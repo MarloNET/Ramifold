@@ -33,3 +33,6 @@ Stitch hat einen zweiten, doppelten Screen erzeugt (Stitch 7f7f62b0c3ed4c6ca7d93
 
 ## Annahmen und offene Fragen
 Keine.
+
+## Ergänzung Runde 2
+Zustand „read-only“ (MSG-005): „Summarize and replace“ deaktiviert. Siehe UI-003.

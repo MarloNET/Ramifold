@@ -14,7 +14,7 @@
 | Titel | „Projects“ | – | – |
 | Tabelle „Title“ / „Created“ | je Vorhaben Titel (Link) und Anlagedatum | Vorhaben | Sortierung: Anlagedatum aufsteigend (älteste zuerst, Annahme); Datumsformat „Nov 3, 2026“ in lokaler Zeitzone; Titel > 1 Zeile wird umbrochen |
 | Statusmarke „Not readable“ | Symbol + Text, bei nicht lesbaren Vorhaben | REQ-072 | Titel, soweit lesbar; sonst Text „(untitled)“ |
-| Banner „Claude Code nicht gefunden“ | siehe MSG-001 | REQ-004 | nur wenn Claude Code beim Start nicht auffindbar |
+| Banner „Claude Code nicht gefunden“ bzw. „zu alt“ | siehe MSG-001 | REQ-004 | nur wenn Claude Code beim Start nicht auffindbar oder älter als v2.1.248 ist; „zu alt“ nennt Mindestversion und `claude update`; Planen ohne KI bleibt möglich |
 
 ## Eingaben und Validierung
 Keine Eingabefelder (Anlegen im Dialog UI-002).
@@ -34,6 +34,7 @@ Keine Eingabefelder (Anlegen im Dialog UI-002).
 | loading | Beim Start der Seite Text „Loading projects…“ anstelle der Tabelle (Ziel ≤ 1 s, REQ-053) | nur Text | „Loading projects…“ |
 | empty | Kein Vorhaben: Leerbereich mit Text und einem Primärbutton; Titelzeile ohne Button | empty.png | „No project in this folder yet.“ / „New project“ |
 | error | Liste nicht ladbar: Banner (role=alert) | nur Text | „The projects could not be loaded. Restart Ramifold and try again.“ |
+| server-down | Ramifold beendet: dauerhaftes Banner MSG-013 über der Kopfzeile; Liste bleibt sichtbar, „New project“ und Öffnen deaktiviert | nur Text | MSG-013 |
 | validation | nicht anwendbar (keine Eingaben) | – | – |
 | permission | nicht anwendbar (eine Rolle); nicht lesbares Vorhaben: Zeile ohne Öffnen-Link, nur „Details“ | default.png | „Not readable“ |
 | disabled | Zeile eines nicht lesbaren Vorhabens: Titel als Text (kein Link), Text gedämpft (Kontrast bleibt ≥ 4,5:1) | default.png | – |

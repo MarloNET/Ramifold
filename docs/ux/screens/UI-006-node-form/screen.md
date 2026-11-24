@@ -47,3 +47,6 @@ Der Rand des Titelfeldes ist rot (gewollt, ergänzt durch Symbol und Text). Kein
 
 ## Annahmen und offene Fragen
 Keine.
+
+## Ergänzung Runde 2
+Zustand „read-only“ (MSG-005) und „server-down“ (MSG-013): Bestätigung deaktiviert, Eingaben bleiben markierbar, Banner im Dialog. Siehe UI-003.

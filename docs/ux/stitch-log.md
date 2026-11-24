@@ -28,3 +28,5 @@ Hinweis: Die Zeilen wurden nach den Aufrufen gesammelt nachgetragen (Aufrufe lie
 
 Bei 30 Generierungen wäre das Courier-Info an den Product Owner fällig; 30 wurden nicht erreicht. Rest: 14.
 Exportiert: Screenshots (PNG) aller 15 Mockups. **HTML-Exporte wurden nicht abgelegt**: `download_file` liefert HTML nur inline in den Kontext, das Ablegen im Repository ist mit den verfügbaren Mitteln nicht möglich (siehe `uiux-design.md`, Abschnitt 8).
+
+**Runde 2 (MAR-1375):** keine neue Generierung, Zähler bleibt 26/40 (Rest 14). Die neuen Zustände „Claude Code zu alt“, „Vorhaben nur lesbar“, „Ramifold läuft nicht mehr“ und die Bilddarstellung sind reine Banner- bzw. Textlink-Zustände, die in `screen.md` und `DESIGN.md` eindeutig beschrieben sind; ein Mockup wurde nicht erstellt, weil sich das Seitenlayout nicht unterscheidet (Banner über vorhandenen Bereichen, vgl. `permission.png`). Der Product Owner kann bei Bedarf ein Mockup für „read-only“ nachfordern (Budget vorhanden).

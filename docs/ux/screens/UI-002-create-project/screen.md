@@ -41,3 +41,6 @@ Schließen-Icon „x“ oben rechts ist vorhanden und gewollt. Sonst keine.
 
 ## Annahmen und offene Fragen
 Keine.
+
+## Ergänzung Runde 2
+Das Anlegen eines neuen Vorhabens ist vom Zustand „read-only“ eines anderen Vorhabens nicht betroffen (AC-REQ-074-06). Bei „server-down“: Bestätigung deaktiviert, Eingaben bleiben, siehe UI-003.

@@ -50,3 +50,6 @@ Baumzeilen nur mit Symbol (siehe UI-003); „Back to node“ nicht dargestellt; 
 
 ## Annahmen und offene Fragen
 - „Accept all“ blockiert bei ungültigem Titel (Auslegung; REQ-038 sagt: Übernahme dieses Vorschlags nicht zulässig).
+
+## Ergänzung Runde 2
+Zustand „read-only“ (MSG-005): Karten lesbar, Accept/Accept all/Discard/Discard all deaktiviert; „server-down“ (MSG-013): Eingaben bleiben, Aktionen deaktiviert. Siehe UI-003.

@@ -1,6 +1,6 @@
 # DESIGN – Ramifold
 
-Status: **vorgeschlagen** (Requirements 10.4: kein vorhandenes Design-System, keine Marke, keine Komponentenbibliothek vorgegeben). Verbindlich wird es erst mit der Freigabe des Designs (Gate „Wie“). Die Komponentenbibliothek der Architecture Baseline ist noch offen; die Tokens sind bibliotheksunabhängig formuliert.
+Status: **vorgeschlagen** (Requirements 10.4: kein vorhandenes Design-System, keine Marke, keine Komponentenbibliothek vorgegeben). Verbindlich wird es erst mit der Freigabe des Designs (Gate „Wie“). Umsetzung (`ui-constraints` v2, ADR-001): React + TypeScript mit **React Aria Components** ohne Fertig-Bibliothek mit eigenem Look; alle Tokens unten werden als CSS Custom Properties umgesetzt. Technische Machbarkeit jeder Komponente beurteilt der Software Architect im Cross-Check. **Stitch-Mockups und ihr HTML sind nur visuelle Referenz**, nie Umsetzungsvorlage.
 
 Leitidee: ruhiges, dichtes Arbeitswerkzeug für lange Planungssitzungen am Desktop (≥ 1280 px). Lesbarkeit vor Dekoration, wenige Farben, Status nie nur über Farbe.
 
@@ -25,7 +25,14 @@ Leitidee: ruhiges, dichtes Arbeitswerkzeug für lange Planungssitzungen am Deskt
 Kontrast (berechnet, WCAG 1.4.3 ≥ 4,5:1 Text, ≥ 3:1 Komponenten): text/bg 15,8; text-muted/bg 7,6; on-primary/primary 6,7; primary/bg 6,7; primary/primary-subtle 5,8; border/bg 4,8; error/bg 6,6; error/error-subtle 5,8; success/Hintergrund 5,1; warning/Hintergrund 6,1; status-open/Hintergrund 6,6; focus/bg 6,4.
 
 ## Typografie
-Headline und Body: **Inter** (Stitch-Theme), Code/Inline-Code/Codeblöcke: **JetBrains Mono**. Basis 15 px / 22 px Zeilenhöhe (Fließtext in Chat und Ergebnis 15 px). Stufen: Seitentitel 22/28 semibold, Abschnitt 17/24 semibold, Label/Meta 13/18 medium, Baumzeile 14/20. Alle Größen in rem, damit Browser-Textvergrößerung greift (WCAG 1.4.4, bis 200 %).
+Headline und Body: **Inter**, Code/Inline-Code/Codeblöcke: **JetBrains Mono** (beide SIL Open Font License 1.1). Basis 15 px / 22 px Zeilenhöhe (Fließtext in Chat und Ergebnis 15 px). Stufen: Seitentitel 22/28 semibold, Abschnitt 17/24 semibold, Label/Meta 13/18 medium, Baumzeile 14/20. Alle Größen in rem, damit Browser-Textvergrößerung greift (WCAG 1.4.4, bis 200 %).
+
+### Auslieferung von Schriften und Icons (REQ-056, REQ-061)
+Ramifold läuft ohne Internet und baut selbst keine Verbindungen nach außen auf. Deshalb: **keine Web-Fonts, Icons oder Skripte von einem CDN** (die Stitch-Exporte referenzieren teils Google Fonts und Material Symbols per CDN; das gilt nicht für die Umsetzung).
+- **Schriften:** Inter und JetBrains Mono als mitgelieferte Dateien (woff2, nur benötigte Schnitte: regular, medium, semibold) *oder*, falls der Software Architect das nicht bündeln will, nur der Systemfallback. Das Layout darf nicht von den Schriftmetriken abhängen (keine festen Breiten für Text).
+- **Fallback-Stack Text:** `Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`.
+- **Fallback-Stack Code:** `"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace`.
+- **Icons:** Material Symbols (Outlined, Apache License 2.0) als **mitgelieferte Inline-SVGs**, nur die verwendeten Symbole (Auf-/Zuklapp-Pfeil, Status „offen/Halbkreis/Haken“, Warnung, Fehler, Info, Schließen, Bild-Link). Jedes Icon hat Text daneben oder `aria-label`; Icons allein tragen keine Information. Die endgültige Auswahl und Lizenzprüfung gehören in die Baseline des Software Architects.
 
 ## Form und Dichte
 Eckenradius 6 px (Stitch: ROUND_EIGHT als nächste Stufe), 8er-Raster, Dichte normal bis kompakt (Baumzeile 32 px Höhe, Schaltflächen 36 px, Mindest-Zielgröße 32 × 32 px). Layout: Kopfzeile 48 px; links Baumspalte 320 px (nicht verstellbar in 0.1), rechts Arbeitsbereich flexibel, Lesebreite für Fließtext höchstens 80 Zeichen.
@@ -38,7 +45,9 @@ Eckenradius 6 px (Stitch: ROUND_EIGHT als nächste Stufe), 8er-Raster, Dichte no
 - **Feedback:** *Banner* (oben im Arbeitsbereich, bleibt bis erledigt, `role="alert"` bei Fehlern, `role="status"` bei Info) für Zustände, die den Planer betreffen; *Inline* (unter Feld) für Validierung; *Toast* nur für flüchtige Erfolgsmeldungen (z. B. „Saved“), 6 s, schließbar, nie als einziger Träger einer Fehlermeldung. Dialoge sind modal, Fokus-Falle, ESC schließt, Fokus kehrt zum Auslöser zurück.
 - **Chat:** Planer-Nachrichten rechtsbündig in primary-subtle, KI-Nachrichten linksbündig auf bg mit Rand divider; Absender als Text („You“, „AI“) und Zeitpunkt. Zustandsmarken „incomplete“, „aborted“, „not saved“ als Text-Pille unter der Nachricht.
 - **Leerzustände:** kurzer Satz plus genau eine Folgeaktion.
-- **Markdown-Darstellung:** Überschriften, Listen, Tabellen (mit Rand divider, horizontal scrollbar bei Überbreite), Codeblöcke (surface, JetBrains Mono, horizontal scrollbar), Links.
+- **Markdown-Darstellung:** Überschriften, Listen, Tabellen (mit Rand divider, horizontal scrollbar bei Überbreite), Codeblöcke (surface, JetBrains Mono, horizontal scrollbar), Links (öffnen in neuem Tab, `rel="noopener noreferrer"`). Kein eingebettetes HTML.
+  - **Bilder werden nicht geladen** (REQ-061). Ein Bild erscheint als Link mit Alternativtext: Bildsymbol (Inline-SVG) + Linktext in Link-Stil, z. B. `![Architektur](https://…/a.png)` → „🖼 Architektur“. Tooltip: „Images are not loaded. Opens in a new tab.“ Leerer Alternativtext → Linktext „Image“, Adresse im Tooltip. Kein Platzhalterkasten, keine Lade- oder Fehlergrafik. Tastaturfokus wie bei jedem Link. Gilt in Ergebnis, Chat, Objective und der Vorschau von UI-004.
+- **Banner „ganzes Fenster“** (`read-only`, `server-down`): volle Breite, nicht schließbar, `role="alert"`, error-subtle mit Symbol und Text; steht über allem anderen Inhalt (server-down über der Kopfzeile, read-only oberhalb des Knotenkopfes) und verschiebt den Inhalt statt ihn zu überdecken.
 
 ## Barrierefreiheit
 Ziele: WCAG 2.2 AA für die sechs Kriterien aus REQ-062 (1.4.3, 1.4.4, 2.1.1, 2.4.3, 2.4.7, 4.1.2). Fokusdarstellung: 2 px focus-Rahmen mit 2 px Abstand, nie entfernt. Mindest-Zielgröße 32 × 32 px. Bewegung: keine dekorativen Animationen; Laufanzeige als Text plus statisches Symbol, Animation nur dezent und bei `prefers-reduced-motion` abgeschaltet.

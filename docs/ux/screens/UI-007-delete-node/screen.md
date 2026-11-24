@@ -39,3 +39,6 @@ Warnsymbol im Dialog vorhanden und gewollt. Hintergrund des Mockups zeigt Beispi
 
 ## Annahmen und offene Fragen
 Keine.
+
+## Ergänzung Runde 2
+Zustand „read-only“ (MSG-005) und „server-down“ (MSG-013): „Delete permanently“ deaktiviert, Banner im Dialog. Siehe UI-003.
