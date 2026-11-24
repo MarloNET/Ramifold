@@ -26,7 +26,7 @@ Status wird nicht als Eingabe gewählt, sondern durch den gewählten Speichern-B
 ## Aktionen
 | Aktion | Auslöser | Voraussetzung / Rolle | Ergebnis bei Erfolg | Ergebnis bei Fehler | Navigation danach |
 |---|---|---|---|---|---|
-| Save as concept | Sekundärbutton | Planer, Text nicht leer | Neue Version mit Status „Concept“; Rückfluss-Hinweis dieses Knotens verschwindet; Toast „Saved as concept“; Ergebnisentwurf (und KI-Entwurf) erledigt | leer: Validierung; Speichern scheitert: MSG-002, Text bleibt bearbeitbar; von außen geändert: MSG-005; Knoten gelöscht: MSG-004 (Text bleibt zum Kopieren) | Ergebnisansicht des Knotens (UI-003) |
+| Save as concept | Sekundärbutton | Planer, Text nicht leer | Neue Version mit Status „Concept“; Rückfluss-Hinweis dieses Knotens verschwindet; Toast „Saved as concept“; Ergebnisentwurf (und KI-Entwurf) erledigt | leer: Validierung; Speichern scheitert: MSG-002 (Ursachen beim Speichern, KL-01), Text bleibt bearbeitbar; von außen geändert: MSG-005; Knoten gelöscht: MSG-004 (Text bleibt zum Kopieren) | Ergebnisansicht des Knotens (UI-003) |
 | Save as fixed plan | Primärbutton | wie oben | wie oben mit Status „Fixed plan“; Rückfluss-Hinweis entsteht beim Elternknoten (falls dieser ein gespeichertes Ergebnis hat); Toast „Saved as fixed plan“; kein weiterer Bestätigungsdialog (Annahme A-UX-02) | wie oben | UI-003 |
 | Discard draft | Textbutton (rot, mit Text) | – | Ergebnisentwurf verworfen (bei KI-Entwurf: Entwurf in der Instanz gelöscht); nach Rückfrage nur, wenn der Text geändert wurde: Dialog „Discard the draft? / Discard / Keep editing“ | – | UI-003 |
 

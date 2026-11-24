@@ -20,7 +20,7 @@
 | Title (je Karte) | einzeiliger Text | ja | nach Trim 1–200 Zeichen | „A title is required.“ / „The title can be at most 200 characters.“ |
 | Objective (je Karte) | mehrzeiliger Text | nein | keine Begrenzung | – |
 
-Änderungen an Karten bleiben Eingaben dieses Fensters, bis die Karte übernommen oder verworfen wird.
+Änderungen an Karten bleiben Eingaben dieses Fensters, bis die Karte übernommen oder verworfen wird. **„Suggest sub-items“ (UI-003) bei bereits offenen Vorschlägen ersetzt alle offenen Vorschläge sofort, auch geänderte Karten, ohne Rückfrage und ohne Dialog (KL-05, REQ-037).**
 
 ## Aktionen
 | Aktion | Auslöser | Voraussetzung / Rolle | Ergebnis bei Erfolg | Ergebnis bei Fehler | Navigation danach |
@@ -37,7 +37,7 @@
 | default | Liste mit Karten | default.png | siehe oben |
 | loading | Nach „Suggest sub-items“: im Knoten Status „AI request running in <Nr> <Titel>“ + „Stop“ (Should); Panel erscheint erst, wenn Vorschläge da sind | nur Text | – |
 | empty | Alle Karten übernommen/verworfen: Panel schließt, Knoten zeigt UI-003 | – | Toast „No suggestions left“ |
-| error | Keine verwertbare Liste: Banner MSG-009; Abbruch/Fehler: MSG-007; Claude Code: MSG-001; läuft anderswo: MSG-003 | nur Text | siehe Meldungen |
+| error | Keine verwertbare Liste: Banner MSG-009; Fehler: Banner MSG-015 („The AI request failed. Cause: <cause>. The plan is unchanged. Try again.“, kein „Send again“), nach „Stop“ kein Banner; Claude Code: MSG-001; läuft anderswo: MSG-003 | nur Text | siehe Meldungen |
 | validation | Fehlertext unter Titel | Muster UI-006 | siehe oben |
 | permission / disabled | „Accept all“ bleibt aktiv; während Speichern „Accepting…“ und Buttons deaktiviert | nur Text | – |
 | success | Statusmeldung „Added …“ | nur Text | – |

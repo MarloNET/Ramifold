@@ -15,7 +15,7 @@
 | Titel | „Projects“ | – | – |
 | Tabelle „Title“ / „Created“ | je Vorhaben Titel (Link) und Anlagedatum | Vorhaben | Sortierung: Anlagedatum aufsteigend (älteste zuerst, Annahme); Datumsformat „Nov 3, 2026“ in lokaler Zeitzone; Titel > 1 Zeile wird umbrochen |
 | Statusmarke „Not readable“ | Symbol + Text, bei nicht lesbaren Vorhaben | REQ-072 | Titel, soweit lesbar; sonst Text „(untitled)“ |
-| Banner „Claude Code nicht gefunden“ bzw. „zu alt“ | siehe MSG-001 | REQ-004 | nur wenn der Befund zu Claude Code negativ ist (beim Laden der Seite): nicht auffindbar oder älter als v2.1.248; „zu alt“ nennt Mindestversion und `claude update` (kein Neustart nötig); Planen ohne KI bleibt möglich. Ein neuer Befund aus einer Anfrage in einem anderen Fenster erscheint hier erst beim nächsten Laden der Seite |
+| Banner „Claude Code nicht gefunden“ bzw. „zu alt“ | siehe MSG-001 | REQ-004 | nur wenn der Befund zu Claude Code negativ ist (beim Laden der Seite): nicht auffindbar (Text beim Start, KL-03) oder älter als v2.1.248; „zu alt“ nennt Mindestversion und `claude update` (kein Neustart nötig); Planen ohne KI bleibt möglich. Ein neuer Befund aus einer Anfrage in einem anderen Fenster erscheint hier erst beim nächsten Laden der Seite |
 
 ## Eingaben und Validierung
 Keine Eingabefelder (Anlegen im Dialog UI-002).

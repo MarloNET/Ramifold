@@ -16,7 +16,7 @@ Keine.
 ## Aktionen
 | Aktion | Auslöser | Voraussetzung / Rolle | Ergebnis bei Erfolg | Ergebnis bei Fehler | Navigation danach |
 |---|---|---|---|---|---|
-| Summarize and replace | Primärbutton | KI-Anfrage zulässig (REQ-069, REQ-004, REQ-030) | Zusammenfassung wird angefordert; Entwurf bleibt bis zum Eingang des neuen KI-Entwurfs unverändert, Ergebnis in allen Fenstern nur lesbar | MSG-001 / MSG-003 / MSG-005; Entwurf bleibt | UI-003 (Knoten, Laufanzeige) |
+| Summarize and replace | Primärbutton | KI-Anfrage zulässig (REQ-069, REQ-004, REQ-030) | Zusammenfassung wird angefordert; Entwurf bleibt bis zum Eingang des neuen KI-Entwurfs unverändert, Ergebnis in allen Fenstern nur lesbar | MSG-001 / MSG-003 / MSG-005; Fehler der Zusammenfassung: MSG-016 (Entwurf bleibt) | UI-003 (Knoten, Laufanzeige) |
 | Keep my draft / ESC | Button (Initialfokus), Taste | – | keine Anfrage, Entwurf unverändert | – | UI-003 / UI-004 |
 
 ## Zustände
