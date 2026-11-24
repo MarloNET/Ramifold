@@ -225,7 +225,8 @@ test('end-to-end: a lost Claude session falls back to a new one with the node ch
   const plan = await s.req('POST', '/api/plans', { title: 'X' });
   await s.req('POST', `/api/plans/${plan.id}/nodes/${plan.rootId}/chat`, { message: 'FIRST-MESSAGE' });
   const store = new Store(s.projectDir);
-  store.setSession(plan.id, plan.rootId, 'gone-session');
+  const { contextHash } = store.loadPlan(plan.id).nodes[plan.rootId];
+  store.setSession(plan.id, plan.rootId, 'gone-session', contextHash);
 
   const res = await s.req('POST', `/api/plans/${plan.id}/nodes/${plan.rootId}/chat`, { message: 'second' });
   assert.strictEqual(res.events.at(-1).type, 'done');
@@ -234,6 +235,59 @@ test('end-to-end: a lost Claude session falls back to a new one with the node ch
   assert.match(retry.prompt, /FIRST-MESSAGE[\s\S]*second$/);
   const view = await s.req('GET', `/api/plans/${plan.id}`);
   assert.notStrictEqual(view.nodes[plan.rootId].sessionId, 'gone-session');
+});
+
+test('end-to-end: a node chat starts a new session with its history when its context changed', async (t) => {
+  const s = await startServer();
+  t.after(() => s.proc.kill());
+  const plan = await s.req('POST', '/api/plans', { title: 'X', mission: 'ROOT-MISSION' });
+  const root = plan.rootId;
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/chat`, { message: 'FIRST-MESSAGE' });
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/chat`, { message: 'unchanged' });
+  assert.ok(s.calls().at(-1).args.includes('--resume'), 'unchanged context resumes the session');
+
+  // A child plan gets fixed: Claude Code keeps the first system prompt on --resume,
+  // so the parent chat must not resume the old session.
+  const view = await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/children`, { title: 'Child', mission: 'm' });
+  const child = view.nodes[root].children[0];
+  await s.req('PATCH', `/api/plans/${plan.id}/nodes/${child}`, { status: 'final', result: 'CHILD-FIXED-PLAN' });
+  const res = await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/chat`, { message: 'after child' });
+  assert.strictEqual(res.events.at(-1).type, 'done');
+  const call = s.calls().at(-1);
+  assert.ok(!call.args.includes('--resume'), 'changed context must not resume the old session');
+  assert.match(call.system, /CHILD-FIXED-PLAN/);
+  assert.match(call.prompt, /FIRST-MESSAGE[\s\S]*unchanged[\s\S]*after child$/);
+
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/chat`, { message: 'again' });
+  assert.ok(s.calls().at(-1).args.includes('--resume'), 'the new session is resumed while the context stays the same');
+});
+
+test('reopening a fixed plan keeps its text as a concept', () => {
+  const store = new Store(tmpDir());
+  const t = exampleTree(store);
+  store.editNode(t.p, t.retrieval.id, { status: 'concept' });
+  const node = store.loadPlan(t.p).nodes[t.retrieval.id];
+  assert.strictEqual(node.status, 'concept');
+  assert.strictEqual(node.result, 'RETRIEVAL-PLAN: hybrid search.');
+  store.editNode(t.p, t.retrieval.id, { status: 'open' });
+  assert.strictEqual(store.loadPlan(t.p).nodes[t.retrieval.id].result, 'RETRIEVAL-PLAN: hybrid search.');
+});
+
+test('end-to-end: malformed URLs and a Claude process that exits before reading stdin do not crash the server', async (t) => {
+  const exitsAtOnce = path.join(tmpDir(), 'exit.js');
+  fs.writeFileSync(exitsAtOnce, "#!/usr/bin/env node\nprocess.stderr.write('error: unknown option');\nprocess.exit(1);\n");
+  fs.chmodSync(exitsAtOnce, 0o755);
+  const s = await startServer({ RAMIFOLD_CLAUDE_CMD: exitsAtOnce });
+  t.after(() => s.proc.kill());
+
+  const bad = await fetch(`${s.base}/%E0%A4%A`);
+  assert.strictEqual(bad.status, 400);
+
+  const plan = await s.req('POST', '/api/plans', { title: 'X' });
+  const res = await s.req('POST', `/api/plans/${plan.id}/nodes/${plan.rootId}/chat`, { message: 'x'.repeat(300000) });
+  assert.match(res.events.at(-1).message, /unknown option/);
+  const alive = await s.req('GET', '/api/plans');
+  assert.strictEqual(alive.status, 200);
 });
 
 test('command line stays short and safe for cmd.exe however long the node context is', () => {

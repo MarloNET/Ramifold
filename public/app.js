@@ -126,7 +126,7 @@ async function openNode(nodeId) {
   $('#suggestions').hidden = true;
   $('#context-view').hidden = true;
   renderTree();
-  renderNode();
+  renderNode(true);
   const { messages } = await call('GET', `/api/plans/${state.planId}/nodes/${nodeId}/chat`);
   if (state.nodeId === nodeId) renderMessages(messages);
 }
@@ -135,21 +135,24 @@ function currentNode() {
   return state.plan.nodes[state.nodeId];
 }
 
-function renderNode() {
+// Editable fields are only filled when a node is opened, so a refresh never drops an unsaved draft.
+function renderNode(fillFields = false) {
   const n = currentNode();
   $('#empty').hidden = true;
   $('#node').hidden = false;
   $('#node-number').textContent = n.number;
-  $('#node-title').value = n.title;
-  $('#node-mission').value = n.mission;
+  if (fillFields) {
+    $('#node-title').value = n.title;
+    $('#node-mission').value = n.mission;
+    $('#result').value = n.result;
+  }
   const status = $('#node-status');
   status.textContent = STATUS_LABEL[n.status];
   status.className = `status ${n.status}`;
-  $('#result').value = n.result;
   $('#stale-hint').hidden = !n.newChildPlans;
   $('#delete-btn').hidden = !n.parentId;
   $('#up-btn').hidden = $('#down-btn').hidden = !n.parentId;
-  $('#reopen-btn').hidden = n.status === 'open';
+  $('#reopen-btn').hidden = n.status !== 'final';
   $('#children').innerHTML = n.children
     .map((id) => {
       const c = state.plan.nodes[id];
@@ -369,7 +372,8 @@ $('#chat-input').addEventListener('keydown', (e) => {
 $('#summarize-btn').addEventListener('click', () => guarded(summarize));
 $('#save-concept-btn').addEventListener('click', () => guarded(() => saveResult('concept')));
 $('#finalize-btn').addEventListener('click', () => guarded(() => saveResult('final')));
-$('#reopen-btn').addEventListener('click', () => guarded(() => saveResult('open')));
+// Reopening keeps the plan text as a concept; it just no longer flows up into the parent.
+$('#reopen-btn').addEventListener('click', () => guarded(() => saveResult('concept')));
 $('#suggest-btn').addEventListener('click', () => guarded(suggest));
 $('#accept-suggestions-btn').addEventListener('click', () => guarded(acceptSuggestions));
 $('#discard-suggestions-btn').addEventListener('click', () => ($('#suggestions').hidden = true));

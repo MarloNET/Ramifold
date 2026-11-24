@@ -5,6 +5,7 @@
 
 const http = require('http');
 const fs = require('fs');
+const crypto = require('crypto');
 const path = require('path');
 const { Store } = require('./lib/store');
 const { getNode, numberOf, hasNewChildPlans } = require('./lib/tree');
@@ -77,6 +78,7 @@ async function streamClaude(res, planId, nodeId, { prompt, userText, kind }) {
     const plan = store.loadPlan(planId);
     const node = getNode(plan, nodeId);
     const systemPrompt = buildNodeContext(plan, nodeId);
+    const contextHash = crypto.createHash('sha256').update(systemPrompt).digest('hex');
     const history = store.loadChat(planId, nodeId).filter((m) => m.role !== 'error');
     if (userText) store.appendChat(planId, nodeId, { role: 'user', text: userText });
     const tools = [];
@@ -93,20 +95,28 @@ async function streamClaude(res, planId, nodeId, { prompt, userText, kind }) {
           emit(ev);
         },
       });
+    const resumable = kind === 'chat' && Boolean(node.sessionId) && node.contextHash === contextHash;
     let out;
     try {
       // Suggestions and summaries get this node's chat explicitly from our files instead of
       // relying on a resumed Claude session, so they also work for nodes without any chat.
-      out = kind === 'chat' ? await run(node.sessionId, prompt) : await run(null, withHistory(history, prompt, true));
+      if (kind !== 'chat') {
+        out = await run(null, withHistory(history, prompt, true));
+      } else if (resumable) {
+        out = await run(node.sessionId, prompt);
+      } else {
+        // Claude Code keeps a session's first system prompt on --resume, so a changed context
+        // (new child plan, edited ancestor, new sibling) needs a new session with our chat.
+        out = await run(null, withHistory(history, prompt));
+      }
     } catch (err) {
-      if (kind !== 'chat') throw err;
       // The Claude session may be gone (cleaned up, other machine). Start a new one and
       // hand over this node's own chat from our files instead.
-      if (!node.sessionId || streamed) throw err;
+      if (!resumable || streamed) throw err;
       out = await run(null, withHistory(history, prompt));
     }
     if (kind === 'chat') {
-      if (out.sessionId) store.setSession(planId, nodeId, out.sessionId);
+      if (out.sessionId) store.setSession(planId, nodeId, out.sessionId, contextHash);
       store.appendChat(planId, nodeId, { role: 'assistant', text: out.text, tools });
       emit({ type: 'done', text: out.text });
     } else if (kind === 'suggest') {
@@ -196,9 +206,9 @@ const server = http.createServer(async (req, res) => {
   if (!self.includes(host) || (origin && !self.some((s) => origin === `http://${s}`))) {
     return send(res, 403, { error: 'Forbidden' });
   }
-  const url = new URL(req.url, `http://${host}`);
-  const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
   try {
+    const url = new URL(req.url, `http://${host}`);
+    const parts = url.pathname.split('/').filter(Boolean).map(decodeURIComponent);
     if (parts[0] === 'api' && parts[1] === 'plans') return await api(req, res, parts.slice(1));
     const file = parts.length ? parts.join('/') : 'index.html';
     const full = path.join(PUBLIC_DIR, file);
