@@ -1,6 +1,6 @@
 # DESIGN – Ramifold
 
-Status: **vorgeschlagen** (Requirements 10.4: kein vorhandenes Design-System, keine Marke, keine Komponentenbibliothek vorgegeben). Verbindlich wird es erst mit der Freigabe des Designs (Gate „Wie“). Umsetzung (`ui-constraints` v2, ADR-001): React + TypeScript mit **React Aria Components** ohne Fertig-Bibliothek mit eigenem Look; alle Tokens unten werden als CSS Custom Properties umgesetzt. Technische Machbarkeit jeder Komponente beurteilt der Software Architect im Cross-Check. **Stitch-Mockups und ihr HTML sind nur visuelle Referenz**, nie Umsetzungsvorlage.
+Status: **vorgeschlagen** (Requirements 10.4: kein vorhandenes Design-System, keine Marke, keine Komponentenbibliothek vorgegeben). Verbindlich wird es erst mit der Freigabe des Designs (Gate „Wie“). Umsetzung (`ui-constraints` v3, ADR-001): React + TypeScript mit **React Aria Components** ohne Fertig-Bibliothek mit eigenem Look; alle Tokens unten werden als CSS Custom Properties umgesetzt. Technische Machbarkeit jeder Komponente beurteilt der Software Architect im Cross-Check. **Stitch-Mockups und ihr HTML sind nur visuelle Referenz**, nie Umsetzungsvorlage.
 
 Leitidee: ruhiges, dichtes Arbeitswerkzeug für lange Planungssitzungen am Desktop (≥ 1280 px). Lesbarkeit vor Dekoration, wenige Farben, Status nie nur über Farbe.
 
