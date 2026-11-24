@@ -13,7 +13,7 @@
 | Titel | „<Vorhabentitel> cannot be opened“ | Vorhaben | Titel soweit lesbar, sonst „This project cannot be opened“ |
 | Text | „Ramifold cannot read the data of this project. Ramifold did not change anything.“ | – | – |
 | Cause | Ursache, z. B. „Git conflict“, „Damaged data“, „Data from a newer Ramifold version“, „Inconsistent data“ | REQ-072 | genau eine Ursache in einfachen Worten |
-| Location | betroffene Stelle im Ramifold-Bereich (Pfad, Monospace) | REQ-072 | der Pfad im Mockup (`.ramifold/projects/3f2a/tree.json`) ist ein Beispiel; echte Namen: OQ-07 |
+| Location | betroffene Stelle im Ramifold-Bereich (Pfad, Monospace) | REQ-072 | der Pfad im Mockup (`.ramifold/plans/<planId>/nodes/<nodeId>.json`) ist ein Beispiel; echte Namen: OQ-07 |
 | Anleitung | „Resolve the problem in your project folder, restart Ramifold, and open the project again. Your other projects are not affected.“ | – | – |
 
 ## Eingaben und Validierung
@@ -39,4 +39,4 @@ Kein „Reparieren“ oder „Erneut versuchen“ (REQ-072: keine Reparatur).
 Hintergrund zeigt die abgedunkelte Vorhabenliste; sonst keine.
 
 ## Annahmen und offene Fragen
-Die Ursachen-Texte sind Beispiele; die vollständige Liste legt der Software Architect mit der Fehlererkennung fest.
+Ursachenliste (festgeschrieben, CC-10): „Git conflict“ (Konfliktmarker in einer Plandatei), „Damaged data“ (Datei nicht lesbar oder formatwidrig), „Data from a newer Ramifold version“, „Inconsistent data“ (Verweise passen nicht zusammen, z. B. fehlender Elternknoten). Genau eine Ursache je Vorhaben. Konfliktmarker nur in `PLAN.md` machen ein Vorhaben **nicht** unlesbar (`PLAN.md` ist abgeleitet). Ein unlesbarer oder zu neuer Ramifold-Bereich selbst (`area.json`) führt zu einem Abbruch beim Start im Terminal (TERM-010, TERM-011), nicht zu diesem Dialog.

@@ -8,7 +8,7 @@
 - Artefakte: `default.png` (Stitch 68013557188b4f13b12980b87bdd7845, Modus „Bestätigung“); Export 2026-11-24
 
 ## Angezeigte Daten
-Titel „Your content is sent to the AI provider“; Text „To answer, Ramifold passes your content to Claude Code, which sends it to its AI provider (Anthropic). This includes:“; Liste „Objectives“, „Results“, „Chat messages“, „Context built from your plan“, „Files from your project folder that the AI reads“; Text „Ramifold itself sends nothing anywhere else and has no cloud.“ (Wortlaut in Anlehnung an AC-REQ-030-05).
+Titel „Your content is sent to the AI provider“; Text „To answer, Ramifold passes your content to Claude Code, which sends it to its AI provider (Anthropic). This includes:“; Liste „Objectives“, „Results“, „Chat messages“, „Context built from your plan“, „Files from your project folder that the AI reads“; **danach zwei Zeilen (CC-06, Entscheidung Product Owner zu REQ-030):** (1) „Claude Code keeps session logs of your conversations in your home folder (~/.claude/) on this computer.“ (2) „The AI can search the web and open web pages while it answers.“; Text „Ramifold itself sends nothing anywhere else and has no cloud.“ (Wortlaut in Anlehnung an AC-REQ-030-05). Die Anmeldeart von Claude Code wird nicht genannt (OQ-01 offen).
 
 ## Eingaben und Validierung
 | Feld | Typ | Pflicht | Regel | Fehlermeldung (Wortlaut) |
@@ -41,4 +41,4 @@ Der Satz über Anthropic und „has no cloud“ ist Teil dieses Textes; Modus �
 
 ## Annahmen und offene Fragen
 - Die Checkbox ist eine Designentscheidung (REQ-030 verlangt nur „bestätigt“).
-- Wenn OQ-08 (Lesebeschränkung, REQ-025) scheitert, muss der Text offen benennen, dass die KI auch Dateien außerhalb des Projektordners lesen könnte (Änderung des Textes, Abstimmung PO/Owner).
+- OQ-08 (Lesebeschränkung) ist durch die Baseline v0.3 erledigt; der Verweis entfällt. Die zwei neuen Zeilen sind Textergänzungen, kein neuer Bestandteil des Dialogs.

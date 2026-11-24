@@ -3,6 +3,7 @@
 - Zweck: Alle Vorhaben des Projektordners zeigen, eines öffnen oder ein neues anlegen.
 - Flows: FLOW-001 (Schritte 2–4), FLOW-008
 - Anforderungen: REQ-005, REQ-006, REQ-072, REQ-004 (Banner), REQ-030 (Link „Data notice“), AC-REQ-006-01, AC-REQ-006-02, AC-REQ-072-*
+- Seitentitel (Tab, CC-13): `Projects – <Ordnername> – Ramifold` (Ordnername = letzter Teil des Projektordners); bei „server-down“ Präfix „Stopped – “; Symbol (Favicon) in allen Instanzen gleich.
 - Rollen: Planer (einzige Rolle, sieht und darf alles)
 - Gerät(e): Desktop/Laptop, Browserfenster ab 1280 px Breite (Requirements 10.2)
 - Artefakte: `default.png` (Stitch 094d269de9b1479eba9fa4fd9265ab55), `empty.png` (Stitch e6c0584c609b4e5d8b3f46f5599eec87); Gerät DESKTOP; Export 2026-11-24
@@ -10,11 +11,11 @@
 ## Angezeigte Daten
 | Element | Inhalt | Quelle (fachlich) | Hinweise |
 |---|---|---|---|
-| Kopfzeile | Text „Ramifold“; „Project folder: <Pfad>“; Link „Data notice“ | Projektordner (REQ-001), Datenabfluss-Hinweis | Pfad gekürzt mit `~`, bei Überlänge mittig mit „…“ gekürzt, voller Pfad als Tooltip/`title` |
+| Kopfzeile | Text „Ramifold“; „Project folder: <Pfad>“; Link „Data notice“; im simulierten Modus Marke „Simulated AI“ (siehe UI-003) | Projektordner (REQ-001), Datenabfluss-Hinweis | Pfad gekürzt mit `~`, bei Überlänge mittig mit „…“ gekürzt, voller Pfad als Tooltip/`title` |
 | Titel | „Projects“ | – | – |
 | Tabelle „Title“ / „Created“ | je Vorhaben Titel (Link) und Anlagedatum | Vorhaben | Sortierung: Anlagedatum aufsteigend (älteste zuerst, Annahme); Datumsformat „Nov 3, 2026“ in lokaler Zeitzone; Titel > 1 Zeile wird umbrochen |
 | Statusmarke „Not readable“ | Symbol + Text, bei nicht lesbaren Vorhaben | REQ-072 | Titel, soweit lesbar; sonst Text „(untitled)“ |
-| Banner „Claude Code nicht gefunden“ bzw. „zu alt“ | siehe MSG-001 | REQ-004 | nur wenn Claude Code beim Start nicht auffindbar oder älter als v2.1.248 ist; „zu alt“ nennt Mindestversion und `claude update`; Planen ohne KI bleibt möglich |
+| Banner „Claude Code nicht gefunden“ bzw. „zu alt“ | siehe MSG-001 | REQ-004 | nur wenn der Befund zu Claude Code negativ ist (beim Laden der Seite): nicht auffindbar oder älter als v2.1.248; „zu alt“ nennt Mindestversion und `claude update` (kein Neustart nötig); Planen ohne KI bleibt möglich. Ein neuer Befund aus einer Anfrage in einem anderen Fenster erscheint hier erst beim nächsten Laden der Seite |
 
 ## Eingaben und Validierung
 Keine Eingabefelder (Anlegen im Dialog UI-002).
@@ -33,7 +34,7 @@ Keine Eingabefelder (Anlegen im Dialog UI-002).
 | default | Tabelle mit Zeilen; Button „New project“ in der Titelzeile | default.png | siehe oben |
 | loading | Beim Start der Seite Text „Loading projects…“ anstelle der Tabelle (Ziel ≤ 1 s, REQ-053) | nur Text | „Loading projects…“ |
 | empty | Kein Vorhaben: Leerbereich mit Text und einem Primärbutton; Titelzeile ohne Button | empty.png | „No project in this folder yet.“ / „New project“ |
-| error | Liste nicht ladbar: Banner (role=alert) | nur Text | „The projects could not be loaded. Restart Ramifold and try again.“ |
+| error | Liste nicht ladbar (unerwarteter Fehler): Banner (role=alert) | nur Text | „The projects could not be loaded. Restart Ramifold and try again.“ Ein unlesbarer oder zu neuer Ramifold-Bereich (`area.json`) ist **kein** Zustand dieser Seite: Der Start bricht im Terminal ab (TERM-010, TERM-011) |
 | server-down | Ramifold beendet: dauerhaftes Banner MSG-013 über der Kopfzeile; Liste bleibt sichtbar, „New project“ und Öffnen deaktiviert | nur Text | MSG-013 |
 | validation | nicht anwendbar (keine Eingaben) | – | – |
 | permission | nicht anwendbar (eine Rolle); nicht lesbares Vorhaben: Zeile ohne Öffnen-Link, nur „Details“ | default.png | „Not readable“ |

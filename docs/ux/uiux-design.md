@@ -6,89 +6,82 @@
 |---|---|
 | Projekt | Ramifold |
 | Slice | 0.1 (erster Slice; kein früheres Design) |
-| Version | 0.2 (Runde 2, nach Product-Owner-Review) |
-| Status | **Entwurf**, zur Prüfung durch den Product Owner; Design-System „vorgeschlagen“ |
+| Version | 0.3 (Cross-Check-Auflösung, MAR-1382; Revision der Runde 2 aus MAR-1375) |
+| Status | **Entwurf** nach Cross-Check, zur Prüfung durch den Product Owner und anschließend Gate „Wie“; Design-System „vorgeschlagen“ |
 | Klassifizierung | Material |
-| Autor | UI/UX Designer (Agent), Design-Task MAR-1372 |
+| Autor | UI/UX Designer (Agent), Design-Tasks MAR-1372, MAR-1375, MAR-1382 |
 | Datum | 2026-11-24 |
 | Branch / PR | `design/MAR-1372` / Draft Pull Request gegen `main` (Commit siehe Übergabe in der Task) |
 | Quellen | Product Brief v0.2 (`docs/product/product-brief.md`, Commit `af886be`); Requirements v0.4 (`docs/product/requirements.md`, Commit `3c85c33`, Gate „Was“ freigegeben); Marktrecherche `docs/product/product-research.md` (nicht verbindlich) |
-| `ui-constraints` | **v2**, Paperclip-Dokument `ui-constraints` an MAR-1370, Revision `bf443e45-5308-48d9-b554-24b53895db0d` (Software Architect, Entwurf); Frontend: React + TypeScript mit React Aria Components (ADR-001); Abgleich in Abschnitt 8 |
-| Stitch | Projekt `17557905236438839052`; Design-System-Asset `assets/15206542824351583325`; Budget 26/40, in Runde 2 keine neue Generierung (siehe `stitch-log.md`) |
+| `ui-constraints` | **v3**, Paperclip-Dokument `ui-constraints` an MAR-1379, Revision `40c3d77d-5c9d-428f-bb02-cb564c6123db` (Software Architect, Entwurf); Baseline v0.3 (`architecture-baseline` Revision `b9cbb5f4-110b-4439-80ff-d508511be2bd`, `adrs` Revision `a97d389a-86f0-444b-858f-fdb08a397498`); Frontend: React + TypeScript mit React Aria Components (ADR-001); Abgleich in Abschnitt 8 |
+| Stitch | Projekt `17557905236438839052`; Design-System-Asset `assets/15206542824351583325`; Budget 26/40, in Runde 2 und in Revision 0.3 keine neue Generierung (siehe `stitch-log.md`) |
 | Sprache | Dokumente Deutsch; **Oberflächentexte Englisch** (REQ-068, LP-09); Beispielinhalte (Titel, Aufträge, Chat) deutsch, weil der Planer auf Deutsch plant |
 
 ## Freigabe-Briefing
 
 ### Kurzfassung
-Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Die Oberfläche besteht aus einer Vorhabenliste und einem Arbeitsbereich mit Baum links und dem gewählten Knoten rechts (Auftrag, Ergebnis, Chat). Dazu kommen elf Screens und Dialoge für Anlegen, Bearbeiten, Vorschläge, Ergebnis speichern, Kontext, Datenabfluss-Hinweis und Fehlerfälle. Das Design-System ist neu und ausdrücklich nur „vorgeschlagen“. Die wichtigsten Weichen: Ergebnis festlegen geschieht mit einem Klick, Sortieren geht über „Move up/Move down“ statt Ziehen, und beim Bearbeiten eines Ergebnisses ist der Chat des Knotens ausgeblendet.
+Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Die Oberfläche besteht aus einer Vorhabenliste und einem Arbeitsbereich mit Baum links und dem gewählten Knoten rechts (Auftrag, Ergebnis, Chat), dazu elf Screens und Dialoge. Das Design-System ist neu und nur „vorgeschlagen“. Weichen: Ergebnis festlegen mit einem Klick, Sortieren über „Move up/Move down“, beim Bearbeiten eines Ergebnisses ist der Chat des Knotens ausgeblendet. Diese Fassung (0.3) löst die Befunde der Cross-Checks auf; es gibt keinen neuen Flow und keinen neuen Screen, nur Texte, Zustände und Ergänzungen.
 
 ### So haben wir dich verstanden
 | Deine Vorgabe (Quelle) | Unsere Auslegung | Beispiel |
 |---|---|---|
-| „Baum anzeigen, navigieren, ein-/ausklappen“ (Brief 9, REQ-007 bis REQ-010) | Baum und Knotenansicht stehen auf **einer** Seite nebeneinander; der Baum bleibt beim Arbeiten sichtbar (UI-003). | Der Owner liest links „2.2 Embedding-Modell – Concept“, klickt es an und sieht rechts Auftrag, Ergebnis und Chat. |
-| „Auf derselben Ebene sortieren“ (Brief 9, REQ-014) | Zwei Aktionen „Move up“ / „Move down“ im Knotenkopf, kein Ziehen mit der Maus. | „Reranking“ steht als 2.3 unten; der Planer klickt zweimal „Move up“, es wird 2.1. |
-| „Hinweis, wenn ein Kind neu festgelegt wurde“ (Brief 9, REQ-046) | Ein Info-Banner im geöffneten Elternknoten nennt Nummer und Titel jedes Kindes. Im Baum gibt es keine Markierung (REQ-047 ist entfallen). | Beim Öffnen von „2 Retrieval“ steht: „Child 2.1 Chunking was fixed after this result was last saved.“ |
-| „Anzeige, was die KI bekommt“ (Brief 9, REQ-036) | Seitenpanel mit dem vollständigen Kontexttext, nur lesbar. | Button „Show context“ unter dem Eingabefeld öffnet ein Panel mit Regeln, Vorfahren, Geschwistern und dem Knoten selbst. |
-| „Datenabfluss-Hinweis vor der ersten KI-Anfrage“ (REQ-030) | Dialog mit Checkbox „I understand and want to continue“; ohne Haken kein Weiter. Danach über „Data notice“ in der Kopfzeile jederzeit lesbar. | Der Planer sendet die erste Frage; der Dialog erscheint; nach „Continue“ geht die Frage los. Bricht er ab, bleibt die Frage im Eingabefeld. |
-| „Ergebnis prüfen, bearbeiten, als Konzept speichern oder festlegen“ (REQ-041 bis REQ-044) | Ein Editor mit Quelltext und Vorschau; der Status ergibt sich aus dem Button („Save as concept“ oder „Save as fixed plan“). | Die KI liefert einen Entwurf; der Planer ändert einen Satz und klickt „Save as fixed plan“. |
-| „Ergebnis gesperrt, wenn es in einem anderen Fenster bearbeitet wird; Überschrift …“ (REQ-071, Beispiel 2) | Gesperrt ist nur das **Ergebnis**; „Überschrift“ lesen wir als Überschrift im Ergebnistext. Titel und Auftrag des Knotens bleiben änderbar (A-UX-05). | In Fenster B kann der Planer „Embedding“ in „Embedding-Modell“ umbenennen, obwohl Fenster A das Ergebnis bearbeitet. |
-| „Oberfläche Englisch“ (REQ-068) | Alle Texte im Design sind englisch, auch Meldungen und Dialoge; Beispielinhalte der Mockups sind deutsch. | Schaltfläche „Export“, Meldung „A title is required.“, Titel „Retrieval“ des Knotens bleibt Inhalt. |
+| „Baum anzeigen, navigieren, ein-/ausklappen“ (Brief 9, REQ-007 bis -010) | Baum und Knotenansicht stehen auf **einer** Seite nebeneinander (UI-003). | Der Planer klickt links „2.2 Embedding-Modell – Concept“ und sieht rechts Auftrag, Ergebnis, Chat. |
+| „Auf derselben Ebene sortieren“ (REQ-014) | „Move up“ / „Move down“ im Knotenkopf, kein Ziehen. | „Reranking“ steht als 2.3; zweimal „Move up“ macht es zu 2.1. |
+| „Hinweis, wenn ein Kind neu festgelegt wurde“ (REQ-046) | Info-Banner im geöffneten Elternknoten, keine Markierung im Baum. | „Child 2.1 Chunking was fixed after this result was last saved.“ |
+| „Datenabfluss-Hinweis vor der ersten KI-Anfrage“ (REQ-030) | Dialog mit Checkbox; **neu:** zwei Zeilen mehr (siehe Annahme 8); danach über „Data notice“ jederzeit lesbar. | Erste Frage → Dialog → „Continue“ → Frage geht los; „Cancel“ lässt sie im Feld stehen. |
+| „Ergebnis gesperrt, wenn es in einem anderen Fenster bearbeitet wird“ (REQ-071) | Gesperrt ist nur das **Ergebnis**; Titel und Auftrag bleiben änderbar (A-UX-05). | In Fenster B lässt sich „Embedding“ umbenennen, obwohl A das Ergebnis bearbeitet. |
+| „Änderung von außen: darf keine Änderung speichern“ (REQ-074) | Ab Erkennung ist das ganze Vorhaben bis zum Neustart nur lesbar; erkannt wird beim Speichern **und** beim Öffnen von Vorhaben und Knoten. Der Export `PLAN.md` zählt nicht als Änderung. | `git pull` ändert einen Knoten; beim nächsten Öffnen eines Knotens zeigt das Fenster „Read-only“. Ändert `git pull` nur `PLAN.md`, bleibt alles bedienbar. |
+| „Oberfläche Englisch“ (REQ-068) | Alle Oberflächentexte englisch, Beispielinhalte deutsch. | Schaltfläche „Export“; der Knotentitel „Retrieval“ bleibt Inhalt. |
 
 ### Kritische Annahmen – bitte einzeln bestätigen
-1. **Annahme (Fenster-Entwürfe):** Ungespeicherte Ergebnistexte und ungesendete Chat-Eingaben bleiben beim Wechsel zwischen Knoten und zur Vorhabenliste **im selben Fenster** erhalten. Beim Neuladen oder Schließen des Fensters gehen sie verloren; der Browser fragt vorher nach.
-   *Beispiel:* Der Planer überarbeitet 10 Minuten das Ergebnis von 2 „Retrieval“, öffnet kurz 3 „Evaluation“ und kehrt zurück: der Text ist da (Baumzeile 2 trägt die Marke „Draft“). Drückt er F5, fragt der Browser „Leave site?“; bestätigt er, ist der Text weg.
-   **Wenn falsch:** Erhalt beim Neuladen wäre eine neue Funktion mit Datenschutzfolgen. Die Browser-Rückfrage ist eine Ergänzung des Designs. (UI-004, UI-003; REQ-071, REQ-073)
-2. **Annahme (Festlegen mit einem Klick):** „Save as fixed plan“ speichert sofort, ohne zusätzlichen Bestätigungsdialog.
-   *Beispiel:* Der Planer klickt in UI-004 „Save as fixed plan“: Das Ergebnis von 2.2 ist festgelegt, der Elternknoten 2 zeigt den Rückfluss-Hinweis. Ein Fehlklick lässt sich korrigieren, indem er das Ergebnis erneut bearbeitet und als „Concept“ speichert (REQ-044).
-   **Wenn falsch:** Es kommt ein Bestätigungsdialog hinzu. (UI-004; REQ-043)
-3. **Annahme (Export ohne Rückfrage):** „Export“ schreibt das Export-Dokument sofort und überschreibt das vorherige Dokument desselben Vorhabens ohne Rückfrage; danach steht ein Banner mit dem Pfad im Arbeitsbereich.
-   *Beispiel:* Der Planer exportiert „Eigenes produktives RAG“ am Montag und nochmals am Dienstag; die Montagsdatei ist weg (nur Git hat sie noch). Banner: „Exported to <Pfad>“.
-   **Wenn falsch:** Es kommt ein Dialog hinzu. (UI-003; REQ-049)
-4. **Annahme (Chat während des Bearbeitens):** Solange der Editor offen ist (UI-004), ist der Chat dieses Knotens ausgeblendet. Der Planer kann den Knoten wechseln und zurückkehren; der Entwurf bleibt (REQ-073).
-   *Beispiel:* Beim Überarbeiten möchte er in 2.2 eine Rückfrage an die KI stellen. Er muss erst speichern oder den Editor verlassen (zu einem anderen Knoten und zurück zeigt wieder den Editor, nicht den Chat).
-   **Wenn falsch:** UI-003/UI-004 werden umgebaut (Editor über dem Chat). (siehe „Deine Entscheidungen“)
-5. **Annahme (Zugang zum Datenabfluss-Hinweis):** Der Hinweis hat bewusst eine Checkbox; „Data notice“ steht dauerhaft in der Kopfzeile aller Seiten (nicht in einem Einstellungsmenü, das es nicht gibt).
-   *Beispiel:* Eine Entwicklerin klont das Repo, startet Ramifold und sendet ihre erste Frage: Der Hinweis erscheint, obwohl der Autor ihn bei sich bestätigt hat (AC-REQ-030-06).
-   **Wenn falsch:** Ohne Checkbox wäre die Bestätigung ein einfacher Klick. (UI-009; REQ-030, LP-06)
+1. **Entwürfe bleiben im Fenster.** Ungespeicherte Ergebnistexte und Chat-Eingaben bleiben beim Wechsel zwischen Knoten und Liste erhalten, nicht beim Neuladen (der Browser fragt vorher). *Beispiel:* 10 Minuten am Ergebnis von „2 Retrieval“ gearbeitet, kurz „3 Evaluation“ geöffnet, zurück: Text da. F5 und „Leave site?“ bestätigt: Text weg. *Wenn falsch:* Erhalt beim Neuladen wäre eine neue Funktion mit Datenschutzfolgen. (UI-003/-004; REQ-071, -073)
+2. **Festlegen mit einem Klick.** „Save as fixed plan“ speichert ohne Bestätigungsdialog. *Beispiel:* Fehlklick bei 2.2 lässt sich durch erneutes Bearbeiten und „Save as concept“ korrigieren (REQ-044). *Wenn falsch:* ein Dialog kommt hinzu. (UI-004)
+3. **Export ohne Rückfrage, überschreibt vollständig.** „Export“ überschreibt `PLAN.md` des Vorhabens ohne Rückfrage, auch wenn sie von Hand geändert wurde; Banner mit Pfad. Im gesperrten Vorhaben („read-only“) ist Export abgewiesen. *Beispiel:* Montag exportiert, Dienstag von Hand ergänzt, Mittwoch wieder „Export“: die Handänderung ist weg (nur Git hat sie noch). (UI-003; REQ-049)
+4. **Chat beim Bearbeiten ausgeblendet.** Solange der Editor offen ist, ist der Chat des Knotens ausgeblendet; der Entwurf bleibt beim Knotenwechsel. *Beispiel:* Rückfrage an die KI mitten im Überarbeiten: erst speichern oder Editor verlassen. *Wenn falsch:* UI-003/-004 werden umgebaut. (siehe „Deine Entscheidungen“)
+5. **Datenabfluss-Hinweis mit Checkbox**, „Data notice“ dauerhaft in der Kopfzeile. *Beispiel:* Wer das Repo klont, sieht den Hinweis bei der ersten Frage, auch wenn der Autor ihn bestätigt hat. (UI-009; REQ-030)
+6. **Neu – „not sent“ und „Send again“ (D3a).** „not sent“ erscheint nur, wenn die Nachricht schon gespeichert ist, Claude Code sie aber vor der Antwort abweist (nicht angemeldet, Prozess startet nicht). Sie bleibt im Verlauf mit Ursache; „Send again“ schickt **dieselbe** Nachricht erneut (keine Kopie, Marke verschwindet bei Erfolg), nur solange sie die jüngste Nachricht des Chats ist. Alle anderen Abweisungen (andere Anfrage läuft, Hinweis unbestätigt, Claude Code laut Befund nicht installiert oder zu alt, read-only, Ramifold beendet) geschehen vor dem Speichern: die Nachricht bleibt im Eingabefeld. Fehler vor dem ersten Textteil (Netzwerk, Limit) ergeben keine Marke, sondern eine KI-Antwort „incomplete“ ohne Text mit Ursache. *Beispiel:* Die Anmeldung ist abgelaufen; der Planer sendet; im Chat steht seine Nachricht mit „not sent – Claude Code is not signed in“; er meldet sich im Terminal an und klickt „Send again“; die Marke verschwindet, die Antwort folgt. (UI-003; REQ-004, -028)
+7. **Neu – „nicht angemeldet“ = „abgelaufen“.** Ramifold unterscheidet beides nicht: **eine** Meldung, Schritt „im Terminal `claude` starten, anmelden, erneut senden“, kein Neustart. „Anmeldung fehlgeschlagen“ gibt es nicht. Nach `claude update` genügt ebenfalls erneut senden. *Beispiel:* „Claude Code is not signed in. Open a terminal, run "claude" and sign in, then send your message again.“ (MSG-001)
+8. **Neu – Datenabfluss-Hinweis nennt zwei weitere Tatsachen (CC-06, Entscheidung Product Owner).** (1) „Claude Code keeps session logs of your conversations in your home folder (~/.claude/) on this computer.“ (2) „The AI can search the web and open web pages while it answers.“ Die Anmeldeart bleibt ungenannt (OQ-01 offen). *Beispiel:* Der Planer sieht vor der ersten Frage, dass seine Gespräche auch lokal in `~/.claude/` liegen. (UI-009; REQ-030)
+9. **Neu – Anzeige „Simulated AI“.** Im simulierten Modus (`RAMIFOLD_AGENT=fake`, für Abnahmetests) zeigt die Kopfzeile dauerhaft die Marke „Simulated AI“; das Terminal sagt es beim Start ebenfalls. *Beispiel:* Der Owner testet die Abnahme; neben „Data notice“ steht „Simulated AI“, damit eine erfundene Antwort nicht für echt gehalten wird. Im Normalbetrieb fehlt die Marke. (UI-001, UI-003; TERM-012)
+10. **Neu – Andere Fenster sehen nur „läuft“.** Ein zweites Fenster zeigt während einer KI-Anfrage nur „AI request running in 2.2 Embedding“ ohne Teiltext; die Antwort erscheint dort erst, wenn der Knoten erneut geöffnet wird. *Beispiel:* Fenster A streamt eine Antwort in 2.2; Fenster B zeigt nur die Laufanzeige; nach dem Ende öffnet der Planer 2.2 in B erneut und sieht die ganze Antwort. (UI-003; REQ-019, -069)
+11. **Neu – Geöffnete Stände können veraltet sein.** Erkennt Ramifold beim Öffnen eines Vorhabens oder Knotens eine Änderung von außen, bleibt der zuvor geladene (möglicherweise veraltete) Stand sichtbar, mit „Read-only“ und Ursache; es wird nicht automatisch neu geladen. Andere Fenster erfahren es erst bei ihrer nächsten Öffnen- oder Speicheraktion. *Beispiel:* Nach `git pull` öffnet der Planer Knoten 3; oben steht „Read-only“ mit der Meldung, der angezeigte Text kann alt sein; Ramifold neu starten lädt den neuen Stand. (UI-003; REQ-074)
+12. **Neu – Adresse.** `http://localhost:<port>` funktioniert wie `http://127.0.0.1:<port>`; jede andere Adresse bekommt eine schlichte englische Abweisungsseite ohne Ramifold-Layout. *Beispiel:* Aufruf über einen fremden Hostnamen: „This address is not allowed. Open the address shown in the terminal.“ (MSG-014)
 
 ### Weitere Annahmen
-- Vorhabenliste nach Anlagedatum aufsteigend. *Beispiel:* „Eigenes produktives RAG“ (3. Nov) vor „Monitoring-Konzept“ (17. Nov). (A-UX-07)
-- Wortlaut der Schritte in MSG-001 (Anmelden, `claude update`) ist ein Platzhalter, den der Software Architect prüft.
-- Breite des Baums ist fest (320 px); Verstellen gehört nicht zu 0.1. (A-UX-08)
-- Die Should-Funktionen aus OQ-09 (Antwort schrittweise, Abbrechen) sind enthalten; fallen sie weg, entfallen Teilantwort-Anzeige und „Stop“ (UI-003).
+- Vorhabenliste nach Anlagedatum aufsteigend (A-UX-07); Baum fest 320 px (A-UX-08); die Should-Funktionen aus OQ-09 (schrittweise Antwort, Abbrechen) sind enthalten.
+- Seitentitel unterscheidet Instanzen: `<Vorhabentitel> – <Ordnername> – Ramifold`, in der Liste `Projects – <Ordnername> – Ramifold`; das Symbol ist überall gleich (CC-13).
+- Neustart-Hinweis nur noch bei „Claude Code nicht installiert“ (Rückfall: erst installieren und erneut senden, sonst Ramifold aus einem neuen Terminal starten). Wortlaut der Schritte prüft der Software Architect.
 
 ### Entscheidungen der Agenten
 | Entscheidung | Verworfene Alternative | Warum | Umkehrbar |
 |---|---|---|---|
-| Baum und Knoten auf einer Seite (Zweispalter) | getrennte Seiten (Baum → Knoten) | REQ-053/10.6: Baum bleibt beim Arbeiten sichtbar; Wechsel zwischen Knoten ohne Seitenwechsel | mittel |
-| „Move up/Move down“ statt Drag-and-drop | Ziehen mit der Maus | Tastaturbedienung ist Pflicht (REQ-062, 2.1.1); Drag-and-drop wäre zusätzliche Funktion | leicht |
-| Dialoge für Anlegen/Umbenennen/Auftrag (ein Formular, drei Modi) | Inline-Bearbeiten im Baum | weniger Zustände, einheitliche Validierung | leicht |
-| Vorschläge als Panel mit Karten (Titel+Auftrag bearbeitbar, „Accept“/„Discard“, „Accept all“/„Discard all“) | Dialog mit Liste | Prüf-Workflow mit mehreren Einträgen braucht Platz (10.6) | mittel |
-| Kontext als Seitenpanel (nur lesbar, kein Kopieren) | eigene Seite | lange Texte, schneller Wechsel zurück | leicht |
-| Status immer Symbol + Text („No result yet“, „Concept“, „Fixed plan“) | nur Farbe/Symbol | WCAG 1.4.1-Geist, REQ-062; Begriffe aus der Requirements-Begriffstabelle | leicht |
-| Bei schmalem Fenster (Zoom ≥ 125 %) wird der Baum aufklappbar | horizontales Scrollen | REQ-062 (200 % Zoom) | leicht |
-| Toast nur für flüchtigen Erfolg; Fehler als Banner | Toasts für alles | Meldungen dürfen nicht verpasst werden | leicht |
-| Header ohne Einstellungen, Profil, Suche (kein Menü) | übliches App-Menü | nicht in den Requirements; vermeidet Platzhalter | leicht |
-| Strg/Cmd+S im Editor speichert als „Concept“ (A-UX-12) | gar keine Tastenkürzel | übliche Erwartung; „Concept“ ist die sichere Stufe, „Fixed plan“ nur per Button | leicht |
-| „Vorhaben nur lesbar“ (REQ-074): dauerhaftes Banner, alle speichernden Aktionen deaktiviert, Lesen und Kopieren bleiben | nur Einzelablehnung je Aktion | Der Planer kann vor dem Neustart seinen Text sichern | leicht |
-| „Server nicht erreichbar“ als eigenes Banner ganz oben (MSG-013), Eingaben bleiben stehen | Fehler je Aktion | Jede Aktion scheitert gleich | leicht |
-| Markdown-Bild = Link mit Alternativtext und Bild-Symbol | Bild-Platzhalterkasten | nichts wird geladen (REQ-061) | leicht |
+| Baum und Knoten auf einer Seite | getrennte Seiten | Baum bleibt beim Arbeiten sichtbar (REQ-053) | mittel |
+| „Move up/Move down“ statt Drag-and-drop | Ziehen | Tastatur Pflicht (REQ-062) | leicht |
+| Vorschläge als Panel mit Karten; Kontext als Seitenpanel | Dialog / eigene Seite | Prüfen braucht Platz, schneller Rückweg | mittel |
+| Status immer Symbol + Text | nur Farbe | WCAG, REQ-062 | leicht |
+| „read-only“ und „Ramifold läuft nicht mehr“ als dauerhafte Banner, Eingaben bleiben stehen | Einzelfehler je Aktion | Text lässt sich vor dem Neustart sichern | leicht |
+| **E-UX-01:** „Send again“ auch an einer unvollständigen KI-Antwort („incomplete“), nicht bei „aborted“; nur an der jüngsten Nachricht | nur bei „not sent“ | REQ-028 verlangt „erneut senden“; „aborted“ hat der Planer selbst gewollt. Die unvollständige Antwort bleibt stehen, die neue folgt darunter. *Beispiel:* Antwort bricht nach zwei Teilen mit „Usage limit reached“ ab; nach dem Limit klickt der Planer „Send again“. | leicht |
+| **E-UX-02:** Marke „Simulated AI“ in der Kopfzeile | nur im Terminal | Gefahr, simulierte Antworten für echt zu halten; kleines Element, nur im Testmodus | leicht |
+| Ein Zustand „nicht angemeldet“ (auch abgelaufen) | zwei Meldungen | gleicher Schritt, Baseline v0.3 | leicht |
 
 ### Bewusst nicht enthalten
-- Keine Anzeige für Werkzeuge/Skills der KI, auch kein ausgegrautes Feld (*Beispiel:* kein Menüpunkt „Tools“).
-- Keine Versionsansicht, Verweise, Abhängigkeiten, Verschieben in andere Eltern, mehrere Chats, Material, Einstellungen, Suche, Benutzerkonto, Dark Mode, Mobil-/Tablet-Layout.
-- Keine Mockups für Terminal-Ausgaben und, in dieser Runde, für die neuen Banner-Zustände (nur Text, siehe `screen.md`).
+- Keine Anzeige und keine Bedienung für Werkzeuge, Skills, MCP-Server oder Werkzeugfreigaben, auch kein ausgegrautes Feld (*Beispiel:* kein Menüpunkt „Tools“). Nur ein Textabschnitt „Ausblick Werkzeugfreigabe“ in Abschnitt 8 beschreibt die spätere Absicht (Owner-Hinweis, REQ-024).
+- Keine Versionsansicht, Verweise, Verschieben in andere Eltern, mehrere Chats, Material, Einstellungen, Suche, Konto, Dark Mode, Mobil-/Tablet-Layout, Mockups für Terminal-Ausgaben und Banner-Zustände.
 
 ### Was sich geändert hat
-Erstfassung für dich (Review-Runde 2; Runde 1 hast du nicht gesehen). Neu nach Review und technischen Randbedingungen: Zustände „Claude Code zu alt“ (ab v2.1.248), „Ramifold läuft nicht mehr“ und „Vorhaben nur lesbar“ (Meldung warnt vor Verlust beim Neustart), Markdown-Bilder als Link, verzögert endende Bearbeitungssperre, gebündelte Schriften/Icons.
+Gegenüber v0.2 (Review-Runde 2) nach den Cross-Checks (Baseline v0.3, `ui-constraints` v3), ohne neue Flows oder Screens:
+- **Claude Code:** „zu alt“ ohne Neustart, „nicht angemeldet“ = „abgelaufen“, „not sent“ mit „Send again“, Kurztexte je Ursache (14 Codes), Banner sofort nur im anfragenden Fenster.
+- **Änderung von außen:** Erkennung auch beim Öffnen (nur lesend); `PLAN.md` zählt nicht; Export überschreibt vollständig und ist im gesperrten Vorhaben abgewiesen.
+- **Texte:** Datenabfluss-Hinweis (zwei Zeilen, Annahme 8), Terminal-Fehler (Node.js, Port, Sperre, Ramifold-Bereich beschädigt oder zu neu), Abweisungsseite für fremde Adressen, Verbindungsverlust ohne stilles Wiederverbinden.
+- **Sonst:** andere Fenster nur mit Laufanzeige, Seitentitel je Instanz, Marke „Simulated AI“, Beispielpfad in UI-011, Ausblick-Text Werkzeugfreigabe, Baumrolle als Tree-Muster (treegrid).
 
 ### Deine Entscheidungen
-1. **Editor und Chat gleichzeitig?** Optionen: (a) Chat beim Bearbeiten ausgeblendet (aktueller Entwurf); (b) Editor über dem Chat, beides sichtbar. Empfehlung: (a) für 0.1, einfacher; (b), falls der Owner beim Überarbeiten oft nachfragt.
-2. **Festlegen mit Bestätigung?** Optionen: (a) ein Klick (Entwurf); (b) kleiner Bestätigungsdialog. Empfehlung: (a), weil Korrektur möglich ist (REQ-044).
-3. **Should-Funktionen aus OQ-09** (REQ-020/-021): im Design enthalten. Entscheidung des Owners zum Slice-Zuschnitt (OQ-09) steht aus; das Design lässt sich ohne Umbau kürzen.
+1. **Editor und Chat gleichzeitig?** (a) Chat beim Bearbeiten ausgeblendet (Entwurf); (b) Editor über dem Chat. Empfehlung: (a).
+2. **Festlegen mit Bestätigung?** (a) ein Klick (Entwurf); (b) Bestätigungsdialog. Empfehlung: (a).
+3. **Should-Funktionen aus OQ-09** (REQ-020/-021) sind enthalten; Entscheidung zum Slice-Zuschnitt steht aus; das Design lässt sich ohne Umbau kürzen.
 
 ### Lesetipps
-- `screens/UI-003-workspace/screen.md` (Kern, alle Zustände), `screens/UI-004-result-editor/screen.md`, Abschnitt 5 unten (alle Meldungen im Wortlaut), `DESIGN.md`.
+`screens/UI-003-workspace/screen.md` (Kern), Abschnitt 5 unten (Meldungen im Wortlaut), Abschnitt 8 (Ausblick Werkzeugfreigabe).
 
 ## 2. Nutzer, Umfang und Designziele
 - **Nutzer:** ein lokaler Planer (Entwickler, erster Nutzer der Owner), Desktop/Laptop mit Tastatur und Maus; lange Sitzungen über mehrere Tage parallel zu Terminal und Coding-Agent (10.5). Die KI und der Coding-Agent sind Systemakteure ohne eigene Oberfläche.
@@ -104,15 +97,15 @@ Erstfassung für dich (Review-Runde 2; Runde 1 hast du nicht gesehen). Neu nach 
 
 | ID | Flow | Normaler Pfad | Alternativen / Fehlerpfade | Screens |
 |---|---|---|---|---|
-| FLOW-001 | Start, Vorhaben wählen oder anlegen | 1 Planer startet Ramifold im Terminal (TERM-001), öffnet die Adresse im Browser → 2 UI-001 zeigt Liste → 3 „Open“ per Titel → UI-003; oder 4 „New project“ → 5 UI-002 (Title, Objective) → „Create project“ → UI-003 mit Wurzelknoten | Leere Liste (UI-001 empty); Vorhaben nicht lesbar → „Details“ → UI-011; Claude Code fehlt oder ist zu alt → Banner MSG-001 (Varianten „nicht gefunden“, „zu alt“); Start-Fehler nur im Terminal (TERM-002, -003, -004, -005) | UI-001, UI-002, UI-011 |
+| FLOW-001 | Start, Vorhaben wählen oder anlegen | 1 Planer startet Ramifold im Terminal (TERM-001), öffnet die Adresse im Browser → 2 UI-001 zeigt Liste → 3 „Open“ per Titel → UI-003; oder 4 „New project“ → 5 UI-002 (Title, Objective) → „Create project“ → UI-003 mit Wurzelknoten | Leere Liste (UI-001 empty); Vorhaben nicht lesbar → „Details“ → UI-011; Claude Code fehlt oder ist zu alt → Banner MSG-001 (Varianten „nicht gefunden“, „zu alt“); fremde Host-Angabe → Abweisungsseite MSG-014; Start-Fehler nur im Terminal (TERM-002 bis -011) | UI-001, UI-002, UI-011 |
 | FLOW-002 | Baum bearbeiten und navigieren | 1 Knoten anklicken/mit Pfeiltasten wählen → 2 ein-/ausklappen → 3 „Add child“ (UI-006) → 4 „Rename“/„Edit objective“ (UI-006) → 5 „Move up/down“ → 6 „Delete“ (UI-007, Bestätigung) | Titel leer/zu lang (Validierung); Knoten in anderem Fenster gelöscht (MSG-004); Speichern scheitert (MSG-002) | UI-003, UI-006, UI-007 |
-| FLOW-003 | Chat im Knoten | 1 Knoten öffnen → 2 Nachricht schreiben, „Send“ (beim ersten Mal UI-009 bestätigen) → 3 Laufanzeige → 4 Antwort (Markdown) im Chat → optional „Show context“ (UI-008) | KI läuft anderswo (MSG-003); Claude Code fehlt/zu alt/nicht angemeldet (MSG-001, Nachricht bleibt im Feld, Funktionen ohne KI bleiben nutzbar); Antwort bricht ab (MSG-007); Sitzung neu aufgebaut (MSG-008); „Stop“ (Should) | UI-003, UI-008, UI-009 |
+| FLOW-003 | Chat im Knoten | 1 Knoten öffnen → 2 Nachricht schreiben, „Send“ (beim ersten Mal UI-009 bestätigen) → 3 Laufanzeige → 4 Antwort (Markdown) im Chat → optional „Show context“ (UI-008) | KI läuft anderswo (MSG-003); Claude Code nicht installiert/zu alt (MSG-001, Nachricht bleibt im Feld) oder nicht angemeldet (Nachricht „not sent“, „Send again“); Funktionen ohne KI bleiben nutzbar; Antwort bricht ab (MSG-007, ggf. „Send again“); Sitzung neu aufgebaut (MSG-008); „Stop“ (Should) | UI-003, UI-008, UI-009 |
 | FLOW-004 | Unterpunkte vorschlagen | 1 „Suggest sub-items“ → 2 Laufanzeige → 3 UI-005 mit Vorschlagskarten → 4 Titel/Auftrag ändern → 5 „Accept“/„Accept all“ oder „Discard“/„Discard all“ → neue Kinder im Baum | keine verwertbare Liste (MSG-009); Titel leer; Abbruch (MSG-007) | UI-003, UI-005 |
 | FLOW-005 | Ergebnis festlegen und Rückfluss | 1 „Summarize with AI“ (ggf. UI-010) → 2 Laufanzeige, Ergebnis lesbar gesperrt → 3 UI-004 mit KI-Entwurf → 4 bearbeiten → 5 „Save as concept“ oder „Save as fixed plan“ → 6 beim Elternknoten erscheint der Rückfluss-Hinweis (Banner) | Fehler/Abbruch: Entwurf unverändert (MSG-007); leeres Ergebnis (Validierung); „Edit result“ ohne KI direkt; „Discard draft“ | UI-003, UI-004, UI-010 |
-| FLOW-006 | Export | 1 „Export“ in der Kopfzeile → 2 Banner „Exported to <Pfad>“ | Speichern scheitert (MSG-002), außerhalb geändert (MSG-005) | UI-003 |
-| FLOW-007 | Mehrere Fenster, Änderung von außen | Zweites Fenster zeigt dieselbe Instanz; Ergebnis in Fenster A in Bearbeitung → Fenster B zeigt es nur lesbar (MSG-011); nach Speichern in A erneut öffnen | Knoten in A gelöscht → Aktion in B abgewiesen (MSG-004); Bearbeitungssperre endet verzögert (bis etwa 15 s nach Schließen von A): B zeigt weiter MSG-011, „Check again“ prüft neu; `git pull` ändert Vorhaben → ab Erkennung ist das ganze Vorhaben bis zum Neustart nur lesbar (Zustand „read-only“, MSG-005), Text bleibt zum Kopieren | UI-003 (permission, read-only), UI-004, UI-002/-005/-006/-007 |
+| FLOW-006 | Export | 1 „Export“ in der Kopfzeile → 2 Banner „Exported to <Pfad>“ (überschreibt `PLAN.md` vollständig) | Speichern scheitert (MSG-002); Vorhaben von außen geändert: Export abgewiesen (MSG-005) | UI-003 |
+| FLOW-007 | Mehrere Fenster, Änderung von außen | Zweites Fenster zeigt dieselbe Instanz; Ergebnis in Fenster A in Bearbeitung → Fenster B zeigt es nur lesbar (MSG-011); nach Speichern in A erneut öffnen; läuft eine KI-Anfrage in A, zeigt B nur „AI request running in <Nr> <Titel>“, die Antwort erscheint in B beim erneuten Öffnen des Knotens | Knoten in A gelöscht → Aktion in B abgewiesen (MSG-004); Bearbeitungssperre endet verzögert (bis etwa 15 s nach Schließen von A): B zeigt weiter MSG-011, „Check again“ prüft neu; `git pull` ändert Plandaten → erkannt beim Speichern, beim Öffnen des Vorhabens oder eines Knotens (nur lesend); ab Erkennung ist das ganze Vorhaben bis zum Neustart nur lesbar (Zustand „read-only“, MSG-005; geladener Stand bleibt sichtbar, kann veraltet sein), Text bleibt zum Kopieren; Änderung nur an `PLAN.md` zählt nicht | UI-003 (permission, read-only), UI-004, UI-002/-005/-006/-007 |
 | FLOW-008 | Datenabfluss-Hinweis | 1 Erste KI-Anfrage → 2 UI-009 (Bestätigung) → 3 „Continue“ → Anfrage geht los; später „Data notice“ (Ansichtsmodus) | Abbruch: nichts gesendet, Nachricht bleibt | UI-009 |
-| FLOW-009 | Ramifold läuft nicht mehr (Querschnitt) | In jedem Flow: Ramifold im Terminal beendet → nächste Aktion oder Verbindungsverlust → dauerhaftes Banner MSG-013; Eingaben bleiben im Fenster stehen; Planer kopiert Text, startet Ramifold neu, öffnet die neue Adresse | – (jede Aktion scheitert einheitlich; keine Einzelfehler) | UI-001, UI-003 (alle Dialoge) |
+| FLOW-009 | Ramifold läuft nicht mehr (Querschnitt) | In jedem Flow: Ramifold im Terminal beendet → nächste Aktion oder Verbindungsverlust → dauerhaftes Banner MSG-013; Eingaben bleiben im Fenster stehen; Planer kopiert Text, startet Ramifold neu, lädt das Fenster neu bzw. öffnet die Adresse; das Fenster verbindet sich nie von selbst neu, auch nicht bei Neustart auf demselben Port | – (jede Aktion scheitert einheitlich; keine Einzelfehler) | UI-001, UI-003 (alle Dialoge) |
 
 **Informationsarchitektur.** Zwei Ebenen: (1) Vorhabenliste des Projektordners (UI-001); (2) Arbeitsbereich eines Vorhabens (UI-003) mit dem Baum als einziger Navigation. Navigation: Brotkrume „Projects / <Titel>“ in der Kopfzeile führt zurück; „Data notice“ in jeder Kopfzeile. Die Kopfzeile hat rechts Platz für weitere Aktionen späterer Slices (Textlinks/Buttons), ohne Umbau; die Bereiche des Arbeitsbereichs (Result, Chat) können später um Abschnitte erweitert werden. Hinweis zur späteren Werkzeuganzeige: sie kann als zusätzliche Textaktion im Chat-Bereich neben „Show context“ stehen; in 0.1 gibt es dafür weder Screen noch Element.
 
@@ -144,35 +137,61 @@ Zählregel: UI-001 bis UI-011 sind stabil; keine zurückgezogenen IDs.
 - *Eingaben bleiben immer erhalten* bei Fehlern (REQ-003, -069, -071, -074).
 - *Einzelne KI-Anfrage (REQ-069):* Solange eine läuft, zeigt der Baum „AI running“ am betroffenen Knoten; „Send“, „Suggest sub-items“ und „Summarize with AI“ in jedem Knoten sind `aria-disabled` und erklären beim Aktivieren per MSG-003, warum nichts passiert; alle Funktionen ohne KI bleiben nutzbar.
 - *Bestätigung vor Zerstörung:* nur beim Löschen (UI-007), Ersetzen eines Entwurfs (UI-010) und Verwerfen geänderter Texte.
-- *Zwei Zustände, die das ganze Fenster betreffen:* **„read-only“** (Vorhaben von außen geändert, MSG-005; REQ-074) und **„server-down“** (Ramifold beendet, MSG-013). Beide zeigen ein dauerhaftes Banner, lassen Eingaben stehen und deaktivieren alle Aktionen, die etwas ändern bzw. Ramifold brauchen; Beschreibung in `screens/UI-003-workspace/screen.md`.
-- *Kein Live-Abgleich zwischen Fenstern:* Kein Zustand, keine Meldung und keine Aktion setzt voraus, dass ein zweites Fenster Änderungen sofort sieht; Nachführen geschieht beim erneuten Öffnen des Vorhabens oder Knotens bzw. mit „Check again“ (MSG-011). Ausnahme nach Vorgabe: die Anzeige „AI running“ (REQ-019).
+- *Zwei Zustände, die das ganze Fenster betreffen:* **„read-only“** (Vorhaben von außen geändert, MSG-005; REQ-074; `PLAN.md` zählt nicht) und **„server-down“** (Ramifold beendet, MSG-013). Beide zeigen ein dauerhaftes Banner, lassen Eingaben stehen und deaktivieren alle Aktionen, die etwas ändern bzw. Ramifold brauchen; Beschreibung in `screens/UI-003-workspace/screen.md`.
+- *Kein Live-Abgleich zwischen Fenstern:* Kein Zustand, keine Meldung und keine Aktion setzt voraus, dass ein zweites Fenster Änderungen sofort sieht; Nachführen geschieht beim erneuten Öffnen des Vorhabens oder Knotens bzw. mit „Check again“ (MSG-011). Ausnahme nach Vorgabe: die Anzeige „AI running“ (REQ-019); andere Fenster bekommen nur die Ereignisse „gestartet“ und „beendet“ (nie Teiltext) und zeigen „AI request running in <Nr> <Titel>“. Die Erkennung einer Änderung von außen läuft beim Speichern sowie beim Öffnen von Vorhaben und Knoten (nur lesend), nicht live.
 - *Tastatur:* Strg/Cmd+S speichert im Editor als „Concept“ (A-UX-12); Strg/Cmd+Enter sendet/bestätigt in Formularen und im Chat; ESC schließt Dialoge.
 
 **Meldungen (Wortlaut, englisch).**
 | ID | Wo | Typ | Text |
 |---|---|---|---|
-| MSG-001 | Banner nach Start / bei KI-Anfrage | Fehler | Vier Varianten, je mit Ursache und nächstem Schritt, Funktionen ohne KI bleiben nutzbar (AC-REQ-004-04). **Beim Start, nicht gefunden:** „Claude Code was not found. Install Claude Code, then restart Ramifold. Planning without AI still works.“ · **nicht installiert (bei Anfrage):** „Claude Code is not installed. Install Claude Code and restart Ramifold, then send your message again.“ · **zu alt (eigener Zustand, Start und Anfrage):** „Claude Code is too old. Ramifold needs version v2.1.248 or newer. Open a terminal, run "claude update" and restart Ramifold. Planning without AI still works.“ · **nicht angemeldet:** „Claude Code is not signed in. Open a terminal, run "claude" and sign in, then send your message again.“ (Schritte prüft der Software Architect.) Bei „zu alt“ ist „Send“ nicht gesperrt, sondern der Versuch endet mit dieser Meldung; die Nachricht bleibt im Feld. |
+| MSG-001 | Banner nach Start / bei KI-Anfrage | Fehler | Vier Varianten, je mit Ursache und nächstem Schritt, Funktionen ohne KI bleiben nutzbar (AC-REQ-004-04). **Beim Start, nicht gefunden:** „Claude Code was not found. Install Claude Code, then restart Ramifold. Planning without AI still works.“ · **nicht installiert (bei Anfrage):** „Claude Code is not installed. Install Claude Code, then send your message again. If Ramifold still cannot find it, start Ramifold again from a new terminal.“ · **zu alt (eigener Zustand, Start und Anfrage; kein Neustart nötig):** „Claude Code is too old. Ramifold needs version v2.1.248 or newer. Planning without AI still works. To use AI, open a terminal and run "claude update", then send your message again.“ · **nicht angemeldet (ein Zustand, gilt auch für abgelaufene Anmeldung; kein Neustart):** „Claude Code is not signed in. Open a terminal, run "claude" and sign in, then send your message again.“ „Anmeldung fehlgeschlagen“ ist kein Ramifold-Zustand. Der Neustart-Hinweis bleibt nur bei „nicht gefunden/installiert“ (Suchpfad des Terminals). Ramifold prüft die Version vor jeder Anfrage erneut, solange der Befund negativ ist. **Wo der Befund erscheint:** ein neuer Befund sofort im Fenster, das die Anfrage gestellt hat; andere Fenster erst beim nächsten Laden der Seite. Bei „nicht installiert“ und „zu alt“ ist „Send“ nicht gesperrt: der Versuch endet vor dem Speichern mit dieser Meldung, die Nachricht bleibt im Feld. Bei „nicht angemeldet“ und bei einem nicht startenden Claude Code ist die Nachricht schon gespeichert: Marke „not sent“ mit Ursache und „Send again“ (UI-003). |
 | MSG-002 | Banner / im Dialog | Fehler | „Your change was not saved. Cause: <cause>. Your input is still here; you can try again.“ |
 | MSG-003 | Banner | Warnung | „AI request running in <Nr> <Titel>. Your message was not sent.“ (bei Vorschlägen/Zusammenfassung: „…Your request was not sent.“) |
 | MSG-004 | Banner | Fehler | „This node no longer exists. It was deleted in another window. Your text stays here so you can copy it.“ |
-| MSG-005 | dauerhaftes Banner (Zustand „read-only“) | Fehler | „"<Vorhaben>" was changed outside Ramifold. Nothing was saved, and this project is read-only until you restart Ramifold. Copy any text you want to keep now: restarting discards everything that is not saved, including the text in this window. Reloading this window is not enough. Then restart Ramifold in the terminal to load the changed version.“ (+ „Affected: <Nr> <Titel>“ falls zutreffend). Dieselbe Meldung für jede weitere abgelehnte speichernde Aktion. |
-| MSG-007 | an der Nachricht + Banner | Warnung | Marke „incomplete“ oder „aborted“; Banner: „The AI answer is incomplete. Cause: <cause>. Your message is kept; send it again.“ |
+| MSG-005 | dauerhaftes Banner (Zustand „read-only“) | Fehler | „"<Vorhaben>" was changed outside Ramifold. What this window shows may be out of date. Nothing was saved, and this project is read-only until you restart Ramifold. Copy any text you want to keep now: restarting discards everything that is not saved, including the text in this window. Reloading this window is not enough. Then restart Ramifold in the terminal to load the changed version.“ (+ „Affected: <Nr> <Titel>“ falls zutreffend). Erscheint bei Erkennung beim Speichern, beim Öffnen des Vorhabens und beim Öffnen eines Knotens (CC-02); beim Öffnen bleibt der geladene Stand sichtbar, es wird nicht neu geladen. Dieselbe Meldung für jede weitere abgelehnte speichernde Aktion, auch „Export“. Eine Änderung nur an `PLAN.md` löst sie nicht aus. |
+| MSG-007 | an der Nachricht + Banner | Warnung | Marke „incomplete“ oder „aborted“ mit Ursache (Tabelle „Ursachen“ unten); Banner: „The AI answer is incomplete. Cause: <cause>. Your message is kept; use "Send again" to ask again.“ Bei „aborted“ (Planer hat gestoppt) kein Banner und kein „Send again“. Ohne Text vor dem Fehler (z. B. Netzwerk): KI-Nachricht „incomplete“ ohne Textkörper, nur mit Ursache. |
 | MSG-008 | Systemzeile im Chat | Info | „Session was rebuilt from the saved chat history.“ |
 | MSG-009 | Banner | Warnung | „The AI returned no usable suggestions. The plan is unchanged. Try again.“ |
-| MSG-010 | Banner (success) | Erfolg | „Exported to <Pfad>“ (Button „Dismiss“) |
+| MSG-010 | Banner (success) | Erfolg | „Exported to <Pfad>. Each export overwrites this file.“ (Button „Dismiss“). Verspricht kein Sperren: `PLAN.md` ist abgeleitet und gehört nicht zu den Plandaten (CC-03). |
 | MSG-011 | Banner | Info | „This result is being edited in another window. If you closed that window just now, it can take a moment (up to about 15 seconds) until you can edit here.“ + Button „Check again“ (prüft neu, ohne Neuladen). Bearbeiten/Zusammenfassen deaktiviert, Text „being edited in another window“. Es gibt keinen Live-Abgleich: der Hinweis verschwindet erst nach „Check again“ oder erneutem Öffnen des Knotens. |
 | MSG-012 | an der eingehenden Antwort | Warnung | Marke „not saved“; die Antwort wird angezeigt, aber nicht gespeichert (REQ-074); das Banner MSG-005 steht bereits (Zustand „read-only“) |
-| MSG-013 | dauerhaftes Banner ganz oben im Fenster (über Kopfzeile, `role="alert"`, nicht schließbar) | Fehler | „Ramifold is no longer running. Start it again in the terminal and open the address it shows. Text you typed stays in this window; copy it before you close the window.“ Zustand „Server nicht erreichbar“: Eingaben bleiben stehen, solange das Fenster offen ist; alle Aktionen, die Ramifold brauchen, sind `aria-disabled`; bereits geladene Inhalte bleiben lesbar. Ungespeichertes ist nach dem Neustart verloren (REQ-073). |
+| MSG-013 | dauerhaftes Banner ganz oben im Fenster (über Kopfzeile, `role="alert"`, nicht schließbar) | Fehler | „Ramifold is no longer running. Start it again in the terminal, then reload this window or open the address it shows. This window does not reconnect by itself, even if Ramifold starts again on the same port. Text you typed stays in this window; copy it before you reload or close it.“ Zustand „Server nicht erreichbar“: Das Fenster **bleibt** in diesem Zustand (kein stilles Wiederverbinden, CC-11); weiter nur durch Neuladen bzw. Öffnen der angezeigten Adresse. Eingaben bleiben stehen, solange das Fenster offen ist; alle Aktionen, die Ramifold brauchen, sind `aria-disabled`; bereits geladene Inhalte bleiben lesbar. Ungespeichertes ist nach dem Neuladen verloren (REQ-073). |
+| MSG-014 | Abweisungsseite für jede Host-Angabe außer `127.0.0.1` und `localhost` (CC-09) | Fehler | Schlichte Seite **ohne Ramifold-Layout, ohne Skripte, ohne Daten**, nur ein Absatz englischer Text: „This address is not allowed. Open the address shown in the terminal.“ Seitentitel „Address not allowed“. `http://localhost:<port>` ist zulässig, das Terminal nennt weiter `127.0.0.1`. |
+
+**Ursachen (CC-12).** Der Kurztext steht an der Marke bzw. in „Cause: <cause>“ von MSG-002/-007. Abschließende Liste der 14 Codes (Baseline v0.3, Abschnitt 9); kein Code gibt es für „Sitzung neu aufgebaut“ (MSG-008) und „Knoten gelöscht“ (MSG-004).
+| Code | Kurztext (englisch) | Marke / Wo |
+|---|---|---|
+| `agent_not_found` | Claude Code was not found or could not be started. | vor dem Speichern: MSG-001, Nachricht im Feld; beim Prozessstart: „not sent“ |
+| `agent_too_old` | Claude Code is too old (needs v2.1.248 or newer). | MSG-001, Nachricht im Feld |
+| `not_authenticated` | Claude Code is not signed in. | „not sent“ + MSG-001 |
+| `network` | There is no connection to the AI provider. | „incomplete“ (ggf. ohne Text) |
+| `usage_limit` | The usage limit of the AI provider was reached. | „incomplete“ |
+| `provider_error` | The AI provider reported an error. | „incomplete“ |
+| `agent_exited` | Claude Code stopped unexpectedly. | „incomplete“ |
+| `agent_protocol` | Ramifold could not understand the output of Claude Code. | „incomplete“ |
+| `timeout` | Claude Code did not respond in time and was stopped. | „incomplete“ |
+| `instance_stopped` | Ramifold was stopped during the request. | „incomplete“ (beim nächsten Laden) |
+| `unusable_result` | The AI answer was not in the expected format. | nur Vorschläge und Zusammenfassung: MSG-009 bzw. Meldung, Plan/Ergebnis unverändert |
+| `aborted_by_planner` | You stopped the request. | „aborted“ |
+| `external_change` | The project was changed outside Ramifold. | nur im Fenster: „not saved“ (MSG-012) |
+| `unknown` | An unknown error occurred. Details are in the terminal and the error log. | „incomplete“ |
 
 **Terminal-Ausgaben (nur Text, englisch, keine Mockups).**
 | ID | Anlass | Text |
 |---|---|---|
-| TERM-001 | Start (REQ-001) | `Ramifold is running for <Projektordner>` / `Open http://127.0.0.1:<port> in your browser.` |
+| TERM-001 | Start (REQ-001) | `Ramifold is running for <Projektordner>` / `Open http://127.0.0.1:<port> in your browser.` (`http://localhost:<port>` funktioniert ebenso; das Terminal nennt `127.0.0.1`) |
 | TERM-002 | Startfehler Ordner (REQ-002) | `Cannot start: <Pfad> does not exist.` / `… is not a folder.` / `… is not writable.` |
 | TERM-003 | Zweiter Start (REQ-070) | `Ramifold is already running for <Projektordner> at http://127.0.0.1:<port>.` |
 | TERM-004 | Claude Code fehlt (REQ-004) | `Warning: Claude Code was not found. AI features will not work until it is installed.` |
 | TERM-005 | Claude Code zu alt (REQ-004) | `Warning: Claude Code is too old (need v2.1.248 or newer). Run "claude update". AI features will not work until then.` |
-Port und Adresse legt der Software Architect fest. Ob die Version beim Start oder erst je Anfrage geprüft wird, entscheidet der Software Architect (TERM-005 ist sonst entfernbar).
+| TERM-006 | Node.js zu alt (CC-08) | `Cannot start: Node.js <gefunden> is too old (need v24 or newer).` Beispiel: `Cannot start: Node.js v22.1.0 is too old (need v24 or newer).` |
+| TERM-007 | Port ungültig (CC-08) | `Cannot start: "<Wert>" is not a valid port. Use a whole number from 0 to 65535.` |
+| TERM-008 | Ausdrücklich angegebener Port belegt (CC-08) | `Cannot start: port <Port> is already in use. Choose another port, or start without a port and Ramifold picks a free one.` Ohne Angabe weicht Ramifold still auf einen freien Port aus (keine Meldung). |
+| TERM-009 | Sperre durch hängendes Ramifold (CC-08) | `Cannot start: a Ramifold process (PID <pid>) for <Projektordner> is still running but does not respond. End that process, then start Ramifold again.` Ist der Prozess kein Ramifold, übernimmt Ramifold die Sperre still. |
+| TERM-010 | Ramifold-Daten beschädigt (CC-04) | `Cannot start: the Ramifold data is damaged: <Pfad>. Ramifold changed nothing. Restore the file (for example with Git), then start Ramifold again.` Gilt auch, wenn `area.json` fehlt, obwohl `.ramifold/plans/` existiert. |
+| TERM-011 | Von neuerer Ramifold-Version angelegt (CC-04) | `Cannot start: the Ramifold data in <Pfad> was created by a newer Ramifold version. Update Ramifold, then start it again.` |
+| TERM-012 | Simulierter Modus (CC-08) | Zusätzlich zu TERM-001 beim Start: `Simulated mode: AI answers are simulated and do not come from a real AI.` Die Oberfläche zeigt die Marke „Simulated AI“ (UI-001, UI-003). |
+Port und Adresse legt der Software Architect fest. Ramifold prüft die Version beim Start und vor jeder KI-Anfrage, solange der Befund negativ ist. TERM-006 bis TERM-011 brechen den Start ab; die Reihenfolge der Prüfungen steht in der Baseline v0.3, Abschnitt 9. Die allgemeine Meldung in UI-001.error bleibt für Unerwartetes; die Ursachen von TERM-010/-011 haben keinen Zustand in der Oberfläche.
 
 ## 6. Responsive Verhalten und Barrierefreiheit
 
@@ -193,22 +212,29 @@ Zusätzlich: Information nie nur durch Farbe (Status = Symbol + Text, Auswahl = 
 Design-System: `DESIGN.md` (**vorgeschlagen**, wird mit der Freigabe verbindlich). Wiederverwendete Muster: Baumzeile mit Statusmarke, Statusmarke, Banner (info/warn/error/success), Toast, modaler Dialog (Standard/Alert), Formularfeld mit Label/Fehlertext, Karte (Vorschlag), Chat-Nachricht mit Zustandsmarke, Markdown-Darstellung, Seitenpanel (Kontext). Umsetzung: React mit React Aria Components ohne Fertig-Bibliothek mit eigenem Look; die Tokens aus `DESIGN.md` werden CSS Custom Properties (ADR-001, `ui-constraints` v2). Ob jede Komponente damit machbar ist, beurteilt der Software Architect im Cross-Check.
 
 ## 8. Machbarkeit und Übergabehinweise
-- **`ui-constraints` v2 (Revision `bf443e45-5308-48d9-b554-24b53895db0d`) gelesen und abgeglichen.** Übernommen: lokale SPA, React + TypeScript, React Aria Components (Baum, Dialoge, Listen), Design-Tokens als CSS Custom Properties; ein Farbschema (hell); 1280 px Mindestbreite und einklappbarer Baum bei 200 % Zoom; kein Login, eine Rolle, kein „keine Berechtigung“; Streaming per SSE mit unvollständigem Markdown; kein Live-Abgleich zwischen Fenstern; Bearbeitungssperre endet verzögert (MSG-011); Markdown ohne HTML und **ohne Bilder** (Link mit Alternativtext); Fehlerzustände „zu alt“ (MSG-001), „Server nicht erreichbar“ (MSG-013), „Vorhaben nur lesbar“ (MSG-005); Sortieren per Tastatur („Move up/down“); kein Upload, kein Drag-and-drop; Schriften und Icons gebündelt, kein CDN (`DESIGN.md`).
-- **Runde 1 abweichend, jetzt behoben:** fehlender Zustand „zu alt“, „Server nicht erreichbar“, Markdown-Bilder, Gesamtzustand „read-only“, Sofort-Aufheben der Sperre, Schrift-/Icon-Auslieferung, Komponentenbibliothek „offen“.
-- **Annahmen, die bleiben:** Echtzeit-Aktualisierung nur für Streaming und die Anzeige „AI running“ in allen Fenstern (REQ-019, -069); Tastaturmuster des ARIA-Tree.
-- **Nachführen mehrerer Fenster:** Ein Fenster muss Änderungen aus einem anderen nicht sofort zeigen, spätestens beim erneuten Öffnen (REQ-071); die Statusanzeige „AI running“ soll aber auch in anderen Fenstern sichtbar sein (REQ-019 AC-019-02) – der Software Architect entscheidet, ob dazu Echtzeit-Aktualisierung nötig ist.
-- **Stitch-Mockups:** HTML-Exporte sind nur visuelle Referenz. **Nicht abgelegt:** Die HTML-Dateien der Mockups liegen nicht im Repository, weil der Stitch-Download den HTML-Text nur inline in den Agentenkontext liefert und das Ablegen als Datei mit den verfügbaren Werkzeugen nicht möglich war. Die PNG-Screenshots liegen im Repository; die Mockups sind ohnehin nicht Umsetzungsvorlage, `screen.md` ist verbindlich.
-- **Bekannte Mockup-Abweichungen:** je Screen in „Bekannte Abweichungen im Mockup“ (u. a. Absenderlabels, Radiogruppe im Editor, Baumstatus nur als Symbol).
-- **Cross-Check:** ausstehend (erst nach dem Baseline-Entwurf). Zu prüfen sind insbesondere Machbarkeit von Baum, Panels und Toasts mit React Aria Components sowie Banner-Zustände „read-only“ und „server-down“ (Erkennung von Verbindungsverlust im Browser).
+- **`ui-constraints` v3 (Revision `40c3d77d-5c9d-428f-bb02-cb564c6123db`) und Baseline v0.3 gelesen und abgeglichen**, einschließlich der 13 „Entscheidungen für den Designer“ (Handoff MAR-1379). Übernommen: lokale SPA, React + TypeScript, React Aria Components (Baum als `Tree`, ARIA-Baummuster *treegrid*, Dialoge, Listen), Design-Tokens als CSS Custom Properties; ein Farbschema (hell); 1280 px Mindestbreite und einklappbarer Baum bei 200 % Zoom; kein Login, eine Rolle; Streaming per SSE mit unvollständigem Markdown, Textteile nur an das auslösende Fenster; kein Live-Abgleich zwischen Fenstern; Bearbeitungssperre endet verzögert (MSG-011); Markdown ohne HTML und ohne Bilder; Fehlerzustände MSG-001 (ohne Neustart nach `claude update`; „nicht angemeldet“ = „abgelaufen“), MSG-005 (Erkennung auch beim Öffnen), MSG-013 (ohne stilles Wiederverbinden); „not sent“ nach Variante D3a; 14 Ursachen-Codes; `localhost` zulässig (MSG-014); Schriften Inter 400/500/600 und JetBrains Mono 400 sowie Material Symbols als Inline-SVG, gebündelt, Lizenzprüfung in der Baseline (B2, keine Design-Änderung); Sortieren per Tastatur; kein Upload, kein Drag-and-drop.
+- **Annahmen, die bleiben:** Echtzeit nur für Streaming (auslösendes Fenster) und die Ereignisse „gestartet/beendet“; Tastaturmuster des ARIA-Baums; Wortlaut der Schritte in MSG-001 prüft der Software Architect.
+- **Stitch-Mockups:** HTML-Exporte sind nur visuelle Referenz und liegen nicht im Repository (Stitch liefert HTML nur inline); die PNG-Screenshots liegen im Repository; `screen.md` ist verbindlich. Die Mockups sind in Revision 0.3 unverändert; neue Texte und Zustände sind in `screen.md` und im Katalog beschrieben (Layout unverändert; Marke „Simulated AI“ ist ein Textelement in der Kopfzeile ohne Mockup).
+- **Bekannte Mockup-Abweichungen:** je Screen in „Bekannte Abweichungen im Mockup“.
+- **Cross-Check:** Befunde D1 bis D4, B2, B3 und CC-01 bis CC-13 sind in 0.3 aufgelöst (Übersicht im Changelog). Ein Delta-Check von CC-02, CC-03, CC-04 und CC-06 gegen den neuen Commit steht beim Product Owner.
+
+### Ausblick Werkzeugfreigabe (nur Text, ADR-004; in 0.1 keine Bedienung, kein Screen, keine Platzhalter)
+Der Owner-Hinweis (`gate-wie-hinweise`) und REQ-024 legen fest: In 0.1 wird von der Werkzeugfreigabe nichts gebaut. Dieser Abschnitt hält nur die Absicht fest, damit ein späterer Slice ohne Umbau anschließen kann; er ist kein Teil der Oberfläche von 0.1 und löst keine Umsetzung aus.
+- **Geltungsbereich:** eine Grundrichtlinie je Projektordner, optional je Vorhaben; keine Richtlinie je Knoten.
+- **Speicherort:** rechnerbezogen unter `.ramifold/local/tool-policy.json`, nie in Git (ein `git pull` darf keine Rechte freischalten).
+- **Rückfrage:** vor jeder einzelnen ändernden oder ausführenden Aktion der KI, nur im Fenster, das die KI-Anfrage gestellt hat, mit Werkzeugname und Argumenten.
+- **Gilt als abgelehnt:** bei Ablehnung, geschlossenem oder getrenntem Fenster, wenn kein Fenster verbunden ist, bei Zeitablauf, bei Abbruch der Anfrage und beim Beenden von Ramifold.
+- **Zustände der Richtlinie:** „nicht freigegeben“, „freigegeben“, „freigegeben mit Bestätigung“. **Zustände einer Rückfrage:** offen, bestätigt, abgelehnt, abgelaufen, Fehler.
+- **Ohne Auswirkung auf 0.1:** Die Kopfzeile, der Chat und UI-009 enthalten keinen Verweis darauf; es gibt keine Anzeige der Werkzeuge der KI (REQ-026 ist entfallen).
 
 ## 9. Traceability
 
 | REQ | Flow | Screens | Anmerkung |
 |---|---|---|---|
-| REQ-001 | FLOW-001 | TERM-001, UI-001 (Projektordner im Kopf) | Terminal |
-| REQ-002 | FLOW-001 | TERM-002 | nur Terminal |
+| REQ-001 | FLOW-001 | TERM-001, UI-001 (Projektordner im Kopf), MSG-014 (Adresse) | Terminal |
+| REQ-002 | FLOW-001 | TERM-002, TERM-006 bis TERM-011 (Startfehler) | nur Terminal |
 | REQ-003 | FLOW-002/-005 | MSG-002 in UI-002/-003/-004/-006/-007 | |
-| REQ-004 | FLOW-001/-003 | MSG-001 (Varianten „nicht gefunden“, „zu alt“ v2.1.248, „nicht angemeldet“), TERM-004, TERM-005, UI-001, UI-003 | Funktionen ohne KI bleiben nutzbar (AC-REQ-004-04) |
+| REQ-004 | FLOW-001/-003 | MSG-001 (Varianten „nicht gefunden“, „zu alt“ v2.1.248, „nicht angemeldet“ = „abgelaufen“), TERM-004, TERM-005, UI-001, UI-003 | Funktionen ohne KI bleiben nutzbar (AC-REQ-004-04) |
 | REQ-005 | FLOW-001 | UI-002 | |
 | REQ-006 | FLOW-001 | UI-001 | |
 | REQ-007, -008, -009, -010 | FLOW-002 | UI-003 | |
@@ -222,9 +248,9 @@ Design-System: `DESIGN.md` (**vorgeschlagen**, wird mit der Freigabe verbindlich
 | REQ-022, -023, -024 | FLOW-003 | keine eigene UI; Quellen erscheinen als Links in der Antwort (UI-003) | ohne UI |
 | REQ-025 | – | Text in UI-009 | Should; keine eigene UI |
 | REQ-027 | FLOW-003 | UI-008 (Anweisung im Kontext sichtbar) | |
-| REQ-028 | FLOW-003 | UI-003 error, MSG-007 | |
+| REQ-028 | FLOW-003 | UI-003 error, MSG-007, Tabelle „Ursachen“ (14 Codes), „not sent“, „Send again“ | |
 | REQ-029 | FLOW-003 | UI-003 error, MSG-008 | |
-| REQ-030 | FLOW-008 | UI-009 | |
+| REQ-030 | FLOW-008 | UI-009 (inkl. Zeilen zu `~/.claude/` und Websuche, CC-06) | |
 | REQ-031–REQ-035 | FLOW-003 | UI-008 (Anzeige); Bildung ohne UI | |
 | REQ-036 | FLOW-003 | UI-008 | |
 | REQ-037, -038, -039, -040 | FLOW-004 | UI-005 | |
@@ -233,7 +259,7 @@ Design-System: `DESIGN.md` (**vorgeschlagen**, wird mit der Freigabe verbindlich
 | REQ-045 | FLOW-005 | keine eigene UI (Version entsteht beim Speichern, nur aktuelle Version sichtbar) | ohne UI |
 | REQ-046 | FLOW-005 | UI-003 (Banner) | |
 | REQ-048 | FLOW-003/-005 | UI-003, UI-004 (Markdown inkl. Bilddarstellung als Link, `DESIGN.md`) | |
-| REQ-049 | FLOW-006 | UI-003 (Export, MSG-010) | |
+| REQ-049 | FLOW-006 | UI-003 (Export, MSG-010; überschreibt `PLAN.md`, in „read-only“ abgewiesen) | |
 | REQ-050, -051, -052 | – | keine UI (Ablage; Anleitung) | ohne UI |
 | REQ-053, -054 | alle | Laden-/Laufzustände in `screen.md` (Zeiten) | |
 | REQ-055, -056, -057, -058, -059, -060 | – | keine UI (REQ-060: Markdown ohne Skriptausführung, Abschnitt 8) | ohne UI |
@@ -245,12 +271,14 @@ Design-System: `DESIGN.md` (**vorgeschlagen**, wird mit der Freigabe verbindlich
 | REQ-067 | alle | Abschnitt 6 | |
 | REQ-068 | alle | alle Oberflächentexte englisch | |
 | REQ-069 | FLOW-003/-004/-005 | MSG-003, UI-003 | |
-| REQ-070 | FLOW-001 | TERM-003 | nur Terminal |
+| REQ-070 | FLOW-001 | TERM-003, TERM-009 | nur Terminal |
 | REQ-071 | FLOW-007 | UI-003 permission, MSG-004, MSG-011 (verzögerte Freigabe, „Check again“) | |
 | (kein REQ) Ramifold beendet | FLOW-009 | MSG-013, UI-003 server-down | Zustand aus `ui-constraints` Abschnitt 5; keine eigene Anforderung |
-| REQ-072 | FLOW-001 | UI-001, UI-011 | |
+| REQ-072 | FLOW-001 | UI-001, UI-011 (Ursachenliste, Pfad `.ramifold/plans/<planId>/nodes/<nodeId>.json`) | |
 | REQ-073 | FLOW-005 | UI-004, UI-010, UI-003 („Draft“) | |
-| REQ-074 | FLOW-007 | MSG-005, MSG-012, UI-003 read-only (ganzes Vorhaben), UI-002/-004/-005/-006/-007 | |
+| REQ-074 | FLOW-007 | MSG-005, MSG-012, UI-003 read-only (ganzes Vorhaben; Erkennung auch beim Öffnen), UI-002/-004/-005/-006/-007 | `PLAN.md` ist abgeleitet und zählt nicht |
+| REQ-019, REQ-069 (andere Fenster) | FLOW-007 | UI-003: nur „AI request running in <Nr> <Titel>“ ohne Teiltext | CC-07 |
+| REQ-024 (Ausblick) | – | nur Text in Abschnitt 8 („Ausblick Werkzeugfreigabe“); keine UI | ohne UI |
 Entfallene Anforderungen REQ-026 und REQ-047: kein Design. Nicht abgedeckte Anforderungen: keine.
 
 ## 10. Entscheidungen, Annahmen, offene Fragen, Changelog
@@ -270,10 +298,17 @@ Entfallene Anforderungen REQ-026 und REQ-047: kein Design. Nicht abgedeckte Anfo
 | A-UX-11 | Datenabfluss-Hinweis mit Checkbox; Zugang über Kopfzeile | vorgeschlagen (kritisch) | UI-009 |
 | A-UX-12 | Zusätzliche Elemente, die in den Requirements nicht wörtlich stehen, aber Anforderungen bedienbar machen: Strg/Cmd+S speichert als „Concept“, „Check again“ (MSG-011), Marke „Read-only“ in der Kopfzeile, Bildsymbol an Markdown-Bildlinks, „Move up/down“, „Back to node“/„Show suggestions (n)“, Marke „Draft“, Hinweis „unsaved AI draft“ + „Review AI draft“, „Show plan/Hide plan“ bei Zoom, Projektordner im Kopf von UI-001 | zur Prüfung durch den Product Owner | UI-001, UI-003, UI-004, UI-005 |
 | A-UX-13 | Im Zustand „read-only“ bleiben Vorhaben-Liste, Anlegen eines **anderen** Vorhabens, Lesen, Kontext und Datenabfluss-Hinweis nutzbar; alles Ändernde einschließlich „Discard“ von Entwürfen ist deaktiviert (AC-REQ-074-06: andere Vorhaben sind nicht betroffen) | Auslegung | UI-003 |
-| A-UX-14 | Meldung MSG-013 nennt kein automatisches Wiederverbinden; der Planer startet neu und öffnet die neue Adresse (Port kann wechseln) | Annahme | UI-003 |
+| A-UX-14 | Das Fenster bleibt nach MSG-013 im Zustand „server-down“ und verbindet nicht von selbst neu (CC-11); weiter durch Neuladen bzw. Öffnen der Adresse (Port kann wechseln) | festgelegt (Baseline v0.3) | UI-003 |
+| A-UX-15 | „not sent“ nur bei gespeicherter, von Claude Code abgewiesener Nachricht (D3a); „Send again“ schickt dieselbe Nachricht, nur an der jüngsten Nachricht des Chats | festgelegt (Architect) | UI-003 |
+| E-UX-01 | „Send again“ auch an unvollständigen KI-Antworten (`incomplete`), nicht bei `aborted` | Entscheidung Designer | UI-003 |
+| E-UX-02 | Marke „Simulated AI“ in der Kopfzeile im simulierten Modus | Entscheidung Designer | UI-001, UI-003 |
+| A-UX-16 | Seitentitel `<Vorhabentitel> – <Ordnername> – Ramifold` bzw. `Projects – <Ordnername> – Ramifold`; Präfix „Stopped – “ bei „server-down“; Symbol überall gleich (CC-13) | Entscheidung Designer | UI-001, UI-003 |
+| A-UX-17 | „Nicht angemeldet“ und „abgelaufen“ sind ein Zustand mit einer Meldung; kein Neustart nach `claude update` (D1, CC-05) | festgelegt (Architect) | MSG-001, UI-003 |
+| A-UX-18 | Erkennung einer Änderung von außen auch beim Öffnen von Vorhaben und Knoten; `PLAN.md` zählt nicht; Export überschreibt `PLAN.md` vollständig (CC-02, CC-03) | festgelegt (Architect, Auslegung Product Owner) | UI-003, MSG-005, MSG-010 |
 
-**Offene Fragen:** (1) Owner: Editor und Chat gleichzeitig? (Briefing). (2) Owner/OQ-09: Should-Funktionen bleiben? (3) Software Architect: Schritte in MSG-001 (Anmeldung, `claude update`; Prüfung beim Start oder je Anfrage), Erkennung von „Ramifold läuft nicht mehr“ im Browser, Lizenz/Bündelung der Icons, Echtzeit-Aktualisierung über Fenster, Format der Ursache in UI-011, Name des Ramifold-Bereichs (OQ-07, Beispielpfade in Mockups). (4) Product Owner: Wunsch nach HTML-Exporten (technisch derzeit nicht möglich).
+**Offene Fragen:** (1) Owner: Editor und Chat gleichzeitig? (Briefing). (2) Owner/OQ-09: Should-Funktionen bleiben? (3) Software Architect: Wortlaut der Schritte in MSG-001, Erkennung von „Ramifold läuft nicht mehr“ im Browser, Name des Ramifold-Bereichs (OQ-07, Beispielpfade in Mockups). (4) OQ-01 (Anmeldeart von Claude Code): UI-009 bleibt neutral. (5) Product Owner: Wunsch nach HTML-Exporten (technisch derzeit nicht möglich).
 
 **Changelog.**
+- 0.3 (2026-11-24, MAR-1382, Cross-Check-Auflösung; nur Texte, Zustände, Ergänzungen; keine neuen Flows oder Screens; keine neue Stitch-Generierung): D1/CC-05 MSG-001 (zu alt ohne Neustart, angemeldet/abgelaufen ein Zustand, Rückfall bei „nicht installiert“, Banner nur im anfragenden Fenster); D2 Baumrolle treegrid (UI-003); D3/B3 „not sent“ nach D3a, „Send again“ (UI-003, E-UX-01); D4/CC-10 UI-011 Pfad `.ramifold/plans/<planId>/nodes/<nodeId>.json` und Ursachenliste; CC-01 Abschnitt „Ausblick Werkzeugfreigabe“ (Abschnitt 8); CC-02 Erkennung beim Öffnen (MSG-005, UI-003, FLOW-007); CC-03 `PLAN.md` abgeleitet (MSG-010, UI-003 Export, UI-011); CC-04 TERM-010/-011; CC-06 UI-009 zwei neue Hinweiszeilen, OQ-08-Verweis entfällt; CC-07 andere Fenster nur Laufanzeige (UI-003, FLOW-007); CC-08 TERM-006 bis TERM-009, TERM-012, Marke „Simulated AI“ (E-UX-02); CC-09 MSG-014; CC-11 MSG-013 und UI-003 server-down; CC-12 Tabelle „Ursachen“ mit 14 Kurztexten; CC-13 Seitentitel (A-UX-16); B2 keine Design-Änderung, Verweis auf Lizenzprüfung der Baseline in `DESIGN.md`. Briefing neu gefasst und gekürzt.
 - 0.2 (2026-11-24, Runde 2): Behebung FIND-PO-01 bis -09 und Abgleich mit `ui-constraints` v2: MSG-001 „zu alt“ (v2.1.248), MSG-005 neu formuliert (Neustart verwirft), MSG-011 mit Verzögerung und „Check again“, neu MSG-013, TERM-005, FLOW-009; Zustände „read-only“ und „server-down“ in UI-003 (Folgen für UI-001, -002, -004 bis -007); Markdown-Bilder als Link (UI-003, UI-004, `DESIGN.md`); Schriften/Icons gebündelt; Abschnitt 8 und Metadaten auf `ui-constraints` v2; Briefing: A-UX-05 und Strg/Cmd+S aufgenommen. Keine neuen Stitch-Generierungen.
 - 0.1 (2026-11-24): Erstfassung, Slice 0.1, UI-001 bis UI-011, FLOW-001 bis FLOW-008.
