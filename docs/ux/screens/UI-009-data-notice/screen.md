@@ -1,0 +1,44 @@
+# UI-009 – Datenabfluss-Hinweis (Dialog „Data notice“)
+
+- Zweck: Vor der ersten KI-Anfrage in einem Projektordner klar sagen, dass Inhalte an den KI-Anbieter gehen, und die Bestätigung einholen; jederzeit wieder aufrufbar.
+- Flows: FLOW-008, FLOW-003 (Schritt 2)
+- Anforderungen: REQ-030, LP-06; AC-REQ-030-01 bis AC-REQ-030-07
+- Rollen: Planer
+- Gerät(e): Desktop ab 1280 px
+- Artefakte: `default.png` (Stitch 68013557188b4f13b12980b87bdd7845, Modus „Bestätigung“); Export 2026-11-24
+
+## Angezeigte Daten
+Titel „Your content is sent to the AI provider“; Text „To answer, Ramifold passes your content to Claude Code, which sends it to its AI provider (Anthropic). This includes:“; Liste „Objectives“, „Results“, „Chat messages“, „Context built from your plan“, „Files from your project folder that the AI reads“; Text „Ramifold itself sends nothing anywhere else and has no cloud.“ (Wortlaut in Anlehnung an AC-REQ-030-05).
+
+## Eingaben und Validierung
+| Feld | Typ | Pflicht | Regel | Fehlermeldung (Wortlaut) |
+|---|---|---|---|---|
+| I understand and want to continue | Checkbox | ja (Modus Bestätigung) | muss angehakt sein, damit „Continue“ aktiv wird | keine; „Continue“ bleibt deaktiviert (`aria-disabled`), solange nicht angehakt |
+
+## Aktionen
+| Aktion | Auslöser | Voraussetzung / Rolle | Ergebnis bei Erfolg | Ergebnis bei Fehler | Navigation danach |
+|---|---|---|---|---|---|
+| Continue (Modus Bestätigung) | Primärbutton | Checkbox angehakt | Bestätigung für diesen Projektordner gespeichert (bleibt über Neustarts, nie über Git); die auslösende KI-Anfrage wird jetzt gesendet | Speichern der Bestätigung scheitert: MSG-002, Anfrage wird nicht gesendet | UI-003; die Nachricht wird gesendet |
+| Cancel / ESC (Modus Bestätigung) | Button, Taste | – | keine KI-Anfrage gesendet; Nachricht bleibt im Eingabefeld | – | UI-003 |
+| Close (Ansichtsmodus) | Primärbutton | Hinweis bereits bestätigt | Dialog schließt | – | zurück zur aufrufenden Seite |
+
+Ansichtsmodus (Aufruf über „Data notice“): gleicher Text, **ohne** Checkbox und ohne „Cancel“, mit Hinweis „You confirmed this notice for this project folder.“ und einem Button „Close“. Ruft der Planer „Data notice“ vor der Bestätigung auf, erscheint der Bestätigungsmodus ohne auslösende Anfrage (nach „Continue“ wird nichts gesendet).
+
+## Zustände
+| Zustand | Darstellung | Artefakt | Text / Microcopy |
+|---|---|---|---|
+| default (Bestätigung) | Checkbox leer, „Continue“ deaktiviert | default.png | siehe oben |
+| Ansichtsmodus | nur Text/Layout wie default ohne Checkbox | nur Text | „You confirmed this notice for this project folder.“ |
+| loading | „Continue“ zeigt „Saving…“ | nur Text | – |
+| error | Banner im Dialog | nur Text | MSG-002 |
+| empty / validation / permission / success | nicht anwendbar | – | – |
+
+## Responsive und Barrierefreiheit
+Modal, Fokus-Falle, Initialfokus auf Titel; ESC = Cancel (bestätigt nie). Checkbox mit sichtbarem Label. Deaktivierter Button bleibt fokussierbar und wird über `aria-describedby` mit der Checkbox verknüpft. Kein Schließen-Icon im Bestätigungsmodus.
+
+## Bekannte Abweichungen im Mockup
+Der Satz über Anthropic und „has no cloud“ ist Teil dieses Textes; Modus „Ansicht“ ist nicht als Mockup gestaltet.
+
+## Annahmen und offene Fragen
+- Die Checkbox ist eine Designentscheidung (REQ-030 verlangt nur „bestätigt“).
+- Wenn OQ-08 (Lesebeschränkung, REQ-025) scheitert, muss der Text offen benennen, dass die KI auch Dateien außerhalb des Projektordners lesen könnte (Änderung des Textes, Abstimmung PO/Owner).
