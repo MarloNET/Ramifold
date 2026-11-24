@@ -6,21 +6,31 @@
 |---|---|
 | Projekt | Ramifold |
 | Slice | 0.1 (erster Slice; kein früheres Design) |
-| Version | 0.3.1 (Wortlaute KL-01 bis KL-05, MAR-1388; Basis: 0.3 Cross-Check-Auflösung, MAR-1382) |
-| Status | **Entwurf** nach Cross-Check, zur Prüfung durch den Product Owner und anschließend Gate „Wie“; Design-System „vorgeschlagen“ |
+| Version | 0.4 (visuelle Überarbeitung nach den neuen Design-Regeln, MAR-1390; Basis: 0.3.1, Commit `7e47484`; keine Verhaltensänderung) |
+| Status | **Entwurf**, zur Prüfung durch den Product Owner und anschließend Gate „Wie“; Look „Werkbank“ vom Owner gewählt (2026-11-24) |
 | Klassifizierung | Material |
-| Autor | UI/UX Designer (Agent), Design-Tasks MAR-1372, MAR-1375, MAR-1382, MAR-1388 |
+| Autor | UI/UX Designer (Agent), Design-Tasks MAR-1372, MAR-1375, MAR-1382, MAR-1388, MAR-1390 |
 | Datum | 2026-11-24 |
 | Branch / PR | `design/MAR-1372` / Draft Pull Request gegen `main` (Commit siehe Übergabe in der Task) |
 | Quellen | Product Brief v0.2 (`docs/product/product-brief.md`, Commit `af886be`); Requirements v0.4 (`docs/product/requirements.md`, Commit `3c85c33`, Gate „Was“ freigegeben); Marktrecherche `docs/product/product-research.md` (nicht verbindlich) |
 | `ui-constraints` | **v3**, Paperclip-Dokument `ui-constraints` an MAR-1379, Revision `40c3d77d-5c9d-428f-bb02-cb564c6123db` (Software Architect, Entwurf); Baseline v0.3 (`architecture-baseline` Revision `b9cbb5f4-110b-4439-80ff-d508511be2bd`, `adrs` Revision `a97d389a-86f0-444b-858f-fdb08a397498`); Frontend: React + TypeScript mit React Aria Components (ADR-001); Abgleich in Abschnitt 8 |
-| Stitch | Projekt `17557905236438839052`; Design-System-Asset `assets/15206542824351583325`; Budget 26/40, in Runde 2 und in Revision 0.3 keine neue Generierung (siehe `stitch-log.md`) |
+| Werkzeug | Mockups als statisches HTML/CSS, gerendert nach PNG (`mockups/base.css`, `mockups/icons.svg`, `mockups/fonts/`). Die früheren Stitch-Mockups sind ersetzt; `stitch-log.md` bleibt als Historie (Projekt `17557905236438839052`, Budget 26/40, nicht mehr verwendet) |
 | Sprache | Dokumente Deutsch; **Oberflächentexte Englisch** (REQ-068, LP-09); Beispielinhalte (Titel, Aufträge, Chat) deutsch, weil der Planer auf Deutsch plant |
 
 ## Freigabe-Briefing
 
 ### Kurzfassung
-Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Die Oberfläche besteht aus einer Vorhabenliste und einem Arbeitsbereich mit Baum links und dem gewählten Knoten rechts (Auftrag, Ergebnis, Chat), dazu elf Screens und Dialoge. Das Design-System ist neu und nur „vorgeschlagen“. Weichen: Ergebnis festlegen mit einem Klick, Sortieren über „Move up/Move down“, beim Bearbeiten eines Ergebnisses ist der Chat des Knotens ausgeblendet. Diese Fassung (0.3) löst die Befunde der Cross-Checks auf; es gibt keinen neuen Flow und keinen neuen Screen, nur Texte, Zustände und Ergänzungen.
+Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum (Vorhabenliste, Arbeitsbereich mit Baum links und Auftrag, Ergebnis und Chat rechts, dazu Dialoge; elf Screens). Diese Version 0.4 ändert **nur die Darstellung**: Du hast den Look „Werkbank“ gewählt; alle Screens sind neu als Mockups gebaut, jeder `screen.md` hat ein Screen-Konzept. Verhalten, Screens, Flows, Zustände und Wortlaute sind gegenüber 0.3.1 unverändert, die bisherigen Annahmen und Entscheidungen bleiben (die alten Annahmen-Karten zu 0.3.1 sind zurückgezogen). Die Bilder unten zeigen die wichtigsten Screens.
+
+![UI-003 Arbeitsbereich: Baum links, Knoten mit Ergebnis und Chat rechts](screens/UI-003-workspace/default.png)
+
+![UI-001 Vorhabenliste](screens/UI-001-project-list/default.png)
+
+![UI-004 Ergebnis bearbeiten](screens/UI-004-result-editor/default.png)
+
+![UI-005 Unterpunkt-Vorschläge](screens/UI-005-suggestions/default.png)
+
+Jeder Screen hat ein aktuelles Bild; alle elf Screens (UI-001 bis UI-011) und die Zustände `empty`, `error`, `permission` (UI-003), `empty` (UI-001) und `validation` (UI-006) liegen unter `screens/`. Ohne Bild (nur Text in `screen.md`): die Zustände „read-only“ und „server-down“ (Layout wie `permission.png` mit dem jeweiligen Banner), „loading“, der Ansichtsmodus von UI-009 und die Zustände ohne eigenes Layout.
 
 ### So haben wir dich verstanden
 | Deine Vorgabe (Quelle) | Unsere Auslegung | Beispiel |
@@ -31,6 +41,7 @@ Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Di
 | „Datenabfluss-Hinweis vor der ersten KI-Anfrage“ (REQ-030) | Dialog mit Checkbox; **neu:** zwei Zeilen mehr (siehe Annahme 8); danach über „Data notice“ jederzeit lesbar. | Erste Frage → Dialog → „Continue“ → Frage geht los; „Cancel“ lässt sie im Feld stehen. |
 | „Ergebnis gesperrt, wenn es in einem anderen Fenster bearbeitet wird“ (REQ-071) | Gesperrt ist nur das **Ergebnis**; Titel und Auftrag bleiben änderbar (A-UX-05). | In Fenster B lässt sich „Embedding“ umbenennen, obwohl A das Ergebnis bearbeitet. |
 | „Änderung von außen: darf keine Änderung speichern“ (REQ-074) | Ab Erkennung ist das ganze Vorhaben bis zum Neustart nur lesbar; erkannt wird beim Speichern **und** beim Öffnen von Vorhaben und Knoten. Der Export `PLAN.md` zählt nicht als Änderung. | `git pull` ändert einen Knoten; beim nächsten Öffnen eines Knotens zeigt das Fenster „Read-only“. Ändert `git pull` nur `PLAN.md`, bleibt alles bedienbar. |
+| Look: „Werkbank“ gewählt (deine Antwort auf MAR-1390) | Kompakt, nüchtern, kühles Grau, ein Petrol-Akzent nur für Auswahl und Hauptaktion; IBM Plex; Statussymbole statt Statuswörtern im Baum (`DESIGN.md`). | Im Baum steht „2.3 Reranking“ mit einem gestrichelten Kreis; „No result yet“ erscheint als Tooltip. |
 | „Oberfläche Englisch“ (REQ-068) | Alle Oberflächentexte englisch, Beispielinhalte deutsch. | Schaltfläche „Export“; der Knotentitel „Retrieval“ bleibt Inhalt. |
 
 ### Kritische Annahmen – bitte einzeln bestätigen
@@ -59,7 +70,9 @@ Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Di
 | Baum und Knoten auf einer Seite | getrennte Seiten | Baum bleibt beim Arbeiten sichtbar (REQ-053) | mittel |
 | „Move up/Move down“ statt Drag-and-drop | Ziehen | Tastatur Pflicht (REQ-062) | leicht |
 | Vorschläge als Panel mit Karten; Kontext als Seitenpanel | Dialog / eigene Seite | Prüfen braucht Platz, schneller Rückweg | mittel |
-| Status immer Symbol + Text | nur Farbe | WCAG, REQ-062 | leicht |
+| Status im Baum als Symbol (Form unterscheidet), das Wort als Tooltip und zugänglicher Name; in der Pille im Abschnitt „Result“ Symbol + Wort | Symbol + Wort in jeder Zeile (v0.3.1) | Neue Regel „Icons statt Wörter“, mehr Baum sichtbar; „nicht nur Farbe“ ist durch die Form erfüllt. *Beispiel:* der Haken-Kreis bei „2.1 Chunking“ heißt für Screenreader „Fixed plan“. Darstellung, keine Verhaltensänderung | leicht |
+| Knotenaktionen „Rename“, „Edit objective“, „Add child“, „Move up/down“ als Icon-Zeile mit Tooltip; „Delete“ bleibt Text | Text-Buttons (v0.3.1) | Frequente Zeilenaktionen als Icons; die Aktion mit Folgen behält das Wort. Gleiche Aktionen, gleiche Namen | leicht |
+| Chat bleibt unter dem Ergebnis im Arbeitsbereich (Platzierung unverändert) | Chat als Tab oder Seitenpanel | Das wäre eine Verhaltensänderung; nicht geändert | – |
 | „read-only“ und „Ramifold läuft nicht mehr“ als dauerhafte Banner, Eingaben bleiben stehen | Einzelfehler je Aktion | Text lässt sich vor dem Neustart sichern | leicht |
 | **E-UX-01:** „Send again“ auch an einer unvollständigen KI-Antwort („incomplete“), nicht bei „aborted“; nur an der jüngsten Nachricht | nur bei „not sent“ | REQ-028 verlangt „erneut senden“; „aborted“ hat der Planer selbst gewollt. Die unvollständige Antwort bleibt stehen, die neue folgt darunter. *Beispiel:* Antwort bricht nach zwei Teilen mit „Usage limit reached“ ab; nach dem Limit klickt der Planer „Send again“. | leicht |
 | **E-UX-02:** Marke „Simulated AI“ in der Kopfzeile | nur im Terminal | Gefahr, simulierte Antworten für echt zu halten; kleines Element, nur im Testmodus | leicht |
@@ -70,7 +83,14 @@ Slice 0.1 von Ramifold: Ein einzelner Entwickler plant ein Vorhaben als Baum. Di
 - Keine Versionsansicht, Verweise, Verschieben in andere Eltern, mehrere Chats, Material, Einstellungen, Suche, Konto, Dark Mode, Mobil-/Tablet-Layout, Mockups für Terminal-Ausgaben und Banner-Zustände.
 
 ### Was sich geändert hat
-Gegenüber v0.2 (Review-Runde 2) nach den Cross-Checks (Baseline v0.3, `ui-constraints` v3), ohne neue Flows oder Screens:
+**Version 0.4 (diese Überarbeitung, keine Verhaltensänderung)**, gegenüber 0.3.1 (Commit `7e47484`):
+- **Look:** „Werkbank“ (deine Wahl); Schriften IBM Plex Sans und Mono statt Inter und JetBrains Mono, Icon-Set Lucide statt Material Symbols, neue Farben (Petrol `#0B6073` statt Blau). Beide Schrift- und Icon-Familien sind frei lizenziert (OFL 1.1, ISC) und werden mitgeliefert, ohne CDN (REQ-056).
+- **Mockups:** alle Stitch-Mockups ersetzt durch HTML/PNG, zusätzlich UI-006 `default`; Vorher-Bilder: [Stand 0.3.1](https://github.com/MarloNET/Ramifold/tree/7e47484/docs/ux/screens).
+- **Screen-Konzept** in jedem `screen.md` (Hauptaufgabe, Primär, Sekundär, Bei Bedarf, Muster); Abschnitt „Bekannte Abweichungen“ bereinigt.
+- **Darstellung im Baum:** Status als Symbol mit Tooltip; Knotenaktionen als Icon-Zeile; die sichtbare Überschrift „Plan“ über dem Baum entfällt (bleibt zugänglicher Name). Ein Beispielknoten 2.2.1 steht jetzt im Baum, damit der Rückfluss-Hinweis stimmt.
+- Unverändert: Screen-Inventar, Flows, Daten, Eingaben, Aktionen, Zustände, Rollen, Navigationsziele, alle Wortlaute inklusive KL-01 bis KL-05, alle Annahmen und Entscheidungen.
+
+**Version 0.3 und 0.3.1** (Stand der letzten Fassung, die der Owner sah), nach den Cross-Checks (Baseline v0.3, `ui-constraints` v3), ohne neue Flows oder Screens:
 - **Claude Code:** „zu alt“ ohne Neustart, „nicht angemeldet“ = „abgelaufen“, „not sent“ mit „Send again“, Kurztexte je Ursache (14 KI-Codes, dazu vier Ursachen beim Speichern), Banner sofort nur im anfragenden Fenster.
 - **Änderung von außen:** Erkennung auch beim Öffnen (nur lesend); `PLAN.md` zählt nicht; Export überschreibt vollständig und ist im gesperrten Vorhaben abgewiesen.
 - **Texte:** Datenabfluss-Hinweis (zwei Zeilen, Annahme 8), Terminal-Fehler (Node.js, Port, Sperre, Ramifold-Bereich beschädigt oder zu neu), Abweisungsseite für fremde Adressen, Verbindungsverlust ohne stilles Wiederverbinden.
@@ -80,9 +100,10 @@ Gegenüber v0.2 (Review-Runde 2) nach den Cross-Checks (Baseline v0.3, `ui-const
 1. **Editor und Chat gleichzeitig?** (a) Chat beim Bearbeiten ausgeblendet (Entwurf); (b) Editor über dem Chat. Empfehlung: (a).
 2. **Festlegen mit Bestätigung?** (a) ein Klick (Entwurf); (b) Bestätigungsdialog. Empfehlung: (a).
 3. **Should-Funktionen aus OQ-09** (REQ-020/-021) sind enthalten; Entscheidung zum Slice-Zuschnitt steht aus; das Design lässt sich ohne Umbau kürzen.
+4. **Look:** beantwortet (Werkbank, 2026-11-24); keine neue Frage. Du siehst das Ergebnis mit dieser Freigabe; eine andere Wahl wäre eine Neugestaltung.
 
 ### Lesetipps
-`screens/UI-003-workspace/screen.md` (Kern), Abschnitt 5 unten (Meldungen im Wortlaut), Abschnitt 8 (Ausblick Werkzeugfreigabe).
+`DESIGN.md` (der gewählte Look, Icons, Kontraste), `screens/UI-003-workspace/screen.md` (Kern mit Screen-Konzept), Abschnitt 5 unten (Meldungen im Wortlaut), Abschnitt 8 (Ausblick Werkzeugfreigabe).
 
 ## 2. Nutzer, Umfang und Designziele
 - **Nutzer:** ein lokaler Planer (Entwickler, erster Nutzer der Owner), Desktop/Laptop mit Tastatur und Maus; lange Sitzungen über mehrere Tage parallel zu Terminal und Coding-Agent (10.5). Die KI und der Coding-Agent sind Systemakteure ohne eigene Oberfläche.
@@ -121,7 +142,7 @@ Gegenüber v0.2 (Review-Runde 2) nach den Cross-Checks (Baseline v0.3, `ui-const
 | UI-003 | Arbeitsbereich (Baum + Knoten) | Baum bearbeiten, Knoten mit Ergebnis und Chat | Planer | REQ-007–016, -017–024, -027–030, -036, -041–046, -048, -049, -061, -069, -071, -073, -074 | default, empty, error, permission (Mockup); loading, disabled, success, read-only, server-down (Text) | | `screens/UI-003-workspace/` |
 | UI-004 | Ergebnis bearbeiten | Ergebnis als Markdown bearbeiten, speichern | Planer | REQ-041–046, -073, -003 | default (Mockup); loading, empty, error, validation, disabled, success (Text) | `screens/UI-004-result-editor/` |
 | UI-005 | Unterpunkt-Vorschläge | Vorschläge prüfen, ändern, übernehmen, verwerfen | Planer | REQ-037–040 | default (Mockup); loading, empty, error, validation (Text) | `screens/UI-005-suggestions/` |
-| UI-006 | Knoten-Formular (Dialog) | Knoten anlegen, umbenennen, Auftrag ändern | Planer | REQ-011–013 | validation (Mockup); default, loading, error (Text) | `screens/UI-006-node-form/` |
+| UI-006 | Knoten-Formular (Dialog) | Knoten anlegen, umbenennen, Auftrag ändern | Planer | REQ-011–013 | default, validation (Mockup); loading, error (Text) | `screens/UI-006-node-form/` |
 | UI-007 | Knoten löschen (Dialog) | Folgen zeigen, bestätigen | Planer | REQ-015 | default (Mockup); loading, error (Text) | `screens/UI-007-delete-node/` |
 | UI-008 | Kontext anzeigen (Panel) | gesendeten Kontext lesen | Planer | REQ-036 | default (Mockup); loading, error (Text) | `screens/UI-008-context/` |
 | UI-009 | Datenabfluss-Hinweis (Dialog) | Bestätigung vor erster KI-Anfrage; Ansicht | Planer | REQ-030 | default (Mockup); Ansichtsmodus, loading, error (Text) | `screens/UI-009-data-notice/` |
@@ -212,21 +233,21 @@ Port und Adresse legt der Software Architect fest. Ramifold prüft die Version b
 **Erfüllung der sechs WCAG-2.2-AA-Kriterien aus REQ-062.**
 | Kriterium | Wie das Design es erfüllt | Evidenz / Prüfung |
 |---|---|---|
-| 1.4.3 Kontrast (Minimum) | Alle Text-/Hintergrundpaare ≥ 4,5:1, UI-Komponenten ≥ 3:1 | berechnet in `DESIGN.md` (z. B. Text 15,8; Sekundärtext 7,6; Primärbutton 6,7; Rand 4,8; Fehler 6,6). Mockups sind kein Beleg; automatisierte Prüfung bei Umsetzung |
+| 1.4.3 Kontrast (Minimum) | Alle Text-/Hintergrundpaare ≥ 4,5:1, UI-Komponenten ≥ 3:1 | berechnet in `DESIGN.md` (Look „Werkbank“: Text 16,5; Sekundärtext 7,6; Primärbutton 7,2; Rand 4,9; Fehler 6,6; Statussymbole im Baum 5,8 bis 6,6). Mockups sind kein Beleg; automatisierte Prüfung bei Umsetzung |
 | 1.4.4 Textgröße ändern | rem-Einheiten, Layout reflowt bei < 1024 px (siehe oben), keine festen Höhen für Text | manueller Zoom-Durchlauf 200 % (Chrome/Firefox) bei Umsetzung (REQ-062) |
 | 2.1.1 Tastatur | Alle Aktionen per Tastatur: Baum nach ARIA-Tree-Muster (Pfeile, Home/End, Enter), „Move up/Move down“ statt Drag-and-drop, Dialoge mit Fokus-Falle und ESC, Strg/Cmd+Enter | je Screen im Abschnitt „Responsive und Barrierefreiheit“ |
 | 2.4.3 Fokus-Reihenfolge | Reihenfolge folgt Lesereihenfolge: Kopfzeile → Baum → Knotenkopf → Banner → Result → Chat → Eingabe → Aktionen; Dialoge: Titel/erstes Feld → Aktionen; Fokus kehrt zum Auslöser zurück | `screen.md` UI-003 |
 | 2.4.7 Fokus sichtbar | 2 px Fokusrahmen (#0B57D0) mit 2 px Abstand an allen Bedienelementen, nie entfernt | `DESIGN.md` |
-| 4.1.2 Name, Rolle, Wert | Semantische Elemente (`button`, `table`, `dialog`, `tree`, `log`), sichtbare Labels, `aria-expanded/selected/disabled/invalid/busy`; Statusmarken als Text; Banner `role=alert/status` | `screen.md` je Screen |
-Zusätzlich: Information nie nur durch Farbe (Status = Symbol + Text, Auswahl = Balken, Fehler = Symbol + Text); Animationen nur dezent, bei `prefers-reduced-motion` aus. Volle AA-Konformität ist nicht zugesagt (A-07).
+| 4.1.2 Name, Rolle, Wert | Semantische Elemente (`button`, `table`, `dialog`, `tree`, `log`), sichtbare Labels, `aria-expanded/selected/disabled/invalid/busy`; Statussymbole mit zugänglichem Namen (`aria-label`, Tooltip), Zustandsmarken als Text; Banner `role=alert/status` | `screen.md` je Screen |
+Zusätzlich: Information nie nur durch Farbe (Status im Baum = Symbol mit unterschiedlicher Form und zugänglichem Namen, in der Pille Symbol + Wort; Auswahl = Balken; Fehler = Symbol + Text); Animationen nur dezent, bei `prefers-reduced-motion` aus. Volle AA-Konformität ist nicht zugesagt (A-07).
 
 ## 7. Komponenten und visuelle Hinweise
-Design-System: `DESIGN.md` (**vorgeschlagen**, wird mit der Freigabe verbindlich). Wiederverwendete Muster: Baumzeile mit Statusmarke, Statusmarke, Banner (info/warn/error/success), Toast, modaler Dialog (Standard/Alert), Formularfeld mit Label/Fehlertext, Karte (Vorschlag), Chat-Nachricht mit Zustandsmarke, Markdown-Darstellung, Seitenpanel (Kontext). Umsetzung: React mit React Aria Components ohne Fertig-Bibliothek mit eigenem Look; die Tokens aus `DESIGN.md` werden CSS Custom Properties (ADR-001, `ui-constraints` v3). Ob jede Komponente damit machbar ist, beurteilt der Software Architect im Cross-Check.
+Look und Design-System: `DESIGN.md` (**vom Owner gewählt am 2026-11-24, Look „Werkbank“**; Auswahl und Alternativen in `looks/looks.md`). Mockup-Stylesheet: `mockups/base.css`. Wiederverwendete Muster: Baumzeile mit Statussymbol, Statuspille, Banner (info/warn/error/success), Toast, modaler Dialog (Standard/Alert), Formularfeld mit Label/Fehlertext, Karte (Vorschlag), Chat-Nachricht mit Zustandsmarke, Markdown-Darstellung, Seitenpanel (Kontext). Umsetzung: React mit React Aria Components ohne Fertig-Bibliothek mit eigenem Look; die Tokens aus `DESIGN.md` werden CSS Custom Properties (ADR-001, `ui-constraints` v3). Ob jede Komponente damit machbar ist, beurteilt der Software Architect im Cross-Check.
 
 ## 8. Machbarkeit und Übergabehinweise
-- **`ui-constraints` v3 (Revision `40c3d77d-5c9d-428f-bb02-cb564c6123db`) und Baseline v0.3 gelesen und abgeglichen**, einschließlich der 13 „Entscheidungen für den Designer“ (Handoff MAR-1379). Übernommen: lokale SPA, React + TypeScript, React Aria Components (Baum als `Tree`, ARIA-Baummuster *treegrid*, Dialoge, Listen), Design-Tokens als CSS Custom Properties; ein Farbschema (hell); 1280 px Mindestbreite und einklappbarer Baum bei 200 % Zoom; kein Login, eine Rolle; Streaming per SSE mit unvollständigem Markdown, Textteile nur an das auslösende Fenster; kein Live-Abgleich zwischen Fenstern; Bearbeitungssperre endet verzögert (MSG-011); Markdown ohne HTML und ohne Bilder; Fehlerzustände MSG-001 (ohne Neustart nach `claude update`; „nicht angemeldet“ = „abgelaufen“), MSG-005 (Erkennung auch beim Öffnen), MSG-013 (ohne stilles Wiederverbinden); „not sent“ nach Variante D3a; 14 Ursachen-Codes; `localhost` zulässig (MSG-014); Schriften Inter 400/500/600 und JetBrains Mono 400 sowie Material Symbols als Inline-SVG, gebündelt, Lizenzprüfung in der Baseline (B2, keine Design-Änderung); Sortieren per Tastatur; kein Upload, kein Drag-and-drop.
+- **`ui-constraints` v3 (Revision `40c3d77d-5c9d-428f-bb02-cb564c6123db`) und Baseline v0.3 gelesen und abgeglichen**, einschließlich der 13 „Entscheidungen für den Designer“ (Handoff MAR-1379). Übernommen: lokale SPA, React + TypeScript, React Aria Components (Baum als `Tree`, ARIA-Baummuster *treegrid*, Dialoge, Listen), Design-Tokens als CSS Custom Properties; ein Farbschema (hell); 1280 px Mindestbreite und einklappbarer Baum bei 200 % Zoom; kein Login, eine Rolle; Streaming per SSE mit unvollständigem Markdown, Textteile nur an das auslösende Fenster; kein Live-Abgleich zwischen Fenstern; Bearbeitungssperre endet verzögert (MSG-011); Markdown ohne HTML und ohne Bilder; Fehlerzustände MSG-001 (ohne Neustart nach `claude update`; „nicht angemeldet“ = „abgelaufen“), MSG-005 (Erkennung auch beim Öffnen), MSG-013 (ohne stilles Wiederverbinden); „not sent“ nach Variante D3a; 14 Ursachen-Codes; `localhost` zulässig (MSG-014); Schriften und Icons gebündelt ohne CDN (REQ-056, Baseline B2) – **in 0.4 geändert:** IBM Plex Sans 400/500/600/700 und IBM Plex Mono 400 (SIL OFL 1.1, woff2, Latin) statt Inter und JetBrains Mono; Lucide-Icons (ISC) als Inline-SVG statt Material Symbols; Lizenzprüfung und Bündelung beim Software Architect nachzuziehen (Delta-Cross-Check); Sortieren per Tastatur; kein Upload, kein Drag-and-drop.
 - **Annahmen, die bleiben:** Echtzeit nur für Streaming (auslösendes Fenster) und die Ereignisse „gestartet/beendet“; Tastaturmuster des ARIA-Baums; Wortlaut der Schritte in MSG-001 ist mit KL-03 festgelegt.
-- **Stitch-Mockups:** HTML-Exporte sind nur visuelle Referenz und liegen nicht im Repository (Stitch liefert HTML nur inline); die PNG-Screenshots liegen im Repository; `screen.md` ist verbindlich. Die Mockups sind in Revision 0.3 unverändert; neue Texte und Zustände sind in `screen.md` und im Katalog beschrieben (Layout unverändert; Marke „Simulated AI“ ist ein Textelement in der Kopfzeile ohne Mockup).
+- **Mockups (ab 0.4):** statisches HTML/CSS in `screens/<ID>/<Zustand>.html` und gerendertes PNG (Viewport 1366 px, 2026-11-24); das HTML ist nur visuelle Referenz, kein Umsetzungscode. `screen.md` ist verbindlich. Die Marke „Simulated AI“ ist als Textelement der Kopfzeile in `screen.md` beschrieben, im Mockup nicht gezeichnet.
 - **Bekannte Mockup-Abweichungen:** je Screen in „Bekannte Abweichungen im Mockup“.
 - **Cross-Check:** Befunde D1 bis D4, B2, B3 und CC-01 bis CC-13 sind in 0.3 aufgelöst (Übersicht im Changelog). Ein Delta-Check von CC-02, CC-03, CC-04 und CC-06 gegen den neuen Commit steht beim Product Owner.
 
@@ -321,6 +342,7 @@ Entfallene Anforderungen REQ-026 und REQ-047: kein Design. Nicht abgedeckte Anfo
 **Offene Fragen:** (1) Owner: Editor und Chat gleichzeitig? (Briefing). (2) Owner/OQ-09: Should-Funktionen bleiben? (3) Software Architect: Erkennung von „Ramifold läuft nicht mehr“ im Browser, Name des Ramifold-Bereichs (OQ-07, Beispielpfade in Mockups). (4) OQ-01 (Anmeldeart von Claude Code): UI-009 bleibt neutral. (5) Product Owner: Wunsch nach HTML-Exporten (technisch derzeit nicht möglich).
 
 **Changelog.**
+- 0.4 (2026-11-24, MAR-1390; visuelle Überarbeitung nach neuen Design-Regeln; keine Verhaltensänderung, keine neuen Screens oder Flows, keine neuen IDs): Look „Werkbank“ vom Owner gewählt (`looks/`); `DESIGN.md` nach neuer Vorlage (IBM Plex, Lucide, Tokens, Kontraste); Screen-Konzept in allen elf `screen.md`; alle Mockups neu als HTML/PNG, zusätzlich UI-006 `default`; Stitch-Mockups ersetzt; Freigabe-Briefing mit Bildern neu gefasst. Darstellungsänderungen in `screen.md` (UI-003): Statussymbole im Baum (Wort als Tooltip), Knotenaktionen als Icon-Zeile, kein sichtbarer Titel „Plan“. Betroffene Screens: alle (Darstellung).
 - 0.3.1 (2026-11-24, MAR-1388; nur Wortlaute KL-01 bis KL-05, keine neuen Flows oder Screens, keine Stitch-Generierung, Mockups unverändert): KL-01 Teiltabelle „Ursachen beim Speichern“ (MSG-002); KL-02 MSG-015/-016, MSG-007 auf Chat beschränkt; KL-03 MSG-001 „beim Start, nicht gefunden“; KL-04 MSG-002 mit `unknown`, TERM-013; KL-05 „Suggest sub-items“ ersetzt offene Vorschläge ohne Dialog.
 - 0.3 (2026-11-24, MAR-1382, Cross-Check-Auflösung; nur Texte, Zustände, Ergänzungen; keine neuen Flows oder Screens; keine neue Stitch-Generierung): D1/CC-05 MSG-001 (zu alt ohne Neustart, angemeldet/abgelaufen ein Zustand, Rückfall bei „nicht installiert“, Banner nur im anfragenden Fenster); D2 Baumrolle treegrid (UI-003); D3/B3 „not sent“ nach D3a, „Send again“ (UI-003, E-UX-01); D4/CC-10 UI-011 Pfad `.ramifold/plans/<planId>/nodes/<nodeId>.json` und Ursachenliste; CC-01 Abschnitt „Ausblick Werkzeugfreigabe“ (Abschnitt 8); CC-02 Erkennung beim Öffnen (MSG-005, UI-003, FLOW-007); CC-03 `PLAN.md` abgeleitet (MSG-010, UI-003 Export, UI-011); CC-04 TERM-010/-011; CC-06 UI-009 zwei neue Hinweiszeilen, OQ-08-Verweis entfällt; CC-07 andere Fenster nur Laufanzeige (UI-003, FLOW-007); CC-08 TERM-006 bis TERM-009, TERM-012, Marke „Simulated AI“ (E-UX-02); CC-09 MSG-014; CC-11 MSG-013 und UI-003 server-down; CC-12 Tabelle „Ursachen“ mit 14 Kurztexten; CC-13 Seitentitel (A-UX-16); B2 keine Design-Änderung, Verweis auf Lizenzprüfung der Baseline in `DESIGN.md`. Briefing neu gefasst und gekürzt.
 - 0.2 (2026-11-24, Runde 2): Behebung FIND-PO-01 bis -09 und Abgleich mit `ui-constraints` v2: MSG-001 „zu alt“ (v2.1.248), MSG-005 neu formuliert (Neustart verwirft), MSG-011 mit Verzögerung und „Check again“, neu MSG-013, TERM-005, FLOW-009; Zustände „read-only“ und „server-down“ in UI-003 (Folgen für UI-001, -002, -004 bis -007); Markdown-Bilder als Link (UI-003, UI-004, `DESIGN.md`); Schriften/Icons gebündelt; Abschnitt 8 und Metadaten auf `ui-constraints` v2; Briefing: A-UX-05 und Strg/Cmd+S aufgenommen. Keine neuen Stitch-Generierungen.

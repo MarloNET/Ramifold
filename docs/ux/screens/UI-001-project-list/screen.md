@@ -6,7 +6,16 @@
 - Seitentitel (Tab, CC-13): `Projects – <Ordnername> – Ramifold` (Ordnername = letzter Teil des Projektordners); bei „server-down“ Präfix „Stopped – “; Symbol (Favicon) in allen Instanzen gleich.
 - Rollen: Planer (einzige Rolle, sieht und darf alles)
 - Gerät(e): Desktop/Laptop, Browserfenster ab 1280 px Breite (Requirements 10.2)
-- Artefakte: `default.png` (Stitch 094d269de9b1479eba9fa4fd9265ab55), `empty.png` (Stitch e6c0584c609b4e5d8b3f46f5599eec87); Gerät DESKTOP; Export 2026-11-24
+- Artefakte: default.png, empty.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`, `empty.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Ein bestehendes Vorhaben öffnen oder ein neues anlegen.
+- Nutzung: zu Beginn jeder Sitzung, wenige Sekunden, Maus oder Tastatur; wenige Vorhaben je Ordner.
+- Primär: die Vorhabentabelle (Titel als Link); Aktion „New project“ (im Leerzustand im Leerbereich).
+- Sekundär: Anlagedatum, Pfad des Projektordners und Link „Data notice“ in der Kopfzeile, Marke „Not readable“.
+- Bei Bedarf: Ursache nicht lesbarer Vorhaben (Dialog UI-011 über „Details“), Banner MSG-001/MSG-013 nur bei Befund.
+- Muster: Tabelle mit Titel-Link als Zeilenaktion, Leerzustand mit einer Folgeaktion.
+- Akzent: keiner; der Screen bleibt ruhig, die Petrol-Fläche von „New project“ ist das einzige farbige Element.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle (fachlich) | Hinweise |
@@ -44,7 +53,7 @@ Keine Eingabefelder (Anlegen im Dialog UI-002).
 Tabelle ist eine echte Tabelle (`<table>`, Kopfzellen `th scope="col"`). Fokus-Reihenfolge: Link „Data notice“ → „New project“ → Zeilen (Titel-Link, ggf. „Details“). Bei Zoom 200 % bleibt der Inhaltsbereich einspaltig, Spalte „Created“ rutscht unter den Titel. Statusmarke immer Symbol + Text.
 
 ## Bekannte Abweichungen im Mockup
-Keine bekannten Abweichungen gegen diese Beschreibung außer: Sortierung/Datumsformat im Mockup nur Beispiel. Die Sortierung ist eine Annahme (siehe `uiux-design.md`, Annahme A-UX-07).
+keine. Sortierung, Datumsformat, Pfad und Titel im Mockup sind Beispiele (siehe Annahme A-UX-07).
 
 ## Annahmen und offene Fragen
 - Pfadangabe im Kopf: der Projektordner ist in der Oberfläche sichtbar, damit der Planer sieht, für welchen Ordner die Instanz läuft (REQ-001 verlangt dies nur im Terminal) – Entscheidung des Designs, keine neue Funktion.

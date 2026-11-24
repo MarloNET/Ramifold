@@ -5,7 +5,16 @@
 - Anforderungen: REQ-041, REQ-042, REQ-043, REQ-044, REQ-045 (Version entsteht beim Speichern), REQ-073, REQ-071, REQ-003, REQ-048; AC-REQ-003-03, AC-REQ-041-*, AC-REQ-042-*, AC-REQ-043-*, AC-REQ-073-*
 - Rollen: Planer. Nur der Planer setzt „Fixed plan“ (REQ-043); die KI liefert nur Entwürfe.
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch 4af72f6fbfb145738759a175117022cf); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Ein Ergebnis als Markdown überarbeiten und als „Concept“ oder „Fixed plan“ speichern.
+- Nutzung: mehrere Minuten am Stück, Tastatur; Quelltext und Vorschau gleichzeitig.
+- Primär: Feld „Result (Markdown)“ mit Vorschau; Aktion „Save as fixed plan“.
+- Sekundär: „Save as concept“, Entwurfshinweis, Status „Unsaved draft“.
+- Bei Bedarf: „Discard draft“ (Text-Button, bei geändertem Text mit Rückfrage), Fehlerbanner.
+- Muster: zwei Spalten (Quelltext, Vorschau), Fußleiste mit Aktionen, Baum bleibt sichtbar.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle | Hinweise |
@@ -50,12 +59,9 @@ Ohne Speichern verlassen: Wechsel zu anderem Knoten oder zur Vorhabenliste ist e
 Unter 1024 px: Quelltext oberhalb, Vorschau darunter (gestapelt). Feld mit sichtbarem Label, Fokus beim Öffnen im Feld; Vorschau ist `aria-live="off"` (kein Dauer-Vorlesen), erreichbar per Tab als Bereich mit Label „Preview“. Strg/Cmd+S speichert als „Concept“ (Entscheidung des Designs, A-UX-12; verworfen: gar keine Tastenkürzel; nicht im Mockup).
 
 ## Bekannte Abweichungen im Mockup
-| Element | Grund |
-|---|---|
-| Radiogruppe „Result status“ (Concept / Fixed plan) über der Fußleiste | von Stitch erzeugt, nicht Teil des Designs: der Status ergibt sich aus dem Speichern-Button |
-| Texte „Editing in progress“, „Markdown enabled“, „Live HTML preview“, Statuspille „Concept“ neben dem Titel | von Stitch erzeugt, nicht Teil des Designs |
-| Baumzeilen nur mit Symbol (ohne Text) | siehe UI-003 |
-| Ergebnistitel in Großbuchstaben „EMBEDDING-MODELL“ | Beispieltext; Darstellung folgt Markdown |
+- Der Knotenkopf zeigt hier nur „<Nr> <Titel>“, ohne Knotenaktionen (wie in der Datentabelle).
+- Strg/Cmd+S als Kürzel ist nicht sichtbar (Verhalten, kein Element).
+- Beispieltext des Ergebnisses fiktiv; das Bild-Link-Beispiel zeigt die Darstellung nach REQ-061.
 
 ## Annahmen und offene Fragen
 - Während der Bearbeitung ist der Chat dieses Knotens ausgeblendet (Vereinfachung); Alternative: Editor oberhalb des Chats. Entscheidung für den Owner im Freigabe-Briefing.

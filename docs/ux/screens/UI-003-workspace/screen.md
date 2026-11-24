@@ -6,17 +6,26 @@
 - Seitentitel (Tab, CC-13): `<Vorhabentitel> – <Ordnername> – Ramifold` (Ordnername = letzter Teil des Projektordners; Titel > 40 Zeichen mit „…“ gekürzt); im Zustand „server-down“ zusätzlich Präfix „Stopped – “. Das Symbol (Favicon) ist in allen Instanzen dasselbe; unterschieden wird nur über den Titel.
 - Rollen: Planer (einzige Rolle). „Permission“-Zustand = Ergebnis in diesem Fenster nur lesbar, weil es in einem anderen Fenster bearbeitet wird (REQ-071). Der Zustand „read-only“ (ganzes Vorhaben nur lesbar, REQ-074) und „server-down“ (Ramifold beendet) sind eigene Zustände (siehe unten).
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch 8047d918dd124dd7acc231b316f5af3d), `empty.png` (6101580aa5f74b408c0222a63d53642e, leerer Knoten + KI läuft in anderem Knoten), `error.png` (232f3a936a4c4e4e84698908bddb5381, Claude Code nicht angemeldet + Chat unvollständig + Sitzung neu aufgebaut), `permission.png` (e39c743407b64ee9ab1d5446e7f35293, Ergebnis nur lesbar + „außerhalb geändert“); Gerät DESKTOP; Export 2026-11-24
+- Artefakte: default.png, empty.png, error.png, permission.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quellen `<Zustand>.html`); `read-only` und `server-down` nur als Text (Layout wie `permission.png` mit dem jeweiligen Banner)
+
+## Screen-Konzept
+- Hauptaufgabe: Den Plan überblicken und im gewählten Knoten Ergebnis lesen und festhalten und mit der KI klären.
+- Nutzung: stundenlang pro Sitzung, überwiegend Lesen und Tippen, Tastatur; Baum und Knoten bleiben nebeneinander im Blick.
+- Primär: Baum links; im Knoten das Ergebnis und die Chat-Eingabe mit der einen Primäraktion „Send“.
+- Sekundär: Auftrag unter dem Titel, Knotenaktionen als Icon-Zeile (mit Tooltip) und „Delete“, „Edit result“, „Summarize with AI“, „Suggest sub-items“, „Show context“, Export in der Kopfzeile.
+- Bei Bedarf: Kontext (Seitenpanel UI-008), Dialoge UI-006/-007/-009/-010, Statuswort und Aktionsname als Tooltip, Banner nur bei Anlass, eingeklappte Teilbäume („+n“).
+- Muster: Master-Detail (Baum und Knoten), Icon-Aktionen mit Tooltip, Statussymbole statt Statuswörtern im Baum, Banner für Zustände, Chat als Protokoll unter dem Ergebnis.
+- Akzent: das Statussystem im Baum (gestrichelt – Punkt – Haken); Petrol nur für Auswahl und „Send“.
 
 ## Aufbau
-Kopfzeile (48 px) · linke Spalte „Plan“ (Baum, 320 px) · rechter Arbeitsbereich mit: Knotenkopf (Nummer, Titel, Aktionen) → Block „Objective“ → Banner-Bereich → Abschnitt „Result“ → Abschnitt „Chat“ (Verlauf, Eingabe). Die Abschnitte stehen untereinander im scrollbaren Arbeitsbereich; Baum und Kopfzeile scrollen nicht mit.
+Kopfzeile (48 px) · linke Spalte (Baum, 320 px; „Plan“ ist nur der zugängliche Name der Spalte, kein sichtbarer Titel) · rechter Arbeitsbereich mit: Knotenkopf (Nummer, Titel, Aktionen) → Block „Objective“ → Banner-Bereich → Abschnitt „Result“ → Abschnitt „Chat“ (Verlauf, Eingabe). Die Abschnitte stehen untereinander im scrollbaren Arbeitsbereich; Baum und Kopfzeile scrollen nicht mit.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle (fachlich) | Hinweise (Format, Kürzung, Sortierung) |
 |---|---|---|---|
 | Kopfzeile | „Ramifold“; Brotkrumen „Projects / <Vorhabentitel>“ („Projects“ ist Link zu UI-001); Link „Data notice“; Button „Export“; im simulierten Modus Marke „Simulated AI“; im Zustand „read-only“ zusätzlich Marke „Read-only“ (Symbol + Text) | Vorhaben | Vorhabentitel bei Überlänge mit „…“ gekürzt |
 | Baumzeile (ARIA-Baummuster wie React Aria `Tree`, Rolle *treegrid*: Zeilen als `row`) | Auf-/Zuklapp-Pfeil (nur bei Kindern), Nummer, Titel, Statusmarke; eingeklappt zusätzlich „+n“ (Zahl verborgener Nachkommen) | Knoten, Ergebnisstatus | Wurzelknoten ohne Nummer, fett; Titel > Zeilenbreite mit „…“ gekürzt, voller Titel als Tooltip und im Knotenkopf; Reihenfolge nach Position; Nummern aus Position (REQ-008) |
-| Statusmarke | Symbol + Text: „No result yet“ / „Concept“ / „Fixed plan“ | Ergebnisstatus | nie nur Farbe |
+| Statusmarke | im Baum: Symbol (gestrichelter Kreis / Kreis mit Punkt / Kreis mit Haken), das Wort „No result yet“ / „Concept“ / „Fixed plan“ als Tooltip und zugänglicher Name; im Abschnitt „Result“: Pille mit Symbol + Wort | Ergebnisstatus | nie nur Farbe: die Symbole unterscheiden sich in der Form |
 | Markierung „AI running“ | Symbol + Text neben der Statusmarke des Knotens, in dem eine KI-Anfrage läuft | REQ-019 | in jedem Fenster sichtbar |
 | Markierung „Draft“ | Text „Draft“ neben Statusmarke, wenn für den Knoten ein KI-Entwurf oder in diesem Fenster eine Ergebnisbearbeitung vorliegt | REQ-073 | Hinweis, dass ungespeicherter Text existiert |
 | Knotenkopf | „<Nummer> <Titel>“ | Knoten | Titel umbricht auf mehrere Zeilen |
@@ -40,11 +49,11 @@ Das Eingabefeld hat kein Platzhaltertext. Der Inhalt bleibt bei jedem Fehler (RE
 |---|---|---|---|---|---|
 | Knoten öffnen | Klick/Enter auf Baumzeile | – | Knoten wird im Arbeitsbereich angezeigt. Dabei prüft Ramifold nur lesend, ob das Vorhaben seit dem Laden von außen geändert wurde (CC-02); ist das so, wechselt das Fenster in „read-only“ (MSG-005), der geladene, möglicherweise veraltete Stand bleibt sichtbar und wird nicht automatisch neu geladen | Knoten inzwischen gelöscht: MSG-004, Baum aktualisiert | bleibt in UI-003 |
 | Ein-/Ausklappen | Pfeil, Pfeiltasten ←/→ | Knoten mit Kindern | Nachkommen verborgen/sichtbar; Klappzustand nur bis Neuladen | – | – |
-| Rename | Textbutton im Knotenkopf | – | Dialog UI-006 (Modus „Rename“) | – | UI-006 |
-| Edit objective | Textbutton | – | Dialog UI-006 (Modus „Edit objective“) | – | UI-006 |
-| Add child | Textbutton | – | Dialog UI-006 (Modus „Add child“) | – | UI-006 |
-| Move up / Move down | Textbutton im Knotenkopf (nicht im Mockup, siehe Abweichungen) | Knoten außer Wurzel; „Move up“ deaktiviert beim ersten, „Move down“ beim letzten Kind | Knoten tauscht Position mit Geschwister; Nummern neu berechnet; Fokus bleibt auf der Aktion; Statusmeldung „Moved to position <n>“ (role=status) | MSG-002 / MSG-004 / MSG-005 | bleibt |
-| Delete | Textbutton (nicht beim Wurzelknoten) | Knoten außer Wurzel | Dialog UI-007 | – | UI-007 |
+| Rename | Icon-Button im Knotenkopf (Tooltip und zugänglicher Name „Rename“) | – | Dialog UI-006 (Modus „Rename“) | – | UI-006 |
+| Edit objective | Icon-Button im Knotenkopf (Tooltip und zugänglicher Name „Edit objective“) | – | Dialog UI-006 (Modus „Edit objective“) | – | UI-006 |
+| Add child | Icon-Button im Knotenkopf (Tooltip und zugänglicher Name „Add child“) | – | Dialog UI-006 (Modus „Add child“) | – | UI-006 |
+| Move up / Move down | Icon-Buttons im Knotenkopf (Tooltip „Move up“ / „Move down“) | Knoten außer Wurzel; „Move up“ deaktiviert beim ersten, „Move down“ beim letzten Kind | Knoten tauscht Position mit Geschwister; Nummern neu berechnet; Fokus bleibt auf der Aktion; Statusmeldung „Moved to position <n>“ (role=status) | MSG-002 / MSG-004 / MSG-005 | bleibt |
+| Delete | Text-Button mit Symbol (nicht beim Wurzelknoten) | Knoten außer Wurzel | Dialog UI-007 | – | UI-007 |
 | Show context | Button unter Eingabe | – | Seitenpanel UI-008 | – | UI-008 |
 | Send | Primärbutton, Strg/Cmd+Enter | Text vorhanden; keine andere KI-Anfrage läuft; Datenabfluss-Hinweis bestätigt | Nachricht erscheint im Chat, Laufanzeige ≤ 1 s, Antwort erscheint im Chat; Eingabefeld geleert | Hinweis unbestätigt: UI-009 (Nachricht bleibt im Feld); Anfrage läuft anderswo: MSG-003; Claude Code laut letztem Befund nicht installiert/nicht gefunden oder zu alt: MSG-001, **vor dem Speichern** abgewiesen, Nachricht bleibt im Feld; Claude Code **nicht angemeldet** (oder Anmeldung abgelaufen) oder Prozess startet nicht: Die Nachricht ist **schon gespeichert** und erscheint im Verlauf mit Marke „not sent“ und Ursache, Banner MSG-001 (Variante „nicht angemeldet“ bzw. „nicht gefunden“); das Eingabefeld ist leer, „Send again“ an der Nachricht; Fehler vor dem ersten Textteil (Netzwerk, Limit): keine Marke „not sent“, sondern KI-Antwort `incomplete` ohne Text mit Ursache (MSG-007); Ramifold beendet: MSG-013; Antwort bricht ab: MSG-007 (nur Chat-Nachrichten); Speichern scheitert: MSG-002 (Ursachen beim Speichern, KL-01); von außen geändert: MSG-005 | bleibt |
 | Stop (Should) | Button in laufender Antwort | KI-Anfrage läuft | Anfrage endet; bereits gezeigter Text bleibt als „aborted“ | – | bleibt |
@@ -73,25 +82,17 @@ Das Eingabefeld hat kein Platzhaltertext. Der Inhalt bleibt bei jedem Fehler (RE
 | success | Toast „Saved“ nach Speichern; Banner „Exported to …“; Toast „Node added“, „Node deleted“, „Moved to position n“ | nur Text | siehe Kapitel Meldungen in `uiux-design.md` |
 
 ## Responsive und Barrierefreiheit
-- Ab 1024 px Breite: zwei Spalten wie im Mockup. Darunter (Zoom ≥ 125 % bei 1280 px, REQ-062): Baum wird zu einem aufklappbaren Bereich oberhalb des Arbeitsbereichs (Button „Show plan“ / „Hide plan“, `aria-expanded`), Arbeitsbereich einspaltig, Textbuttons des Knotenkopfes umbrechen.
+- Ab 1024 px Breite: zwei Spalten wie im Mockup. Darunter (Zoom ≥ 125 % bei 1280 px, REQ-062): Baum wird zu einem aufklappbaren Bereich oberhalb des Arbeitsbereichs (Button „Show plan“ / „Hide plan“, `aria-expanded`), Arbeitsbereich einspaltig, Icon-Zeile des Knotenkopfes bricht um.
 - Baum: ARIA-Baummuster wie React Aria `Tree` (Rolle *treegrid*, Zeilen `row` mit `aria-level`, `aria-expanded`, `aria-selected`); ein Tab-Stopp; ↑/↓ Fokus, → aufklappen bzw. in Kind, ← zuklappen bzw. zum Elternknoten, Home/End, Enter öffnet den Knoten.
 - Tab-Reihenfolge: Kopfzeile → Baum → Knotenkopf-Aktionen → Banner-Aktionen → Result-Aktionen → Chat-Verlauf (fokussierbarer Bereich) → Message → Suggest sub-items → Show context → Send.
 - Fokussichtbar 2 px, nie entfernt; alle Aktionen per Tastatur (REQ-062 / 2.1.1). Chat-Verlauf `role="log"` mit `aria-live="polite"`; Fehlerbanner `role="alert"`; Laufanzeige `role="status"`.
-- Statusmarken und Zustandsmarken immer Symbol + Text; ausgewählter Baumknoten zusätzlich zur Farbe mit Balken.
+- Statussymbole im Baum mit zugänglichem Namen (Wort), Zustandsmarken an Nachrichten Symbol + Text; ausgewählter Baumknoten zusätzlich zur Farbe mit Balken.
 - Lange Tabellen/Codeblöcke in Markdown scrollen horizontal im eigenen Bereich (kein Verlust bei 200 % Zoom).
 
 ## Bekannte Abweichungen im Mockup
-| Element | Screens | Grund |
-|---|---|---|
-| Absenderbezeichnung „Planner“ und „Ramifold AI“ statt „You“ / „AI“ | default.png | von Stitch erzeugt; verbindlich sind „You“ und „AI“ |
-| Rückfluss-Hinweis nennt „Child 2.2.1 Quantisierung“, obwohl 2.2 im Baum keine Kinder zeigt | default.png | Beispieldaten inkonsistent; verbindlich: der Hinweis nennt ein tatsächliches Kind |
-| Statusmarken im Baum nur als Symbol (ohne Text) | empty.png, error.png, permission.png (und UI-004, UI-005) | Screenshot nach Bereinigung nicht neu gerendert; verbindlich: Symbol + Text („Fixed plan“, „Concept“, „No result yet“) |
-| Überschrift in Banner, Platzhaltertexte, Zähler „Plan (n nodes)“, „New root“, „Status legend“ | – | per Bereinigung entfernt (Stitch-Log); sollten in den Mockups nicht mehr vorkommen, nicht Teil des Designs |
-| Schaltflächen „Move up / Move down“, „Show plan / Hide plan“, Markierung „Draft“, Hinweis „There is an unsaved AI draft…“ | alle | im Mockup nicht dargestellt, aber in diesem `screen.md` festgelegt |
-| Kopfbereich im Mockup „error.png“ zeigt Ergebnis eingeklappt auf eine Zeile | error.png | nur Darstellung zur Platzersparnis im Mockup; verbindlich: Result-Abschnitt wie default |
-| Textbuttons „Rename“, „Edit objective“, „Add child“, „Delete“ in einigen Mockups als Rand-Buttons | permission.png | gleiche Aktionen, Darstellung als Textbutton nach DESIGN.md |
-| Header: Pille „Concept“ neben Knotentitel | permission.png | nicht Teil des Designs; Status des Ergebnisses steht im Abschnitt „Result“ |
-| HTML-Exporte | alle | nicht exportiert (siehe `uiux-design.md`, Abschnitt 8) |
+- Im Mockup nicht dargestellt, aber hier festgelegt: Schaltfläche „Show plan / Hide plan“ (nur unter 1024 px), Hinweis „There is an unsaved AI draft for this node.“ mit „Review AI draft“, Marke „Draft“ im Baum (sie erscheint in `UI-004/default.png`), die Zustände „read-only“ und „server-down“, Ladezustände.
+- In `default.png` und `empty.png` sind „Send“, „Suggest sub-items“ und „Summarize with AI“ deaktiviert, weil eine KI-Anfrage läuft (Zustand „disabled“); in `empty.png` läuft sie in Knoten 2.2, nicht im geöffneten Knoten 2.3.
+- Die Beispielinhalte (Titel, Chat, Zeiten) sind fiktiv.
 
 ## Annahmen und offene Fragen
 - Breite des Baums fest 320 px; Verstellen und Persistenz sind nicht Teil von 0.1.

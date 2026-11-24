@@ -5,7 +5,16 @@
 - Anforderungen: REQ-036, REQ-031 bis REQ-035, REQ-029; AC-REQ-036-01 bis AC-REQ-036-03
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch aeaf18b769bc4a6b8bebaa252d35e5c0); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Den Text lesen, den die nächste KI-Anfrage dieses Knotens mitbekommt.
+- Nutzung: gelegentlich, zum Prüfen; Lesen und Scrollen.
+- Primär: der Kontexttext (Monospace, schreibgeschützt).
+- Sekundär: Erklärtext, „Close“.
+- Bei Bedarf: Ladezustand und Fehlertext.
+- Muster: Seitenpanel (Drawer), der Arbeitsbereich bleibt dahinter sichtbar.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle | Hinweise |
@@ -34,7 +43,7 @@ Keine Eingaben (schreibgeschützt, aber per Tastatur fokussierbar und scrollbar)
 Panel als modaler Dialog (`role="dialog"`), Fokus beim Öffnen auf den Titel/Textbereich; Textbereich `tabindex="0"` mit Label. Unter 1024 px füllt das Panel die Breite. Kein Kopieren-Button (nicht in den Requirements).
 
 ## Bekannte Abweichungen im Mockup
-Keine bekannten Abweichungen außer dem Beispielinhalt des Kontexttextes (Struktur der Abschnitte „RULES / ANCESTORS / SIBLINGS / THIS NODE“ ist beispielhaft; der genaue Aufbau ist Sache des Software Architects).
+keine. Der Aufbau des Kontexttextes („RULES / ANCESTORS / SIBLINGS / THIS NODE“) ist beispielhaft; der genaue Aufbau ist Sache des Software Architects.
 
 ## Annahmen und offene Fragen
 Der Kontexttext ist englisch/technisch und wird nicht lokalisiert; Inhalte des Planers erscheinen unverändert.

@@ -5,7 +5,16 @@
 - Anforderungen: REQ-015; AC-REQ-015-01 bis AC-REQ-015-05
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch ec8d75140bc94b249aae664d8be1084a); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Die Folgen des Löschens erkennen und bewusst bestätigen oder abbrechen.
+- Nutzung: selten; Initialfokus auf der sicheren Wahl „Cancel“.
+- Primär: die Zahlenliste der Folgen; Aktion „Delete permanently“ (destruktiv, mit Text).
+- Sekundär: „Cancel“.
+- Bei Bedarf: Fehlerbanner im Dialog.
+- Muster: Warndialog (`alertdialog`) mit Warnsymbol.
+- Akzent: Rot nur an Symbol und Schaltfläche.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle | Hinweise |
@@ -35,7 +44,7 @@ Keine Eingaben. Das Löschen wird nicht für den Wurzelknoten angeboten (AC-REQ-
 `role="alertdialog"`, Beschreibung = Text + Zahlenliste; Fokus-Falle; Zahlenliste als `<ul>`. Der destruktive Button ist rot **mit Text**, nicht nur Farbe.
 
 ## Bekannte Abweichungen im Mockup
-Warnsymbol im Dialog vorhanden und gewollt. Hintergrund des Mockups zeigt Beispielinhalte (abgedunkelt), nicht verbindlich.
+keine. Der Hintergrund zeigt Beispielinhalt (abgedunkelt) und ist nicht verbindlich.
 
 ## Annahmen und offene Fragen
 Keine.

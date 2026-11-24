@@ -5,7 +5,16 @@
 - Anforderungen: REQ-037, REQ-038, REQ-039, REQ-040, REQ-005 (Regeln), REQ-069; AC-REQ-037-* bis AC-REQ-040-*
 - Rollen: Planer. Nur der Planer macht Vorschläge zu Knoten (LP-03).
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch eab93c6de6ac40b7920ba87d7ffdbc4e); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: KI-Vorschläge für Unterpunkte prüfen, anpassen und übernehmen oder verwerfen.
+- Nutzung: gelegentlich, wenige Karten, Tastatur.
+- Primär: Vorschlagskarten (Title, Objective); Aktion „Accept all“.
+- Sekundär: „Accept“ je Karte, „Discard all“, Hinweis „<n> suggestions …“.
+- Bei Bedarf: Fehlertexte unter dem Titel, Rückfrage-Dialog bei „Discard all“ mit geänderten Karten.
+- Muster: Sammelbereich mit Karten (jede Karte ist ein bearbeitbares Formular, daher Rahmen), Baum bleibt sichtbar.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle | Hinweise |
@@ -46,7 +55,7 @@
 Karten sind `role="group"` mit Beschriftung „Suggestion <n>“; Tab-Reihenfolge Titel → Objective → Discard → Accept je Karte, danach Discard all / Accept all? Reihenfolge: Kopfaktionen stehen im DOM vor den Karten. Bei 200 % Zoom einspaltig, Buttons umbrechen.
 
 ## Bekannte Abweichungen im Mockup
-Baumzeilen nur mit Symbol (siehe UI-003); „Back to node“ nicht dargestellt; Kopfzeilen „Plan“ ohne Zähler nach Bereinigung.
+keine. Der Knopf „Back to node / Show suggestions (n)“ ist nicht dargestellt, aber in diesem `screen.md` festgelegt; Beispieltexte fiktiv.
 
 ## Annahmen und offene Fragen
 - „Accept all“ blockiert bei ungültigem Titel (Auslegung; REQ-038 sagt: Übernahme dieses Vorschlags nicht zulässig).

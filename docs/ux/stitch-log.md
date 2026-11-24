@@ -32,3 +32,6 @@ Exportiert: Screenshots (PNG) aller 15 Mockups. **HTML-Exporte wurden nicht abge
 **Runde 2 (MAR-1375):** keine neue Generierung, Zähler bleibt 26/40 (Rest 14). Die neuen Zustände „Claude Code zu alt“, „Vorhaben nur lesbar“, „Ramifold läuft nicht mehr“ und die Bilddarstellung sind reine Banner- bzw. Textlink-Zustände, die in `screen.md` und `DESIGN.md` eindeutig beschrieben sind; ein Mockup wurde nicht erstellt, weil sich das Seitenlayout nicht unterscheidet (Banner über vorhandenen Bereichen, vgl. `permission.png`). Der Product Owner kann bei Bedarf ein Mockup für „read-only“ nachfordern (Budget vorhanden).
 
 **Revision 0.3 (MAR-1382):** keine neue Generierung, Zähler bleibt 26/40 (Rest 14). Alle Änderungen sind Texte, Zustände und ein Textelement in der Kopfzeile; kein Layout ändert sich sichtbar, die Mockups bleiben unverändert.
+
+## Hinweis MAR-1390 (2026-11-24)
+Ab Version 0.4 werden Mockups als statisches HTML/CSS in `docs/ux/screens/` und `docs/ux/mockups/` gebaut und mit Playwright gerendert. Die Stitch-Mockups sind ersetzt; Google Stitch wird nicht mehr verwendet. Dieses Log bleibt als Historie der Version 0.3.1 und früher.

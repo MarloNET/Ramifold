@@ -32,4 +32,4 @@ Gemeinsame Annahmen aus dem Fach: ein Entwickler, mehrstündige Planungssitzunge
 **A – Werkbank.** Ramifold wird stundenlang neben Terminal und Coding-Agent genutzt; A zeigt am meisten Baum und Inhalt zugleich, ist ruhig und setzt Farbe nur für Auswahl, Status und die eine Primäraktion ein.
 
 ## Entscheidung
-Offen (Frage an den Owner auf MAR-1390).
+**A – Werkbank**, vom Owner gewählt am 2026-11-24 (Antwort auf die Frage an den Owner, MAR-1390). Übernommen in `DESIGN.md` und `mockups/base.css`; B und C bleiben als Alternativen dokumentiert.

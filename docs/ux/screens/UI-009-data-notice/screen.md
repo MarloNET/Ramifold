@@ -5,7 +5,16 @@
 - Anforderungen: REQ-030, LP-06; AC-REQ-030-01 bis AC-REQ-030-07
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch 68013557188b4f13b12980b87bdd7845, Modus „Bestätigung“); Export 2026-11-24
+- Artefakte: default.png (Modus Bestätigung; Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Vor der ersten KI-Anfrage verstehen, wohin Inhalte gehen, und das bestätigen.
+- Nutzung: einmal je Projektordner; danach nur lesend über „Data notice“.
+- Primär: der Hinweistext; Aktion „Continue“ (erst nach Haken aktiv).
+- Sekundär: Checkbox, „Cancel“.
+- Bei Bedarf: Ansichtsmodus ohne Checkbox.
+- Muster: modaler Dialog mit Bestätigungs-Checkbox.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 Titel „Your content is sent to the AI provider“; Text „To answer, Ramifold passes your content to Claude Code, which sends it to its AI provider (Anthropic). This includes:“; Liste „Objectives“, „Results“, „Chat messages“, „Context built from your plan“, „Files from your project folder that the AI reads“; **danach zwei Zeilen (CC-06, Entscheidung Product Owner zu REQ-030):** (1) „Claude Code keeps session logs of your conversations in your home folder (~/.claude/) on this computer.“ (2) „The AI can search the web and open web pages while it answers.“; Text „Ramifold itself sends nothing anywhere else and has no cloud.“ (Wortlaut in Anlehnung an AC-REQ-030-05). Die Anmeldeart von Claude Code wird nicht genannt (OQ-01 offen).
@@ -37,7 +46,7 @@ Ansichtsmodus (Aufruf über „Data notice“): gleicher Text, **ohne** Checkbox
 Modal, Fokus-Falle, Initialfokus auf Titel; ESC = Cancel (bestätigt nie). Checkbox mit sichtbarem Label. Deaktivierter Button bleibt fokussierbar und wird über `aria-describedby` mit der Checkbox verknüpft. Kein Schließen-Icon im Bestätigungsmodus.
 
 ## Bekannte Abweichungen im Mockup
-Der Satz über Anthropic und „has no cloud“ ist Teil dieses Textes; Modus „Ansicht“ ist nicht als Mockup gestaltet.
+keine. Der Ansichtsmodus (ohne Checkbox, mit „Close“) ist nicht als Mockup gestaltet, aber oben beschrieben.
 
 ## Annahmen und offene Fragen
 - Die Checkbox ist eine Designentscheidung (REQ-030 verlangt nur „bestätigt“).

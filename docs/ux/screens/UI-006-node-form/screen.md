@@ -5,7 +5,16 @@
 - Anforderungen: REQ-011, REQ-012, REQ-013, REQ-005 (Regeln); AC-REQ-011-*, AC-REQ-012-*, AC-REQ-013-*
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `validation.png` (Stitch c4ddc255066b48b189d3d46e637e279d, Zustand „validation“ als Muster für alle Formulare); Export 2026-11-24
+- Artefakte: default.png (Modus Add child), validation.png (Modus Rename, leerer Titel) (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quellen `default.html`, `validation.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Titel und/oder Auftrag eines Knotens erfassen oder ändern.
+- Nutzung: häufig, kurz, Tastatur; Fokus im ersten Feld.
+- Primär: Feld „Title (required)“ bzw. „Objective“ und die Aktion des Modus („Add node“, „Save title“, „Save objective“).
+- Sekundär: „Cancel“, Schließen-Icon, Feld „Objective“ (Add child).
+- Bei Bedarf: Fehlertext unter dem Feld (erst bei Validierung).
+- Muster: modaler Dialog, einspaltiges Formular; `validation.png` ist das Muster für alle Formulare.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 Modus bestimmt Titel und Felder:
@@ -43,7 +52,7 @@ Validierung beim Absenden; Fehlertext unter dem Feld mit Symbol, roter Rand; Fok
 Wie UI-002 (Fokus-Falle, ESC, Beschriftungen, Pflichtfeld „(required)“). Fehlertext verbunden über `aria-describedby`, Feld `aria-invalid`.
 
 ## Bekannte Abweichungen im Mockup
-Der Rand des Titelfeldes ist rot (gewollt, ergänzt durch Symbol und Text). Keine weiteren.
+keine. Der rote Rand des Titelfeldes in `validation.png` ist gewollt, ergänzt durch Symbol und Text.
 
 ## Annahmen und offene Fragen
 Keine.

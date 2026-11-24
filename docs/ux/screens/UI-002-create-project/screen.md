@@ -5,7 +5,16 @@
 - Anforderungen: REQ-005, AC-REQ-005-01 bis AC-REQ-005-04
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch d3a3cc9afe4749be9aad3ba9432d2153); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Ein neues Vorhaben mit Titel (und optional Auftrag) anlegen.
+- Nutzung: selten, Tastatur, Fokus beginnt im Feld „Title“.
+- Primär: Feld „Title (required)“ und Aktion „Create project“.
+- Sekundär: Feld „Objective“, „Cancel“, Schließen-Icon.
+- Bei Bedarf: Fehlertexte (erst bei Validierung).
+- Muster: modaler Dialog über der Liste, einspaltiges Formular.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 Dialogtitel „New project“; zwei Felder (leer beim Öffnen).
@@ -37,7 +46,7 @@ Validierung beim Klick auf „Create project“ (nicht beim Tippen); danach Fehl
 Modal mit Fokus-Falle (`role="dialog"`, `aria-modal`, Titel als `aria-labelledby`); Tab-Reihenfolge Title → Objective → Cancel → Create project; ESC schließt; Pflichtfeld im Label „(required)“. Unter 1024 px Breite: Dialog füllt die Breite abzüglich 16 px.
 
 ## Bekannte Abweichungen im Mockup
-Schließen-Icon „x“ oben rechts ist vorhanden und gewollt. Sonst keine.
+keine.
 
 ## Annahmen und offene Fragen
 Keine.

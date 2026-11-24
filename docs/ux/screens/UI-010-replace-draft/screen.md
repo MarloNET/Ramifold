@@ -5,7 +5,16 @@
 - Anforderungen: REQ-073 (Regel 2), REQ-041; AC-REQ-073-*
 - Rollen: Planer
 - Gerät(e): Desktop ab 1280 px
-- Artefakte: `default.png` (Stitch 89d21363273845e4b2aabe743f2d1cd5); Export 2026-11-24
+- Artefakte: default.png (Viewport 1366 px, gerendert 2026-11-24; Stand: aktuell; Quelle `default.html`)
+
+## Screen-Konzept
+- Hauptaufgabe: Bestätigen, dass ein vorhandener Entwurf durch eine neue Zusammenfassung ersetzt werden darf.
+- Nutzung: selten; Initialfokus auf der sicheren Wahl „Keep my draft“.
+- Primär: der Erklärtext; Aktion „Summarize and replace“.
+- Sekundär: „Keep my draft“.
+- Bei Bedarf: nichts.
+- Muster: Bestätigungsdialog (`alertdialog`) mit Warnsymbol.
+- Akzent: keiner.
 
 ## Angezeigte Daten
 Titel „Replace the unsaved draft?“; Text „<Nr> <Titel> has an unsaved draft. If you summarize again, the new AI draft replaces it as soon as it arrives. Until then your draft stays untouched.“ (im Mockup mit „2 Retrieval“).
@@ -29,7 +38,7 @@ Keine.
 `role="alertdialog"`, Initialfokus auf „Keep my draft“ (sichere Wahl), Fokus-Falle.
 
 ## Bekannte Abweichungen im Mockup
-Stitch hat einen zweiten, doppelten Screen erzeugt (Stitch 7f7f62b0c3ed4c6ca7d935edb98deb67); er wird nicht verwendet. Hintergrund zeigt Beispielinhalte (abgedunkelt).
+keine. Der Hintergrund zeigt Beispielinhalt (abgedunkelt); der Dialog nennt im Mockup „2 Retrieval“ als Beispiel.
 
 ## Annahmen und offene Fragen
 Keine.

@@ -1,60 +1,78 @@
 # DESIGN – Ramifold
+Status: **vom Owner gewählt am 2026-11-24 (MAR-1390): Look A „Werkbank“** (Alternativen und Begründung: `looks/looks.md`). Quelle der Mockup-Werte: `mockups/base.css`. Umsetzung (`ui-constraints` v3, ADR-001): React + TypeScript mit React Aria Components; alle Tokens als CSS Custom Properties.
 
-Status: **vorgeschlagen** (Requirements 10.4: kein vorhandenes Design-System, keine Marke, keine Komponentenbibliothek vorgegeben). Verbindlich wird es erst mit der Freigabe des Designs (Gate „Wie“). Umsetzung (`ui-constraints` v3, ADR-001): React + TypeScript mit **React Aria Components** ohne Fertig-Bibliothek mit eigenem Look; alle Tokens unten werden als CSS Custom Properties umgesetzt. Technische Machbarkeit jeder Komponente beurteilt der Software Architect im Cross-Check. **Stitch-Mockups und ihr HTML sind nur visuelle Referenz**, nie Umsetzungsvorlage.
-
-Leitidee: ruhiges, dichtes Arbeitswerkzeug für lange Planungssitzungen am Desktop (≥ 1280 px). Lesbarkeit vor Dekoration, wenige Farben, Status nie nur über Farbe.
+## Charakter
+Kompakt, nüchtern, präzise. Ramifold läuft stundenlang neben Terminal und Coding-Agent, der Planer liest viel Markdown und bedient mit der Tastatur; deshalb zeigt der Look viel Baum und Inhalt zugleich, auf kühlen Grautönen. Orientierung: Editor- und Terminal-Werkzeuge (Dichte), Git-Oberflächen (Statussymbole).
+Mut zeigt der Look an einer Stelle: dem **Statussystem** (Symbol je Ergebnisstatus im Baum, gestrichelt – Punkt – Haken). Alles andere bleibt ruhig; Farbe tragen nur Auswahl, Status und die eine Primäraktion (Petrol).
+Bewusst vermieden: Karten für alles, ein Radius überall, Schlagschatten, Verläufe, Großbuchstaben-Beschriftungen, Inter und Standard-Blau. Statt Statuswörtern im Baum stehen Symbole; das Wort ist Tooltip und zugänglicher Name.
 
 ## Farben
 | Token | Hex | Rolle |
 |---|---|---|
-| bg | #FFFFFF | Seitenhintergrund, Lese- und Arbeitsflächen |
-| surface | #F6F8FA | Seitenleisten (Baum), Kopfzeile, Chat-Hintergrund |
-| border | #6B7280 | Rand von Eingabefeldern und Schaltflächen (UI-Komponenten, 4,8:1) |
-| divider | #D0D7DE | Trennlinien ohne Informationsfunktion |
-| text | #1F2328 | Haupttext |
-| text-muted | #4B5563 | Sekundärtext, Zeitstempel, Hilfetexte |
-| primary | #1D4ED8 | Primäraktionen, Links, Auswahl, Fokus-Akzent |
+| bg | #FFFFFF | Arbeits- und Lesefläche, Kopfzeile |
+| surface | #F3F5F7 | Tabellenkopf |
+| tree-bg | #EDF0F3 | Baumspalte |
+| hover | #E6EBEF | Hover auf Icon-Buttons |
+| divider | #D3D9DF | Trennlinien ohne Informationsfunktion |
+| border | #66727F | Rand von Eingabefeldern und Schaltflächen |
+| text | #17202A | Haupttext |
+| text-muted | #4A5561 | Sekundärtext, Zeitstempel, Hilfetexte |
+| primary | #0B6073 | Primäraktion, Links, Markenname; Fläche der Primärschaltfläche |
 | on-primary | #FFFFFF | Text auf primary |
-| primary-subtle | #E8EEFD | ausgewählter Baumknoten, Infobanner |
-| focus | #0B57D0 | Fokusrahmen 2 px + 2 px Abstand |
-| error | #B42318 | Fehlertext, Fehlerrand; Hintergrund error-subtle #FDECEA |
-| success | #067647 | Erfolg, Status „Fixed plan“; Hintergrund #E7F6EC |
-| warning | #8A4B08 | Warnhinweise, Status „Concept“; Hintergrund #FEF3C7 |
-| status-open | #4B5563 | Status „No result yet“; Hintergrund #EEF0F3 |
+| tree-sel-bg / -text / -bar | #D5E7EA / #0A3F4C / #0B6073 | ausgewählter Baumknoten (plus 3-px-Balken) |
+| focus | #0B57D0 | Fokusrahmen 2 px, Abstand 2 px |
+| status-none | #4A5561 | „No result yet“ (gestrichelter Kreis); Pille #EBEEF1 / Text #3C4651 |
+| status-concept | #8A4B08 | „Concept“ (Kreis mit Punkt); Pille #FCEFD2 / Text #7A4206 |
+| status-fixed | #0A6B3D | „Fixed plan“ (Kreis mit Haken); Pille #DDF2E5 / Text #08592F |
+| info | #0B57D0 | Info, „AI running“; Banner #E8F0FD, Rand #B4CCF3, Text #0A3E94 |
+| error | #B42318 | Fehler, Löschen; Banner #FDECEA, Rand #F0B5AF, Text #8E1B12 |
+| warning | Banner #FEF3C7, Rand #E6CE82, Text #6E3B05 | Warnungen |
+| success | Banner #E4F5EA, Rand #A8D9BC, Text #08592F | Erfolg |
+| you-bg | #E3F0F2 (Rand #B6D4DA) | Nachrichten des Planers |
 
-Kontrast (berechnet, WCAG 1.4.3 ≥ 4,5:1 Text, ≥ 3:1 Komponenten): text/bg 15,8; text-muted/bg 7,6; on-primary/primary 6,7; primary/bg 6,7; primary/primary-subtle 5,8; border/bg 4,8; error/bg 6,6; error/error-subtle 5,8; success/Hintergrund 5,1; warning/Hintergrund 6,1; status-open/Hintergrund 6,6; focus/bg 6,4.
+Gemessene Kontraste (berechnet, Skript, WCAG 2.2): text/bg 16,5; text-muted/bg 7,6; text-muted/tree-bg 6,6; on-primary/primary 7,2; primary/bg 7,2; border/bg 4,9 (Komponente, Ziel 3:1); Baumauswahl 9,0; Status im Baum: concept 5,9, fixed 5,8, none 6,6 (Symbole, Ziel 3:1); Pillen 7,1 bis 8,2; Banner info 8,6, error 7,9, warning 8,2, success 7,5; focus/bg 6,4; text/you-bg 14,1.
 
 ## Typografie
-Headline und Body: **Inter**, Code/Inline-Code/Codeblöcke: **JetBrains Mono** (beide SIL Open Font License 1.1). Basis 15 px / 22 px Zeilenhöhe (Fließtext in Chat und Ergebnis 15 px). Stufen: Seitentitel 22/28 semibold, Abschnitt 17/24 semibold, Label/Meta 13/18 medium, Baumzeile 14/20. Alle Größen in rem, damit Browser-Textvergrößerung greift (WCAG 1.4.4, bis 200 %).
-
-### Auslieferung von Schriften und Icons (REQ-056, REQ-061)
-Ramifold läuft ohne Internet und baut selbst keine Verbindungen nach außen auf. Deshalb: **keine Web-Fonts, Icons oder Skripte von einem CDN** (die Stitch-Exporte referenzieren teils Google Fonts und Material Symbols per CDN; das gilt nicht für die Umsetzung).
-- **Schriften:** Inter und JetBrains Mono als mitgelieferte Dateien (woff2, nur benötigte Schnitte: regular, medium, semibold) *oder*, falls der Software Architect das nicht bündeln will, nur der Systemfallback. Das Layout darf nicht von den Schriftmetriken abhängen (keine festen Breiten für Text).
-- **Fallback-Stack Text:** `Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif`.
-- **Fallback-Stack Code:** `"JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace`.
-- **Icons:** Material Symbols (Outlined, Apache License 2.0) als **mitgelieferte Inline-SVGs**, nur die verwendeten Symbole (Auf-/Zuklapp-Pfeil, Status „offen/Halbkreis/Haken“, Warnung, Fehler, Info, Schließen, Bild-Link). Jedes Icon hat Text daneben oder `aria-label`; Icons allein tragen keine Information. Schriften (Inter 400/500/600, JetBrains Mono 400) und Icons sind in Baseline v0.3 festgelegt und lizenzgeprüft (B2, Abschnitt 3 der Baseline; OFL 1.1 bzw. Apache 2.0, unverändert gebündelt); keine Design-Änderung nötig. Hinzugekommen ist kein neues Icon; die Marke „Simulated AI“ nutzt das vorhandene Info-Symbol mit Text.
+**IBM Plex Sans** (Text) und **IBM Plex Mono** (Code, Quelltext, Pfade, Kontexttext). Beide SIL Open Font License 1.1, als lokale woff2-Dateien ausgeliefert (Latin; Sans 400/500/600/700, Mono 400), keine CDN-Verbindung (REQ-056, REQ-061). Fallback Text: `system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`; Code: `ui-monospace, Menlo, Consolas, monospace`. Das Layout hängt nicht von den Schriftmetriken ab.
+Größen (rem, damit Textvergrößerung bis 200 % greift): Basis 0,9 rem / 1,5; Baumzeile 0,88 rem; Seitentitel und Knotentitel 1,35 rem semibold; Abschnitt 1,05 rem semibold; Marke/Meta 0,8 rem. Zahlen in Tabellen und Baumnummern mit tabellarischen Ziffern.
 
 ## Form und Dichte
-Eckenradius 6 px (Stitch: ROUND_EIGHT als nächste Stufe), 8er-Raster, Dichte normal bis kompakt (Baumzeile 32 px Höhe, Schaltflächen 36 px, Mindest-Zielgröße 32 × 32 px). Layout: Kopfzeile 48 px; links Baumspalte 320 px (nicht verstellbar in 0.1), rechts Arbeitsbereich flexibel, Lesebreite für Fließtext höchstens 80 Zeichen.
+Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Ergebnisfläche, Nachrichten, Dialoge 6 px, Pillen voll rund. 4-/8-px-Raster. Dicht: Baumzeile 30 px, Schaltfläche 32 px, Mindest-Zielgröße 32 × 32 px. Kopfzeile 48 px, Baumspalte 320 px (fest in 0.1), Arbeitsbereich mit Innenabstand 20/32 px, Lesebreite für Fließtext höchstens 84 Zeichen. Dialogbreite 560 px (breit 620 px), Kontext-Panel 640 px; ein dezenter Schatten nur an Dialog und Panel.
+
+## Icons
+**Lucide** (ISC-Lizenz), Linienstil, Strichstärke 1,75, Größe 1,15 em (Baum und Pillen 14 px), als mitgelieferte Inline-SVGs (`mockups/icons.svg`), nur die verwendeten. Ein Icon, eine Bedeutung.
+| Bedeutung | Icon | Farbe | Zugänglicher Name / Tooltip |
+|---|---|---|---|
+| kein Ergebnis | circle-dashed | status-none | „No result yet“ |
+| Concept | circle-dot | status-concept | „Concept“ |
+| Fixed plan | circle-check | status-fixed | „Fixed plan“ |
+| KI läuft | loader-circle (mit Text „AI running“) | info | „AI running“ |
+| Info | info | info | – (Text steht daneben) |
+| Fehler / nicht gesendet / unvollständig | circle-x | error | Text steht daneben |
+| Warnung / nicht lesbar | triangle-alert | warning bzw. error | Text steht daneben |
+| Ergebnis gesperrt | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
+| Bild-Link (Bilder werden nicht geladen) | image | Link | Tooltip „Images are not loaded. Opens in a new tab.“ |
+| Umbenennen / Auftrag bearbeiten / Unterpunkt hinzufügen / nach oben / nach unten | pencil / file-text / plus / arrow-up / arrow-down | text-muted | „Rename“ / „Edit objective“ / „Add child“ / „Move up“ / „Move down“ |
+| Ergebnis bearbeiten / Zusammenfassen / Vorschläge | pencil / sparkles / list-tree | text | Text steht daneben |
+| Senden / Stopp / Kontext / Export / Löschen | send / square / eye / download / trash-2 | je Schaltfläche | Text steht daneben |
+| Auf-/Zuklappen | chevron-right / chevron-down | tree-muted | `aria-expanded` |
+Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im Tooltip und im zugänglichen Namen. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
 
 ## Komponentenregeln
-- **Buttons:** primär (gefüllt primary, höchstens einer pro Bereich), sekundär (Rand border, Text text), destruktiv (gefüllt error, nur im Löschdialog), Text-Button (Link-Stil) für Nebenaktionen. Beschriftung = Ergebnis der Aktion („Save as concept“). Deaktiviert: Text text-muted, Rand divider, `aria-disabled`, mit Grund als sichtbarem Hilfetext oder Tooltip.
-- **Formulare:** Label immer sichtbar über dem Feld, Pflichtfeld mit „(required)“ im Label, Fehlertext unter dem Feld in error mit Symbol, Fokus springt bei Fehler zum ersten fehlerhaften Feld.
-- **Baum:** Zeile = Auf-/Zuklapp-Pfeil (nur bei Kindern), Nummer, Titel, Statusmarke. Ausgewählt: primary-subtle plus 3 px Balken links (nicht nur Farbe). Eingeklappt: Zahl verborgener Nachkommen als „+4“.
-- **Statusmarken (Ergebnisstatus):** Pille mit Symbol und Text – „No result yet“ (offener Kreis, status-open), „Concept“ (Halbkreis, warning), „Fixed plan“ (Haken, success).
-- **Feedback:** *Banner* (oben im Arbeitsbereich, bleibt bis erledigt, `role="alert"` bei Fehlern, `role="status"` bei Info) für Zustände, die den Planer betreffen; *Inline* (unter Feld) für Validierung; *Toast* nur für flüchtige Erfolgsmeldungen (z. B. „Saved“), 6 s, schließbar, nie als einziger Träger einer Fehlermeldung. Dialoge sind modal, Fokus-Falle, ESC schließt, Fokus kehrt zum Auslöser zurück.
-- **Chat:** Planer-Nachrichten rechtsbündig in primary-subtle, KI-Nachrichten linksbündig auf bg mit Rand divider; Absender als Text („You“, „AI“) und Zeitpunkt. Zustandsmarken „incomplete“, „aborted“, „not saved“ als Text-Pille unter der Nachricht.
-- **Leerzustände:** kurzer Satz plus genau eine Folgeaktion.
-- **Markdown-Darstellung:** Überschriften, Listen, Tabellen (mit Rand divider, horizontal scrollbar bei Überbreite), Codeblöcke (surface, JetBrains Mono, horizontal scrollbar), Links (öffnen in neuem Tab, `rel="noopener noreferrer"`). Kein eingebettetes HTML.
-  - **Bilder werden nicht geladen** (REQ-061). Ein Bild erscheint als Link mit Alternativtext: Bildsymbol (Inline-SVG) + Linktext in Link-Stil, z. B. `![Architektur](https://…/a.png)` → „🖼 Architektur“. Tooltip: „Images are not loaded. Opens in a new tab.“ Leerer Alternativtext → Linktext „Image“, Adresse im Tooltip. Kein Platzhalterkasten, keine Lade- oder Fehlergrafik. Tastaturfokus wie bei jedem Link. Gilt in Ergebnis, Chat, Objective und der Vorschau von UI-004.
-- **Banner „ganzes Fenster“** (`read-only`, `server-down`): volle Breite, nicht schließbar, `role="alert"`, error-subtle mit Symbol und Text; steht über allem anderen Inhalt (server-down über der Kopfzeile, read-only oberhalb des Knotenkopfes) und verschiebt den Inhalt statt ihn zu überdecken.
+- **Buttons:** primär (gefüllt primary, höchstens einer je Bereich), sekundär (Rand border), Text-Button für Nebenaktionen, destruktiv (gefüllt error, nur im Löschdialog; „Delete“ im Knotenkopf ist ein roter Text-Button mit Symbol). Beschriftung = Ergebnis der Aktion. Icon-Buttons: Tooltip, zugänglicher Name, 32 × 32 px. Deaktiviert: `aria-disabled`, gedämpft, bleibt fokussierbar.
+- **Formulare:** Label immer sichtbar über dem Feld, Pflichtfeld „(required)“ im Label, Fehlertext unter dem Feld in error mit Symbol, roter Rand 2 px, Fokus auf das erste fehlerhafte Feld.
+- **Baum:** Zeile = Auf-/Zuklapp-Pfeil, Nummer, Titel, „+n“, Markierungen „AI running“ und „Draft“, Statussymbol rechts. Ausgewählt: tree-sel-bg und 3-px-Balken.
+- **Pillen und Marken:** Status-Pille mit Symbol und Wort im Ergebnis; Zustandsmarken an Nachrichten („incomplete“, „aborted“, „not sent“) als Text-Pille mit Symbol und Ursache.
+- **Feedback:** Banner (bleibt, `role="alert"` bzw. `status`), Inline unter Feldern, Toast nur für flüchtigen Erfolg (6 s, schließbar). Dialoge modal, Fokus-Falle, ESC schließt, Fokus kehrt zurück.
+- **Chat:** Planer rechts auf you-bg, KI links auf bg mit Rand divider; Absender als Text („You“, „AI“) und Zeit.
+- **Muster:** Master-Detail (Baum links, Knoten rechts), Dialog für Formulare und Bestätigungen, Seitenpanel für den Kontext (UI-008), Sammelbereich der Vorschlagskarten (UI-005), Icon-Zeile für Knotenaktionen, Tooltips für Icons.
+- **Leerzustände:** ein Satz und genau eine Folgeaktion.
+- **Markdown:** Überschriften, Listen, Tabellen (Rand divider, horizontal scrollbar), Codeblöcke (code-bg, Mono, scrollbar), Links in neuem Tab; keine eingebetteten Bilder, ein Bild erscheint als Link mit Bild-Icon.
+- **Banner „ganzes Fenster“** (`read-only`, `server-down`): volle Breite, nicht schließbar, error-Farben, schiebt den Inhalt statt ihn zu überdecken.
 
 ## Barrierefreiheit
-Ziele: WCAG 2.2 AA für die sechs Kriterien aus REQ-062 (1.4.3, 1.4.4, 2.1.1, 2.4.3, 2.4.7, 4.1.2). Fokusdarstellung: 2 px focus-Rahmen mit 2 px Abstand, nie entfernt. Mindest-Zielgröße 32 × 32 px. Bewegung: keine dekorativen Animationen; Laufanzeige als Text plus statisches Symbol, Animation nur dezent und bei `prefers-reduced-motion` abgeschaltet.
+Ziel WCAG 2.2 AA für die sechs Kriterien aus REQ-062 (1.4.3, 1.4.4, 2.1.1, 2.4.3, 2.4.7, 4.1.2). Fokus: 2 px focus-Rahmen mit 2 px Abstand, nie entfernt. Mindest-Zielgröße 32 × 32 px. Keine dekorativen Animationen; die Laufanzeige ist Symbol plus Text, eine Drehung nur dezent und bei `prefers-reduced-motion` abgeschaltet.
 
 ## Nicht verwenden
-- Kopf- und Navigationselemente, die nicht im Screen-Inventar stehen: Einstellungs-Zahnrad, Avatar/Profil, Benachrichtigungsglocke, globale Suche, Hamburger-Menü, Bottom-Navigation, Seitenleisten-Menüs außer dem Baum, Dark-Mode-Schalter, Hilfe-Icon
-- Platzhalter-, Hilfe- oder Marketingtexte, die nicht in `screen.md` stehen; Onboarding-Touren
-- Kennzahlen, Diagramme, Fortschrittsbalken, Badges, Footer ohne Grundlage in den Requirements
-- Verläufe, Schlagschatten außer dezentem Dialog-Schatten, dekorative Animationen, mehr als ein Primärbutton pro Bereich
-- Anzeigen für Werkzeuge oder Skills der KI, Modellauswahl, Versionsverläufe, Verweise/Abhängigkeiten (spätere Slices)
+(a) Elemente ohne Grundlage im Screen-Inventar, in den `screen.md` oder in den Requirements: Einstellungs-Zahnrad, Avatar/Profil, Benachrichtigungsglocke, globale Suche, Hamburger-Menü, Bottom-Navigation, Seitenleisten-Menüs außer dem Baum, Dark-Mode-Schalter, Hilfe-Icon, Kennzahlen, Diagramme, Fortschrittsbalken, Badges, Footer, Marketing-, Hilfe- und Platzhaltertexte, Onboarding; Anzeigen für Werkzeuge oder Skills der KI, Modellauswahl, Versionsverläufe, Verweise (spätere Slices).
+(b) Projektspezifisch: Verläufe, Schlagschatten außer an Dialog und Panel, dekorative Animationen, mehr als ein Primärbutton je Bereich, Großbuchstaben-Beschriftungen, Schriften und Icons von einem CDN.
