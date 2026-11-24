@@ -45,7 +45,7 @@ Abhängigkeiten, Versionen und Benachrichtigungen, Profile, API-Key-Anbindung, M
 
 - `server.js`: lokaler HTTP-Server, nur an `127.0.0.1` gebunden, ohne Abhängigkeiten
 - `lib/context.js`: Kontextregel (das, was hier getestet wird)
-- `lib/claude.js`: startet pro Anfrage `claude -p --output-format stream-json`. Der Kontext geht per `--append-system-prompt`, der Chat eines Knotens wird über `--resume <session>` fortgesetzt, Vorschläge und Zusammenfassungen laufen in einer neuen Session, bekommen den gespeicherten Chat des Knotens ausdrücklich mit und landen nicht im Chat
+- `lib/claude.js`: startet pro Anfrage `claude -p --output-format stream-json`. Der Kontext geht über eine Temp-Datei per `--append-system-prompt-file` (nicht als Argument, sonst ist die Befehlszeile unter Windows zu lang), der Chat eines Knotens wird über `--resume <session>` fortgesetzt, Vorschläge und Zusammenfassungen laufen in einer neuen Session, bekommen den gespeicherten Chat des Knotens ausdrücklich mit und landen nicht im Chat
 - `public/`: Oberfläche (reines HTML/JS)
 - Tests: `npm test` (nutzt `test/fake-claude.js` statt des echten Claude Code)
 - Ohne Claude-Login durchklicken: `RAMIFOLD_CLAUDE_CMD=test/fake-claude.js node server.js` (Antworten sind erfunden)

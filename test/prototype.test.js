@@ -8,7 +8,7 @@ const path = require('path');
 const { spawn } = require('child_process');
 const { Store } = require('../lib/store');
 const { buildNodeContext } = require('../lib/context');
-const { parseSuggestions } = require('../lib/claude');
+const { parseSuggestions, buildArgs } = require('../lib/claude');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'ramifold-test-'));
@@ -156,7 +156,10 @@ test('end-to-end: create plan, chat with tools, suggest and accept children, sum
   // Child chat gets root context and sibling mission, never the root chat.
   await s.req('POST', `/api/plans/${plan.id}/nodes/${embed}/chat`, { message: 'hello child' });
   const childCall = s.calls().at(-1);
-  const sys = childCall.args[childCall.args.indexOf('--append-system-prompt') + 1];
+  // The context travels in a file, never on the command line (Windows cmd.exe caps it at 8191 chars).
+  assert.ok(!childCall.args.includes('--append-system-prompt'));
+  assert.ok(childCall.args.join(' ').length < 1000, 'command line stays short');
+  const sys = childCall.system;
   assert.match(sys, /Plan a RAG\./);
   assert.match(sys, /1 Chunking: Decide the chunking strategy\./);
   assert.doesNotMatch(sys, /ROOT-CHAT-MESSAGE/);
@@ -231,4 +234,13 @@ test('end-to-end: a lost Claude session falls back to a new one with the node ch
   assert.match(retry.prompt, /FIRST-MESSAGE[\s\S]*second$/);
   const view = await s.req('GET', `/api/plans/${plan.id}`);
   assert.notStrictEqual(view.nodes[plan.rootId].sessionId, 'gone-session');
+});
+
+test('command line stays short and safe for cmd.exe however long the node context is', () => {
+  const args = buildArgs({ systemPromptFile: 'C:\\Users\\Max Muster\\AppData\\Local\\Temp\\rf-1\\context.md', sessionId: 'abc' }, 'win32');
+  assert.ok(args.includes('"C:\\Users\\Max Muster\\AppData\\Local\\Temp\\rf-1\\context.md"'), 'paths with spaces are quoted');
+  assert.ok(args.includes('"--append-system-prompt-file"'));
+  assert.ok(args.every((a) => a.startsWith('"') && a.endsWith('"')));
+  const posix = buildArgs({ systemPromptFile: '/tmp/x/context.md' }, 'linux');
+  assert.strictEqual(posix[posix.indexOf('--append-system-prompt-file') + 1], '/tmp/x/context.md');
 });

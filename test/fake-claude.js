@@ -16,7 +16,9 @@ process.stdin.on('end', () => {
   const resumed = argValue('--resume');
   const sessionId = resumed && !args.includes('--fork-session') ? resumed : crypto.randomUUID();
   if (process.env.FAKE_CLAUDE_LOG) {
-    fs.appendFileSync(process.env.FAKE_CLAUDE_LOG, `${JSON.stringify({ args, prompt })}\n`);
+    const file = argValue('--append-system-prompt-file');
+    const system = file ? fs.readFileSync(file, 'utf8') : null;
+    fs.appendFileSync(process.env.FAKE_CLAUDE_LOG, `${JSON.stringify({ args, prompt, system })}\n`);
   }
   const out = (o) => process.stdout.write(`${JSON.stringify({ ...o, session_id: sessionId })}\n`);
 
