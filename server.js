@@ -58,14 +58,16 @@ function planView(planId) {
   return { id: plan.id, rootId: plan.rootId, nodes, folder: store.planDir(plan.id) };
 }
 
-function withHistory(history, prompt) {
-  if (!history.length) return prompt;
+function withHistory(history, prompt, sayIfEmpty = false) {
+  if (!history.length) {
+    return sayIfEmpty ? `There is no conversation in this node yet; work from the context only.\n\n---\n\n${prompt}` : prompt;
+  }
   const transcript = history.map((m) => `[${m.role}]\n${m.text}`).join('\n\n');
   return `Earlier conversation in THIS node (for continuity):\n\n${transcript}\n\n---\n\n${prompt}`;
 }
 
 // Streams NDJSON events to the browser while Claude works.
-async function streamClaude(res, planId, nodeId, { prompt, fork, userText, kind }) {
+async function streamClaude(res, planId, nodeId, { prompt, userText, kind }) {
   const key = `${planId}/${nodeId}`;
   if (busy.has(key)) return send(res, 409, { error: 'This node is already working on a request.' });
   busy.add(key);
@@ -85,7 +87,6 @@ async function streamClaude(res, planId, nodeId, { prompt, fork, userText, kind 
         systemPrompt,
         prompt: text,
         sessionId,
-        fork,
         onEvent: (ev) => {
           streamed = true;
           if (ev.type === 'tool') tools.push({ name: ev.name, detail: ev.detail });
@@ -94,8 +95,11 @@ async function streamClaude(res, planId, nodeId, { prompt, fork, userText, kind 
       });
     let out;
     try {
-      out = await run(node.sessionId, prompt);
+      // Suggestions and summaries get this node's chat explicitly from our files instead of
+      // relying on a resumed Claude session, so they also work for nodes without any chat.
+      out = kind === 'chat' ? await run(node.sessionId, prompt) : await run(null, withHistory(history, prompt, true));
     } catch (err) {
+      if (kind !== 'chat') throw err;
       // The Claude session may be gone (cleaned up, other machine). Start a new one and
       // hand over this node's own chat from our files instead.
       if (!node.sessionId || streamed) throw err;
@@ -172,13 +176,12 @@ async function api(req, res, parts) {
     if (!text) return send(res, 400, { error: 'Message is empty.' });
     return streamClaude(res, planId, nodeId, { prompt: text, userText: text, kind: 'chat' });
   }
-  // Suggestions and summaries run in a fork of the node's chat, so they see the
-  // conversation but do not clutter it.
+  // Suggestions and summaries see the node's chat but are not added to it.
   if (action === 'suggest' && method === 'POST') {
-    return streamClaude(res, planId, nodeId, { prompt: SUGGEST_PROMPT, fork: true, kind: 'suggest' });
+    return streamClaude(res, planId, nodeId, { prompt: SUGGEST_PROMPT, kind: 'suggest' });
   }
   if (action === 'summarize' && method === 'POST') {
-    return streamClaude(res, planId, nodeId, { prompt: SUMMARIZE_PROMPT, fork: true, kind: 'summarize' });
+    return streamClaude(res, planId, nodeId, { prompt: SUMMARIZE_PROMPT, kind: 'summarize' });
   }
   return send(res, 404, { error: 'Not found' });
 }

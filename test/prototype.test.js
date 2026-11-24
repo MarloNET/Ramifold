@@ -143,11 +143,12 @@ test('end-to-end: create plan, chat with tools, suggest and accept children, sum
   assert.strictEqual(second.args[second.args.indexOf('--resume') + 1], session);
   assert.ok(second.args.includes('WebSearch,WebFetch,Read,Glob,Grep'));
 
-  // Suggestions run in a fork and do not touch the node chat.
+  // Suggestions get the node chat explicitly in a fresh session and do not touch the node chat.
   const sug = await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/suggest`);
   const suggestions = sug.events.at(-1).suggestions;
   assert.strictEqual(suggestions.length, 2);
-  assert.ok(s.calls().at(-1).args.includes('--fork-session'));
+  assert.ok(!s.calls().at(-1).args.includes('--resume'));
+  assert.match(s.calls().at(-1).prompt, /ROOT-CHAT-MESSAGE/);
   view = await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/children`, { children: suggestions });
   const [chunk, embed] = view.nodes[root].children;
   assert.strictEqual(view.nodes[embed].number, '2');
@@ -177,6 +178,29 @@ test('end-to-end: create plan, chat with tools, suggest and accept children, sum
   assert.match(exp.markdown, /## 2 Embedding model[\s\S]*EMBED-FIXED-PLAN/);
   assert.ok(fs.existsSync(path.join(s.projectDir, 'ramifold', plan.id, 'PLAN.md')));
   assert.ok(chunk);
+});
+
+test('end-to-end: summarize gets the node chat explicitly and works without any chat', async (t) => {
+  const s = await startServer();
+  t.after(() => s.proc.kill());
+  const plan = await s.req('POST', '/api/plans', { title: 'X', mission: 'ROOT-MISSION' });
+  const root = plan.rootId;
+
+  // A node without chat (e.g. a parent that only bundles its children) still gets a plan.
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/summarize`);
+  let call = s.calls().at(-1);
+  assert.ok(!call.args.includes('--resume'), 'summary must not depend on a hidden Claude session');
+  assert.match(call.prompt, /no conversation in this node yet/i);
+  assert.match(call.prompt, /Do not ask/);
+
+  // With a chat, the stored node chat is handed over verbatim.
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/chat`, { message: 'CHAT-DECISION-42' });
+  await s.req('POST', `/api/plans/${plan.id}/nodes/${root}/summarize`);
+  call = s.calls().at(-1);
+  assert.ok(!call.args.includes('--resume'));
+  assert.match(call.prompt, /CHAT-DECISION-42[\s\S]*Write the plan for THIS node/);
+  const chat = await s.req('GET', `/api/plans/${plan.id}/nodes/${root}/chat`);
+  assert.strictEqual(chat.messages.length, 2, 'summarizing leaves the chat untouched');
 });
 
 test('end-to-end: Claude errors are shown and stored, foreign origins are rejected', async (t) => {
