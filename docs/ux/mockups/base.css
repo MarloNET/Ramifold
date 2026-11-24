@@ -188,7 +188,9 @@ dl.facts dd{margin:0}
 .dim-bg{filter:none}
 .row .run{display:inline-flex;align-items:center;gap:4px;font-size:.76rem;font-weight:600;color:var(--info)}
 .row .run .i{width:13px;height:13px}
-.row .draft{font-size:.72rem;font-weight:600;color:var(--tree-muted);border:1px solid var(--tree-muted);border-radius:4px;padding:0 4px}
+.row .draft{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:600;color:var(--tree-muted);border:1px solid var(--tree-muted);border-radius:4px;padding:0 4px}
 .banner .btn{height:28px}
 .msg .actions{margin-top:6px}
 .toolbar-note{font-size:.85rem;color:var(--text-muted)}
+
+.row .draft .i{width:12px;height:12px}

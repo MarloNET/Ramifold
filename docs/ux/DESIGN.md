@@ -48,15 +48,34 @@ Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Er
 | Fixed plan | circle-check | status-fixed | „Fixed plan“ |
 | KI läuft | loader-circle (mit Text „AI running“) | info | „AI running“ |
 | Info | info | info | – (Text steht daneben) |
-| Fehler / nicht gesendet / unvollständig | circle-x | error | Text steht daneben |
+| Fehlerzustand (Marken „incomplete“, „not sent“, Fehlerbanner, Löschdialog) | circle-x | error | Text steht daneben (nennt die Art) |
+| Marke „aborted“ (vom Planer gestoppt) | circle-slash | text-muted | Text „aborted“ steht daneben |
+| Marke „Simulated AI“ (Kopfzeile) | flask-conical | info | Text steht daneben; Tooltip „AI answers are simulated and do not come from a real AI.“ |
+| Marke „Draft“ (Baumzeile) | file-pen | tree-muted | Text „Draft“ steht daneben |
 | Warnung / nicht lesbar | triangle-alert | warning bzw. error | Text steht daneben |
-| Ergebnis gesperrt | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
+| Ergebnis gesperrt / Marke „Read-only“ | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
 | Bild-Link (Bilder werden nicht geladen) | image | Link | Tooltip „Images are not loaded. Opens in a new tab.“ |
-| Umbenennen / Auftrag bearbeiten / Unterpunkt hinzufügen / nach oben / nach unten | text-cursor-input / file-text / plus / arrow-up / arrow-down | text-muted | „Rename“ / „Edit objective“ / „Add child“ / „Move up“ / „Move down“ |
-| Ergebnis bearbeiten / Zusammenfassen / Vorschläge | pencil / sparkles / list-tree | text | Text steht daneben |
-| Senden / Stopp / Kontext / Export / Löschen | send / square / eye / download / trash-2 | je Schaltfläche | Text steht daneben |
+| Absender „AI“ im Chat | bot | text-muted | Text „AI“ steht daneben |
+| Schließen (Dialog, Panel) | x | text | „Close“ |
+| Umbenennen | text-cursor-input | text-muted | „Rename“ |
+| Auftrag bearbeiten | file-text | text-muted | „Edit objective“ |
+| Unterpunkt hinzufügen | plus | text-muted | „Add child“ |
+| Nach oben / nach unten | arrow-up / arrow-down | text-muted | „Move up“ / „Move down“ |
+| Neues Vorhaben | folder-plus | on-primary | Text „New project“ steht daneben |
+| Ergebnis bearbeiten | pencil | text | Text steht daneben |
+| Zusammenfassen | sparkles | text | Text steht daneben |
+| Vorschläge | list-tree | text | Text steht daneben |
+| Vorschlag übernehmen | check | text bzw. on-primary | Text „Accept“ / „Accept all“ steht daneben |
+| Senden / Stopp | send / square | je Schaltfläche | Text steht daneben |
+| Nachricht erneut senden | undo-2 | text | Text „Send again“ steht daneben |
+| Sperre erneut prüfen | refresh-cw | text | Text „Check again“ steht daneben |
+| Kontext anzeigen | eye | text | Text steht daneben |
+| Export | download | text | Text steht daneben |
+| Knoten löschen | trash-2 | error | Text „Delete“ / „Delete permanently“ steht daneben |
+| Entwurf verwerfen | file-x | error | Text „Discard draft“ steht daneben |
 | Auf-/Zuklappen | chevron-right / chevron-down | tree-muted | `aria-expanded` |
-Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im zugänglichen Namen und im Tooltip. Im Baum gehört der Tooltip zur Zeile, nicht zum Symbol: Er erscheint bei Mausposition auf der Zeile und bei Tastaturfokus auf der Zeile (ohne Zusatzbedienung, `Esc` blendet ihn aus, WCAG 1.4.13); der zugängliche Name der Baumzeile enthält das Statuswort („2.2 Embedding-Modell, Concept“). Ein Icon steht für genau eine Bedeutung; „pencil“ ist ausschließlich „Edit result“. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
+Marken (REQ-062): Jede Marke zeigt **Symbol und Text** (incomplete, aborted, not sent, Simulated AI, Draft, Read-only), nie nur Farbe. Mehrere Marken mit derselben Bedeutung teilen ein Symbol (die Art steht im Text: „incomplete“ und „not sent“ sind beide Fehlerzustände mit `circle-x`); verschiedene Aktionen haben verschiedene Symbole.
+Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im zugänglichen Namen und im Tooltip. Im Baum gehört der Tooltip zur Zeile, nicht zum Symbol, und es gibt **einen** Tooltip je Zeile: bei gekürztem Titel „<voller Titel> · <Statuswort>“ (z. B. „Embedding-Modell · Concept“), sonst nur das Statuswort („Concept“). Er erscheint bei Mausposition auf der Zeile und bei Tastaturfokus auf der Zeile (ohne Zusatzbedienung, `Esc` blendet ihn aus, WCAG 1.4.13). Der zugängliche Name der Baumzeile nennt, soweit an der Zeile sichtbar, in fester Reihenfolge: Nummer und Titel, Statuswort, „Draft“, „+n“, „AI running“ (z. B. „2.2 Embedding-Modell, Concept, Draft, +3“; „2.2 Embedding-Modell, Concept, AI running“); die Symbole und die sichtbare Laufanzeige tragen keinen eigenen Namen. Ein Icon steht für genau eine Bedeutung; „pencil“ ist ausschließlich „Edit result“. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
 
 ## Komponentenregeln
 - **Buttons:** primär (gefüllt primary, höchstens einer je Bereich), sekundär (Rand border), Text-Button für Nebenaktionen, destruktiv (gefüllt error, nur im Löschdialog; „Delete“ im Knotenkopf ist ein roter Text-Button mit Symbol). Beschriftung = Ergebnis der Aktion. Icon-Buttons: Tooltip, zugänglicher Name, 32 × 32 px. Deaktiviert: `aria-disabled`, gedämpft, bleibt fokussierbar.
