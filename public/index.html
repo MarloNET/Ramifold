@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <title>Ramifold – Prototyp</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <aside id="sidebar">
+    <header>
+      <strong>Ramifold</strong> <span class="badge">Prototyp · Wegwerfcode</span>
+    </header>
+    <label class="small" for="plan-select">Vorhaben</label>
+    <select id="plan-select"></select>
+    <button id="new-plan-btn" type="button">+ Neues Vorhaben</button>
+    <nav id="tree" aria-label="Planungsbaum"></nav>
+    <footer>
+      <button id="export-btn" type="button">Gesamtplan exportieren (Markdown)</button>
+      <div id="progress" class="small"></div>
+    </footer>
+  </aside>
+
+  <main id="main">
+    <section id="empty" class="panel">
+      <h1>Willkommen</h1>
+      <p>Lege links ein Vorhaben an, zum Beispiel „Eigenes produktives RAG“.</p>
+    </section>
+
+    <section id="node" class="panel" hidden>
+      <div class="node-head">
+        <span id="node-number" class="number"></span>
+        <input id="node-title" aria-label="Titel">
+        <span id="node-status" class="status"></span>
+      </div>
+      <label for="node-mission" class="small">Auftrag (was hier zu klären ist)</label>
+      <textarea id="node-mission" rows="2"></textarea>
+      <div class="row">
+        <button id="save-meta-btn" type="button">Titel/Auftrag speichern</button>
+        <button id="context-btn" type="button" class="secondary">Kontext ansehen, den die KI bekommt</button>
+        <span class="spacer"></span>
+        <button id="up-btn" type="button" class="secondary" title="Nach oben">↑</button>
+        <button id="down-btn" type="button" class="secondary" title="Nach unten">↓</button>
+        <button id="delete-btn" type="button" class="danger">Knoten löschen</button>
+      </div>
+      <pre id="context-view" hidden></pre>
+
+      <div class="columns">
+        <div class="col chat-col">
+          <h2>Chat</h2>
+          <div id="messages" aria-live="polite"></div>
+          <form id="chat-form">
+            <textarea id="chat-input" rows="3" placeholder="Nachricht … (Strg+Enter sendet)"></textarea>
+            <button id="chat-send" type="submit">Senden</button>
+          </form>
+        </div>
+
+        <div class="col side-col">
+          <h2>Ergebnis</h2>
+          <div id="stale-hint" class="hint" hidden>Ein Unterpunkt wurde seit dem letzten Ergebnis festgelegt. Lass das Ergebnis neu zusammenfassen.</div>
+          <div class="row">
+            <button id="summarize-btn" type="button">KI fasst zusammen</button>
+          </div>
+          <textarea id="result" rows="14" placeholder="Noch kein Ergebnis. Lass die KI zusammenfassen oder schreib selbst."></textarea>
+          <div class="row">
+            <button id="save-concept-btn" type="button" class="secondary">Als Konzept speichern</button>
+            <button id="finalize-btn" type="button">Plan festlegen</button>
+            <button id="reopen-btn" type="button" class="secondary">Wieder öffnen</button>
+          </div>
+
+          <h2>Unterpunkte</h2>
+          <ul id="children"></ul>
+          <div class="row">
+            <button id="suggest-btn" type="button">KI schlägt Unterpunkte vor</button>
+            <button id="add-child-btn" type="button" class="secondary">+ Manuell</button>
+          </div>
+          <div id="suggestions" hidden>
+            <p class="small">Vorschläge prüfen, ändern und übernehmen:</p>
+            <div id="suggestion-list"></div>
+            <div class="row">
+              <button id="accept-suggestions-btn" type="button">Ausgewählte übernehmen</button>
+              <button id="discard-suggestions-btn" type="button" class="secondary">Verwerfen</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="new-plan-dialog">
+    <form method="dialog" id="new-plan-form">
+      <h2>Neues Vorhaben</h2>
+      <label>Titel <input name="title" required placeholder="Eigenes produktives RAG"></label>
+      <label>Auftrag <textarea name="mission" rows="3" placeholder="Was soll am Ende stehen?"></textarea></label>
+      <div class="row">
+        <button value="cancel" formnovalidate class="secondary">Abbrechen</button>
+        <button value="ok">Anlegen</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="export-dialog">
+    <h2>Export</h2>
+    <p class="small" id="export-file"></p>
+    <textarea id="export-text" rows="24" readonly></textarea>
+    <div class="row">
+      <button id="copy-export-btn" type="button">Kopieren</button>
+      <button id="close-export-btn" type="button" class="secondary">Schließen</button>
+    </div>
+  </dialog>
+
+  <script src="/app.js"></script>
+</body>
+</html>

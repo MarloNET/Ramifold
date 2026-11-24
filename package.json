@@ -1,0 +1,12 @@
+{
+  "name": "ramifold-prototype",
+  "version": "0.0.0-prototype",
+  "private": true,
+  "description": "THROWAWAY prototype to validate planning in a tree with result inheritance. Not part of the product.",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  }
+}
