@@ -13,7 +13,7 @@
 - Nutzung: stundenlang pro Sitzung, überwiegend Lesen und Tippen, Tastatur; Baum und Knoten bleiben nebeneinander im Blick.
 - Primär: Baum links; im Knoten das Ergebnis und die Chat-Eingabe mit der einen Primäraktion „Send“.
 - Sekundär: Auftrag unter dem Titel, Knotenaktionen als Icon-Zeile (mit Tooltip) und „Delete“, „Edit result“, „Summarize with AI“, „Suggest sub-items“, „Show context“, Export in der Kopfzeile.
-- Bei Bedarf: Kontext (Seitenpanel UI-008), Dialoge UI-006/-007/-009/-010, Statuswort und Aktionsname als Tooltip, Banner nur bei Anlass, eingeklappte Teilbäume („+n“).
+- Bei Bedarf: Kontext (Seitenpanel UI-008), Dialoge UI-006/-007/-009/-010, Statuswort (Tooltip der Baumzeile, auch bei Tastaturfokus) und Aktionsname als Tooltip, Banner nur bei Anlass, eingeklappte Teilbäume („+n“).
 - Muster: Master-Detail (Baum und Knoten), Icon-Aktionen mit Tooltip, Statussymbole statt Statuswörtern im Baum, Banner für Zustände, Chat als Protokoll unter dem Ergebnis.
 - Akzent: das Statussystem im Baum (gestrichelt – Punkt – Haken); Petrol nur für Auswahl und „Send“.
 
@@ -25,7 +25,7 @@ Kopfzeile (48 px) · linke Spalte (Baum, 320 px; „Plan“ ist nur der zugängl
 |---|---|---|---|
 | Kopfzeile | „Ramifold“; Brotkrumen „Projects / <Vorhabentitel>“ („Projects“ ist Link zu UI-001); Link „Data notice“; Button „Export“; im simulierten Modus Marke „Simulated AI“; im Zustand „read-only“ zusätzlich Marke „Read-only“ (Symbol + Text) | Vorhaben | Vorhabentitel bei Überlänge mit „…“ gekürzt |
 | Baumzeile (ARIA-Baummuster wie React Aria `Tree`, Rolle *treegrid*: Zeilen als `row`) | Auf-/Zuklapp-Pfeil (nur bei Kindern), Nummer, Titel, Statusmarke; eingeklappt zusätzlich „+n“ (Zahl verborgener Nachkommen) | Knoten, Ergebnisstatus | Wurzelknoten ohne Nummer, fett; Titel > Zeilenbreite mit „…“ gekürzt, voller Titel als Tooltip und im Knotenkopf; Reihenfolge nach Position; Nummern aus Position (REQ-008) |
-| Statusmarke | im Baum: Symbol (gestrichelter Kreis / Kreis mit Punkt / Kreis mit Haken), das Wort „No result yet“ / „Concept“ / „Fixed plan“ als Tooltip und zugänglicher Name; im Abschnitt „Result“: Pille mit Symbol + Wort | Ergebnisstatus | nie nur Farbe: die Symbole unterscheiden sich in der Form |
+| Statusmarke | im Baum: Symbol (gestrichelter Kreis / Kreis mit Punkt / Kreis mit Haken), das Wort „No result yet“ / „Concept“ / „Fixed plan“ im zugänglichen Namen der Baumzeile (Nummer, Titel, Statuswort, z. B. „2.2 Embedding-Modell, Concept“) und als Tooltip der Zeile, der bei Mausposition und bei Tastaturfokus auf der Zeile erscheint (kein eigener Fokuspunkt, keine zusätzliche Bedienung); im Abschnitt „Result“: Pille mit Symbol + Wort | Ergebnisstatus | nie nur Farbe: die Symbole unterscheiden sich in der Form |
 | Markierung „AI running“ | Symbol + Text neben der Statusmarke des Knotens, in dem eine KI-Anfrage läuft | REQ-019 | in jedem Fenster sichtbar |
 | Markierung „Draft“ | Text „Draft“ neben Statusmarke, wenn für den Knoten ein KI-Entwurf oder in diesem Fenster eine Ergebnisbearbeitung vorliegt | REQ-073 | Hinweis, dass ungespeicherter Text existiert |
 | Knotenkopf | „<Nummer> <Titel>“ | Knoten | Titel umbricht auf mehrere Zeilen |
@@ -86,7 +86,7 @@ Das Eingabefeld hat kein Platzhaltertext. Der Inhalt bleibt bei jedem Fehler (RE
 - Baum: ARIA-Baummuster wie React Aria `Tree` (Rolle *treegrid*, Zeilen `row` mit `aria-level`, `aria-expanded`, `aria-selected`); ein Tab-Stopp; ↑/↓ Fokus, → aufklappen bzw. in Kind, ← zuklappen bzw. zum Elternknoten, Home/End, Enter öffnet den Knoten.
 - Tab-Reihenfolge: Kopfzeile → Baum → Knotenkopf-Aktionen → Banner-Aktionen → Result-Aktionen → Chat-Verlauf (fokussierbarer Bereich) → Message → Suggest sub-items → Show context → Send.
 - Fokussichtbar 2 px, nie entfernt; alle Aktionen per Tastatur (REQ-062 / 2.1.1). Chat-Verlauf `role="log"` mit `aria-live="polite"`; Fehlerbanner `role="alert"`; Laufanzeige `role="status"`.
-- Statussymbole im Baum mit zugänglichem Namen (Wort), Zustandsmarken an Nachrichten Symbol + Text; ausgewählter Baumknoten zusätzlich zur Farbe mit Balken.
+- Statuswort im Baum: Der zugängliche Name der Baumzeile enthält das Wort („2.2 Embedding-Modell, Concept“), und derselbe Tooltip erscheint auch bei Tastaturfokus auf der Zeile (bleibt sichtbar, solange die Zeile den Fokus hat; `Esc` blendet ihn aus). Das Symbol selbst ist nicht fokussierbar und es gibt kein neues Element oder keine neue Aktion. Icons der Knotenaktionen: Rename = Textfeld mit Cursor (`text-cursor-input`), Edit objective = Dokument (`file-text`); „Edit result“ im Abschnitt „Result“ = Stift (`pencil`). Zustandsmarken an Nachrichten Symbol + Text;  Zustandsmarken an Nachrichten Symbol + Text; ausgewählter Baumknoten zusätzlich zur Farbe mit Balken.
 - Lange Tabellen/Codeblöcke in Markdown scrollen horizontal im eigenen Bereich (kein Verlust bei 200 % Zoom).
 
 ## Bekannte Abweichungen im Mockup

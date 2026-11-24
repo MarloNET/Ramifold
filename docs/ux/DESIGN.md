@@ -52,11 +52,11 @@ Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Er
 | Warnung / nicht lesbar | triangle-alert | warning bzw. error | Text steht daneben |
 | Ergebnis gesperrt | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
 | Bild-Link (Bilder werden nicht geladen) | image | Link | Tooltip „Images are not loaded. Opens in a new tab.“ |
-| Umbenennen / Auftrag bearbeiten / Unterpunkt hinzufügen / nach oben / nach unten | pencil / file-text / plus / arrow-up / arrow-down | text-muted | „Rename“ / „Edit objective“ / „Add child“ / „Move up“ / „Move down“ |
+| Umbenennen / Auftrag bearbeiten / Unterpunkt hinzufügen / nach oben / nach unten | text-cursor-input / file-text / plus / arrow-up / arrow-down | text-muted | „Rename“ / „Edit objective“ / „Add child“ / „Move up“ / „Move down“ |
 | Ergebnis bearbeiten / Zusammenfassen / Vorschläge | pencil / sparkles / list-tree | text | Text steht daneben |
 | Senden / Stopp / Kontext / Export / Löschen | send / square / eye / download / trash-2 | je Schaltfläche | Text steht daneben |
 | Auf-/Zuklappen | chevron-right / chevron-down | tree-muted | `aria-expanded` |
-Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im Tooltip und im zugänglichen Namen. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
+Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im zugänglichen Namen und im Tooltip. Im Baum gehört der Tooltip zur Zeile, nicht zum Symbol: Er erscheint bei Mausposition auf der Zeile und bei Tastaturfokus auf der Zeile (ohne Zusatzbedienung, `Esc` blendet ihn aus, WCAG 1.4.13); der zugängliche Name der Baumzeile enthält das Statuswort („2.2 Embedding-Modell, Concept“). Ein Icon steht für genau eine Bedeutung; „pencil“ ist ausschließlich „Edit result“. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
 
 ## Komponentenregeln
 - **Buttons:** primär (gefüllt primary, höchstens einer je Bereich), sekundär (Rand border), Text-Button für Nebenaktionen, destruktiv (gefüllt error, nur im Löschdialog; „Delete“ im Knotenkopf ist ein roter Text-Button mit Symbol). Beschriftung = Ergebnis der Aktion. Icon-Buttons: Tooltip, zugänglicher Name, 32 × 32 px. Deaktiviert: `aria-disabled`, gedämpft, bleibt fokussierbar.

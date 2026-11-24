@@ -6,7 +6,7 @@
 |---|---|
 | Projekt | Ramifold |
 | Slice | 0.1 (erster Slice; kein früheres Design) |
-| Version | 0.4 (visuelle Überarbeitung nach den neuen Design-Regeln, MAR-1390; Basis: 0.3.1, Commit `7e47484`; keine Verhaltensänderung) |
+| Version | 0.4.1 (Review-Befunde FIND-PO-V1/-V2, MAR-1391, auf Basis 0.4, Commit `118b2ea`; 0.4 = visuelle Überarbeitung nach den neuen Design-Regeln, MAR-1390; Basis: 0.3.1, Commit `7e47484`; keine Verhaltensänderung) |
 | Status | **Entwurf**, zur Prüfung durch den Product Owner und anschließend Gate „Wie“; Look „Werkbank“ vom Owner gewählt (2026-11-24) |
 | Klassifizierung | Material |
 | Autor | UI/UX Designer (Agent), Design-Tasks MAR-1372, MAR-1375, MAR-1382, MAR-1388, MAR-1390 |
@@ -67,6 +67,7 @@ Jeder Screen hat ein aktuelles Bild; alle elf Screens (UI-001 bis UI-011) und di
 ### Entscheidungen der Agenten
 | Entscheidung | Verworfene Alternative | Warum | Umkehrbar |
 |---|---|---|---|
+| Statuswort im Baum: Name der Zeile + Tooltip der Zeile (auch bei Tastaturfokus) | eigener Fokuspunkt am Symbol | kein neues Element, keine Zusatzbedienung (FIND-PO-V2) | leicht |
 | Baum und Knoten auf einer Seite | getrennte Seiten | Baum bleibt beim Arbeiten sichtbar (REQ-053) | mittel |
 | „Move up/Move down“ statt Drag-and-drop | Ziehen | Tastatur Pflicht (REQ-062) | leicht |
 | Vorschläge als Panel mit Karten; Kontext als Seitenpanel | Dialog / eigene Seite | Prüfen braucht Platz, schneller Rückweg | mittel |
@@ -342,6 +343,7 @@ Entfallene Anforderungen REQ-026 und REQ-047: kein Design. Nicht abgedeckte Anfo
 **Offene Fragen:** (1) Owner: Editor und Chat gleichzeitig? (Briefing). (2) Owner/OQ-09: Should-Funktionen bleiben? (3) Software Architect: Erkennung von „Ramifold läuft nicht mehr“ im Browser, Name des Ramifold-Bereichs (OQ-07, Beispielpfade in Mockups). (4) OQ-01 (Anmeldeart von Claude Code): UI-009 bleibt neutral. (5) Product Owner: Wunsch nach HTML-Exporten (technisch derzeit nicht möglich).
 
 **Changelog.**
+- 0.4.1 (2026-11-24, MAR-1391; zwei Review-Befunde, keine Verhaltensänderung): FIND-PO-V1 „Rename“ nutzt jetzt `text-cursor-input` statt `pencil` (`pencil` nur noch „Edit result“); FIND-PO-V2 Statuswort im Baum: zugänglicher Name der Zeile enthält das Wort, Tooltip erscheint auch bei Tastaturfokus auf der Zeile. Geändert: `DESIGN.md`, `mockups/icons.svg`, UI-003/-006/-007/-008/-009/-010 (HTML und PNG, nur Icon im Knotenkopf), `screens/UI-003-workspace/screen.md`. Icon-Set (Lucide), Schriften und Tokens unverändert.
 - 0.4 (2026-11-24, MAR-1390; visuelle Überarbeitung nach neuen Design-Regeln; keine Verhaltensänderung, keine neuen Screens oder Flows, keine neuen IDs): Look „Werkbank“ vom Owner gewählt (`looks/`); `DESIGN.md` nach neuer Vorlage (IBM Plex, Lucide, Tokens, Kontraste); Screen-Konzept in allen elf `screen.md`; alle Mockups neu als HTML/PNG, zusätzlich UI-006 `default`; Stitch-Mockups ersetzt; Freigabe-Briefing mit Bildern neu gefasst. Darstellungsänderungen in `screen.md` (UI-003): Statussymbole im Baum (Wort als Tooltip), Knotenaktionen als Icon-Zeile, kein sichtbarer Titel „Plan“. Betroffene Screens: alle (Darstellung).
 - 0.3.1 (2026-11-24, MAR-1388; nur Wortlaute KL-01 bis KL-05, keine neuen Flows oder Screens, keine Stitch-Generierung, Mockups unverändert): KL-01 Teiltabelle „Ursachen beim Speichern“ (MSG-002); KL-02 MSG-015/-016, MSG-007 auf Chat beschränkt; KL-03 MSG-001 „beim Start, nicht gefunden“; KL-04 MSG-002 mit `unknown`, TERM-013; KL-05 „Suggest sub-items“ ersetzt offene Vorschläge ohne Dialog.
 - 0.3 (2026-11-24, MAR-1382, Cross-Check-Auflösung; nur Texte, Zustände, Ergänzungen; keine neuen Flows oder Screens; keine neue Stitch-Generierung): D1/CC-05 MSG-001 (zu alt ohne Neustart, angemeldet/abgelaufen ein Zustand, Rückfall bei „nicht installiert“, Banner nur im anfragenden Fenster); D2 Baumrolle treegrid (UI-003); D3/B3 „not sent“ nach D3a, „Send again“ (UI-003, E-UX-01); D4/CC-10 UI-011 Pfad `.ramifold/plans/<planId>/nodes/<nodeId>.json` und Ursachenliste; CC-01 Abschnitt „Ausblick Werkzeugfreigabe“ (Abschnitt 8); CC-02 Erkennung beim Öffnen (MSG-005, UI-003, FLOW-007); CC-03 `PLAN.md` abgeleitet (MSG-010, UI-003 Export, UI-011); CC-04 TERM-010/-011; CC-06 UI-009 zwei neue Hinweiszeilen, OQ-08-Verweis entfällt; CC-07 andere Fenster nur Laufanzeige (UI-003, FLOW-007); CC-08 TERM-006 bis TERM-009, TERM-012, Marke „Simulated AI“ (E-UX-02); CC-09 MSG-014; CC-11 MSG-013 und UI-003 server-down; CC-12 Tabelle „Ursachen“ mit 14 Kurztexten; CC-13 Seitentitel (A-UX-16); B2 keine Design-Änderung, Verweis auf Lizenzprüfung der Baseline in `DESIGN.md`. Briefing neu gefasst und gekürzt.
