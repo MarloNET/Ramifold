@@ -75,7 +75,7 @@ Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Er
 | Knoten löschen | trash-2 | error | Text „Delete“ / „Delete permanently“ steht daneben |
 | Entwurf verwerfen | file-x | error | Text „Discard draft“ steht daneben |
 | Auf-/Zuklappen | chevron-right / chevron-down | tree-muted | `aria-expanded` |
-| Auf-/Zuklappen der Planspalte („Show plan“ / „Hide plan“, unter 1024 px) | chevron-right (zu) / chevron-down (offen) | text | Text steht daneben, `aria-expanded` |
+| Auf-/Zuklappen der Planspalte („Show plan“ / „Hide plan“, unter 1024 px) | chevron-right (zu) / chevron-down (offen) | text | Text steht daneben, `aria-expanded`; Anfangszustand „offen“ (Schaltfläche „Hide plan“), siehe `UI-003` |
 | Brotkrumen-Trenner (Kopfzeile) | chevron-right | text-muted | dekorativ (`aria-hidden`), keine eigene Bedeutung; die Reihenfolge trägt die Navigationsrolle (`nav`) |
 | **Erfolg** (Banner MSG-010 „Exported to …“, alle Toasts) | **kein Symbol** | – | Der Text trägt die Aussage (Banner zusätzlich in success-Farben); `circle-check` bleibt „Fixed plan“ vorbehalten |
 
@@ -89,7 +89,7 @@ Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe
 - **Formulare:** Label immer sichtbar über dem Feld, Pflichtfeld „(required)“ im Label, Fehlertext unter dem Feld in error mit Symbol, roter Rand 2 px, Fokus auf das erste fehlerhafte Feld.
 - **Baum:** Zeile = Auf-/Zuklapp-Pfeil, Nummer, Titel, „+n“, Markierungen „AI running“ und „Draft“, Statussymbol rechts. Ausgewählt: tree-sel-bg und 3-px-Balken.
 - **Pillen und Marken:** Status-Pille mit Symbol und Wort im Ergebnis; Zustandsmarken an Nachrichten („incomplete“, „aborted“, „not sent“, „not saved“) als Text-Pille mit Symbol und Ursache.
-- **Feedback:** Banner (bleibt, `role="alert"` bzw. `status`), Inline unter Feldern, Toast nur für flüchtigen Erfolg (6 s, schließbar). Dialoge modal, Fokus-Falle, ESC schließt, Fokus kehrt zurück.
+- **Feedback:** Banner (bleibt); Warn- und Fehlerbanner `role="alert"`, Info- und Erfolgsmeldungen (Banner und Toasts) `role="status"`, Inline unter Feldern, Toast nur für flüchtigen Erfolg (6 s, schließbar). Dialoge modal, Fokus-Falle, ESC schließt, Fokus kehrt zurück.
 - **Chat:** Planer rechts auf you-bg, KI links auf bg mit Rand divider; Absender als Text („You“, „AI“) und Zeit.
 - **Muster:** Master-Detail (Baum links, Knoten rechts), Dialog für Formulare und Bestätigungen, Seitenpanel für den Kontext (UI-008), Sammelbereich der Vorschlagskarten (UI-005), Icon-Zeile für Knotenaktionen, Tooltips für Icons.
 - **Leerzustände:** ein Satz und genau eine Folgeaktion.
