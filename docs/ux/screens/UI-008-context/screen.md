@@ -36,7 +36,7 @@ Keine Eingaben (schreibgeschützt, aber per Tastatur fokussierbar und scrollbar)
 |---|---|---|---|
 | default | Panel rechts, 640 px | default.png | siehe oben |
 | loading | „Loading context…“ im Textbereich | nur Text | „Loading context…“ |
-| error | „The context could not be loaded. Close this panel and try again.“ | nur Text | – |
+| error | „The context could not be loaded. Close this panel and try again.“ mit Symbol `circle-x` (error) | nur Text | – |
 | empty / validation / permission / success / disabled | nicht anwendbar (der Kontext ist nie leer: feste Regeln immer vorhanden) | – | – |
 
 ## Responsive und Barrierefreiheit

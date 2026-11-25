@@ -38,7 +38,7 @@ Validierung beim Klick auf „Create project“ (nicht beim Tippen); danach Fehl
 |---|---|---|---|
 | default | Dialog, Fokus im Feld „Title“ | default.png | siehe oben |
 | loading | Primärbutton zeigt „Creating…“ und ist deaktiviert (aria-busy), Felder gesperrt | nur Text | „Creating…“ |
-| error | Banner im Dialog, MSG-002 | nur Text | siehe MSG-002 |
+| error | Banner im Dialog mit Symbol `circle-x`, MSG-002 | nur Text | siehe MSG-002 |
 | validation | Fehlertext unter Feld, roter Rand + Symbol | Muster siehe UI-006 `validation.png` | siehe Tabelle |
 | permission / empty / success | nicht anwendbar (success = Dialog schließt, Toast) | – | – |
 

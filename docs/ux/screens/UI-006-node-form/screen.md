@@ -44,7 +44,7 @@ Validierung beim Absenden; Fehlertext unter dem Feld mit Symbol, roter Rand; Fok
 | default | Dialog mit Fokus im ersten Feld | nur Text (Layout wie UI-002) | – |
 | loading | Primärbutton „Saving…“, Felder gesperrt | nur Text | „Saving…“ |
 | empty / permission / success | nicht anwendbar (success = Dialog schließt, Toast) | – | – |
-| error | Banner im Dialog | nur Text | MSG-002 / MSG-004 / MSG-005 |
+| error | Banner im Dialog mit Symbol `circle-x` | nur Text | MSG-002 / MSG-004 / MSG-005 |
 | validation | Fehlertext + roter Rand + Symbol | validation.png | „A title is required.“ |
 | disabled | „Add child“/„Rename“ sind in einem Fenster nicht gesperrt, auch wenn das Ergebnis in anderem Fenster bearbeitet wird | – | – |
 

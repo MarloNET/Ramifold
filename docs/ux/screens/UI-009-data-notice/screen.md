@@ -39,7 +39,7 @@ Ansichtsmodus (Aufruf über „Data notice“): gleicher Text, **ohne** Checkbox
 | default (Bestätigung) | Checkbox leer, „Continue“ deaktiviert | default.png | siehe oben |
 | Ansichtsmodus | nur Text/Layout wie default ohne Checkbox | nur Text | „You confirmed this notice for this project folder.“ |
 | loading | „Continue“ zeigt „Saving…“ | nur Text | – |
-| error | Banner im Dialog | nur Text | MSG-002 |
+| error | Banner im Dialog mit Symbol `circle-x` | nur Text | MSG-002 |
 | empty / validation / permission / success | nicht anwendbar | – | – |
 
 ## Responsive und Barrierefreiheit
