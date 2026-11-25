@@ -1,0 +1,18 @@
+<!-- Quelle: Paperclip-Dokument `adrs` v0.7, Revision e24de893-855d-43a5-8c04-2c0257b1fd7d (MAR-1416); freigegeben mit Gate „Wie“ Slice 0.1 (MAR-1369) -->
+
+## ADR-002 – Kein Hosting; Auslieferung als fertiges npm-Paket am GitHub Release; Start mit einem Befehl
+
+- **Slug:** `distribution-and-start`
+- **Status:** **approved (Gate „Wie“ Slice 0.1, MAR-1369; Owner-Freigabe 2026-11-25 mit „Stimmt“ bei allen 13 kritischen Annahmen; freigegebene Revision `e24de893-855d-43a5-8c04-2c0257b1fd7d`)**. Stand bei der Prüfung: Vorgeschlagen. Frage 2 der Karte `e4597c5b` blieb unbeantwortet, die Karte wurde zurückgezogen. Der Owner entscheidet mit Gate „Wie“ (Baseline-Briefing, „Deine Entscheidungen“). Die Wahl ist leicht umkehrbar und blockiert die Technical Specification nicht. Owner-Entscheidung am 2026-11-25: Variante a (Empfehlung der Baseline).
+- **Kontext:** Ramifold betreibt keinen Server (LP-02). Installation und Start mit je einem Befehl (REQ-066). Die Lizenz ist offen (OQ-02); das Repository ist öffentlich.
+- **Betroffene Anforderungen:** REQ-001, REQ-066; LP-02, LP-10.
+- **Optionen:**
+  1. **Fertiges Paket am GitHub Release (v0.4):** Release = Versions-Tag `v<x.y.z>` mit GitHub Release auf dem abgenommenen Commit. Ein Workflow baut aus diesem Tag das npm-Paket mit dem Oberflächen-Build und hängt es als `ramifold-<x.y.z>.tgz` an das Release. Installation: `npm install -g https://github.com/MarloNET/Ramifold/releases/download/v0.1.0/ramifold-0.1.0.tgz`; kein Register.
+  1a. *Verworfen in v0.4 (FIND-030):* Installation direkt aus dem Git-Tag (`npm install -g github:MarloNET/Ramifold#v0.1.0`). Das geht nur, wenn der getaggte Commit den Build enthält (dann müsste ein Workflow einen eigenen Commit mit `dist/` erzeugen und den Tag darauf setzen, statt auf den abgenommenen Commit) oder wenn npm beim Nutzer baut (`prepare`, mit allen Entwicklungswerkzeugen, langsam und fehleranfällig). Beides widerspricht dem Ablauf „Tag auf dem abgenommenen Commit“ bzw. dem Ziel „ein Befehl ohne Build“.
+  2. **npm-Register ab 0.1:** `npm install -g ramifold` (Name derzeit frei); derselbe Workflow veröffentlicht das Paket zusätzlich dort.
+  3. Einzeldatei-Downloads je Plattform: entfällt für 0.1 mit ADR-001; später als Einzeldatei-Build mit Node.js möglich (R-06).
+- **Entscheidung (Vorschlag):** Option 1 für 0.1, Register (Option 2) später, wenn Lizenz und Veröffentlichung entschieden sind. Start: **`ramifold [projektordner]`** (ohne Angabe: aktueller Ordner). Für die Abnahme aus einem Klon zusätzlich `./start.sh` (Baseline Abschnitt 11).
+  - **Auslösen eines Release:** durch das „Freigeben“ des Owners in der Slice-Abnahme; danach setzt der CEOrchestrator Tag und GitHub Release auf den abgenommenen Commit. Der Workflow reagiert auf das veröffentlichte Release (Rückfallweg: manueller Start mit Angabe des Tags), setzt die Versionsnummer nur im Paket, baut, prüft das Paket mit einer Probe-Installation und hängt es an. Scheitert er, hat das Release kein Paket, und der Fehler wird als Bug behandelt; der Tag bleibt unverändert. Einzelheiten: Technical Specification Abschnitt 4.7.
+- **Folgen:** Keine Hosting- oder Kontokosten; niemand baut ein Release von Hand. Die Installation baut beim Nutzer nicht. Der Tag zeigt auf genau den abgenommenen Stand, `main` enthält keine gebauten Dateien. Das Paket am Release ist das, was QA vor der Abnahme mit `npm pack` aus demselben Commit geprüft hat.
+- **Risiken:** Die Adresse des Pakets ist länger als ein Paketname; die Anleitung nennt sie vollständig. Wird ein Release mit einem Token angelegt, das keine Workflows auslöst, fehlt zunächst das Paket; dafür gibt es den manuellen Start des Workflows. Umstieg auf das Register ändert nur Workflow und Anleitung.
+- **Umkehrbarkeit:** leicht.
