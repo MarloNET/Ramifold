@@ -45,14 +45,14 @@ Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Er
 |---|---|---|---|
 | kein Ergebnis | circle-dashed | status-none | „No result yet“ |
 | Concept | circle-dot | status-concept | „Concept“ |
-| Fixed plan | circle-check | status-fixed | „Fixed plan“ |
+| Fixed plan (auch Schaltfläche „Save as fixed plan“, UI-004: dieselbe Bedeutung, Ergebnis wird „Fixed plan“) | circle-check | status-fixed (Schaltfläche: on-primary) | „Fixed plan“ (Schaltfläche: Text steht daneben) |
 | KI läuft | loader-circle (mit Text „AI running“) | info | „AI running“ |
 | Info | info | info | – (Text steht daneben) |
-| Fehlerzustand (Marken „incomplete“, „not sent“, Fehlerbanner, Löschdialog) | circle-x | error | Text steht daneben (nennt die Art) |
+| Fehlerzustand (Marken „incomplete“, „not sent“, Fehlerbanner auch im Löschdialog UI-007, Fehlerdialog UI-011, Validierungsfehler am Feld) | circle-x | error | Text steht daneben (nennt die Art) |
 | Marke „aborted“ (vom Planer gestoppt) | circle-slash | text-muted | Text „aborted“ steht daneben |
 | Marke „Simulated AI“ (Kopfzeile) | flask-conical | info | Text steht daneben; Tooltip „AI answers are simulated and do not come from a real AI.“ |
 | Marke „Draft“ (Baumzeile) | file-pen | tree-muted | Text „Draft“ steht daneben |
-| Warnung / nicht lesbar | triangle-alert | warning bzw. error | Text steht daneben |
+| Warnung (Kopf der Warndialoge: Löschdialog UI-007 in error-Rot, Ersetzen-Dialog UI-010 in Bernstein) und Marke „Not readable“ in der Vorhabenliste | triangle-alert | error (UI-007), status-concept (UI-010), warning (Marke) | Text steht daneben |
 | Ergebnis gesperrt / Marke „Read-only“ | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
 | Bild-Link (Bilder werden nicht geladen) | image | Link | Tooltip „Images are not loaded. Opens in a new tab.“ |
 | Absender „AI“ im Chat | bot | text-muted | Text „AI“ steht daneben |

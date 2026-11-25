@@ -13,7 +13,7 @@
 - Primär: die Zahlenliste der Folgen; Aktion „Delete permanently“ (destruktiv, mit Text).
 - Sekundär: „Cancel“.
 - Bei Bedarf: Fehlerbanner im Dialog.
-- Muster: Warndialog (`alertdialog`) mit Warnsymbol.
+- Muster: Warndialog (`alertdialog`) mit Warnsymbol `triangle-alert` im Kopf (rot); ein Fehlerbanner im Dialog (Zustand „error“) trägt `circle-x` (Fehlerzustand, `DESIGN.md`).
 - Akzent: Rot nur an Symbol und Schaltfläche.
 
 ## Angezeigte Daten
@@ -37,7 +37,7 @@ Keine Eingaben. Das Löschen wird nicht für den Wurzelknoten angeboten (AC-REQ-
 |---|---|---|---|
 | default | Dialog, Initialfokus auf „Cancel“ | default.png | siehe oben |
 | loading | „Deleting…“, Buttons deaktiviert | nur Text | „Deleting…“ |
-| error | Banner im Dialog | nur Text | MSG-002 / -004 / -005 |
+| error | Banner im Dialog mit Symbol `circle-x` und Text | nur Text | MSG-002 / -004 / -005 |
 | empty / validation / permission / success | nicht anwendbar | – | – |
 
 ## Responsive und Barrierefreiheit

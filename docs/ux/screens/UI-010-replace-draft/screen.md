@@ -13,7 +13,7 @@
 - Primär: der Erklärtext; Aktion „Summarize and replace“.
 - Sekundär: „Keep my draft“.
 - Bei Bedarf: nichts.
-- Muster: Bestätigungsdialog (`alertdialog`) mit Warnsymbol.
+- Muster: Bestätigungsdialog (`alertdialog`) mit Warnsymbol `triangle-alert` im Kopf (Bernstein, `status-concept`).
 - Akzent: keiner.
 
 ## Angezeigte Daten

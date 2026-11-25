@@ -14,7 +14,7 @@
 - Sekundär: Ort der Störung („Location“, Monospace).
 - Bei Bedarf: nichts.
 - Muster: Fehlerdialog (`alertdialog`) mit Definitionsliste (Ursache, Ort).
-- Akzent: Rot nur am Fehlersymbol.
+- Akzent: Rot nur am Fehlersymbol (`circle-x`, Fehlerzustand; die Marke „Not readable“ in UI-001 trägt dagegen `triangle-alert`).
 
 ## Angezeigte Daten
 | Element | Inhalt | Quelle | Hinweise |
