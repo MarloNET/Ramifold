@@ -46,7 +46,7 @@
 | default | Liste mit Karten | default.png | siehe oben |
 | loading | Nach „Suggest sub-items“: im Knoten Status „AI request running in <Nr> <Titel>“ + „Stop“ (Should); Panel erscheint erst, wenn Vorschläge da sind | nur Text | – |
 | empty | Alle Karten übernommen/verworfen: Panel schließt, Knoten zeigt UI-003 | – | Toast „No suggestions left“ |
-| error | Keine verwertbare Liste: Warnbanner MSG-009 (`triangle-alert`); Fehler: Fehlerbanner MSG-015 (`circle-x`) („The AI request failed. Cause: <cause>. The plan is unchanged. Try again.“, kein „Send again“), nach „Stop“ kein Banner; Claude Code: MSG-001 (`circle-x`); läuft anderswo: MSG-003 (`triangle-alert`) | nur Text | siehe Meldungen |
+| error | Keine verwertbare Liste: Warnbanner MSG-009 (`triangle-alert`); Fehler: Fehlerbanner MSG-015 (`circle-x`) („The AI request failed. Cause: <cause>. The plan is unchanged. Try again.“; bei Ursache `not_authenticated` statt „Try again.“ der Schritt zur Anmeldung, Wortlaut siehe MSG-015; kein „Send again“), nach „Stop“ kein Banner; Claude Code: MSG-001 (`circle-x`); läuft anderswo: MSG-003 (`triangle-alert`) | nur Text | siehe Meldungen |
 | validation | Fehlertext unter Titel mit Symbol `circle-x` | Muster UI-006 | siehe oben |
 | permission / disabled | „Accept all“ bleibt aktiv; während Speichern „Accepting…“ und Buttons deaktiviert | nur Text | – |
 | success | Statusmeldung „Added …“ | nur Text | – |
