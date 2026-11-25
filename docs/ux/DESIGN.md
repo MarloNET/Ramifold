@@ -1,0 +1,104 @@
+# DESIGN – Ramifold
+Status: **vom Owner gewählt am 2026-11-24 (MAR-1390): Look A „Werkbank“** (Alternativen und Begründung: `looks/looks.md`). Quelle der Mockup-Werte: `mockups/base.css`. Umsetzung (`ui-constraints` v3, ADR-001): React + TypeScript mit React Aria Components; alle Tokens als CSS Custom Properties.
+
+## Charakter
+Kompakt, nüchtern, präzise. Ramifold läuft stundenlang neben Terminal und Coding-Agent, der Planer liest viel Markdown und bedient mit der Tastatur; deshalb zeigt der Look viel Baum und Inhalt zugleich, auf kühlen Grautönen. Orientierung: Editor- und Terminal-Werkzeuge (Dichte), Git-Oberflächen (Statussymbole).
+Mut zeigt der Look an einer Stelle: dem **Statussystem** (Symbol je Ergebnisstatus im Baum, gestrichelt – Punkt – Haken). Alles andere bleibt ruhig; Farbe tragen nur Auswahl, Status und die eine Primäraktion (Petrol).
+Bewusst vermieden: Karten für alles, ein Radius überall, Schlagschatten, Verläufe, Großbuchstaben-Beschriftungen, Inter und Standard-Blau. Statt Statuswörtern im Baum stehen Symbole; das Wort ist Tooltip und zugänglicher Name.
+
+## Farben
+| Token | Hex | Rolle |
+|---|---|---|
+| bg | #FFFFFF | Arbeits- und Lesefläche, Kopfzeile |
+| surface | #F3F5F7 | Tabellenkopf |
+| tree-bg | #EDF0F3 | Baumspalte |
+| hover | #E6EBEF | Hover auf Icon-Buttons |
+| divider | #D3D9DF | Trennlinien ohne Informationsfunktion |
+| border | #66727F | Rand von Eingabefeldern und Schaltflächen |
+| text | #17202A | Haupttext |
+| text-muted | #4A5561 | Sekundärtext, Zeitstempel, Hilfetexte |
+| primary | #0B6073 | Primäraktion, Links, Markenname; Fläche der Primärschaltfläche |
+| on-primary | #FFFFFF | Text auf primary |
+| tree-sel-bg / -text / -bar | #D5E7EA / #0A3F4C / #0B6073 | ausgewählter Baumknoten (plus 3-px-Balken) |
+| focus | #0B57D0 | Fokusrahmen 2 px, Abstand 2 px |
+| status-none | #4A5561 | „No result yet“ (gestrichelter Kreis); Pille #EBEEF1 / Text #3C4651 |
+| status-concept | #8A4B08 | „Concept“ (Kreis mit Punkt); Pille #FCEFD2 / Text #7A4206 |
+| status-fixed | #0A6B3D | „Fixed plan“ (Kreis mit Haken); Pille #DDF2E5 / Text #08592F |
+| info | #0B57D0 | Info, „AI running“; Banner #E8F0FD, Rand #B4CCF3, Text #0A3E94 |
+| error | #B42318 | Fehler, Löschen; Banner #FDECEA, Rand #F0B5AF, Text #8E1B12 |
+| warning | Banner #FEF3C7, Rand #E6CE82, Text #6E3B05 | Warnungen |
+| success | Banner #E4F5EA, Rand #A8D9BC, Text #08592F | Erfolg |
+| you-bg | #E3F0F2 (Rand #B6D4DA) | Nachrichten des Planers |
+
+Gemessene Kontraste (berechnet, Skript, WCAG 2.2): text/bg 16,5; text-muted/bg 7,6; text-muted/tree-bg 6,6; on-primary/primary 7,2; primary/bg 7,2; border/bg 4,9 (Komponente, Ziel 3:1); Baumauswahl 9,0; Status im Baum: concept 5,9, fixed 5,8, none 6,6 (Symbole, Ziel 3:1); Pillen 7,1 bis 8,2; Banner info 8,6, error 7,9, warning 8,2, success 7,5; focus/bg 6,4; text/you-bg 14,1.
+
+## Typografie
+**IBM Plex Sans** (Text) und **IBM Plex Mono** (Code, Quelltext, Pfade, Kontexttext). Beide SIL Open Font License 1.1, als lokale woff2-Dateien ausgeliefert (Latin; Sans 400/500/600/700, Mono 400), keine CDN-Verbindung (REQ-056, REQ-061). Fallback Text: `system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif`; Code: `ui-monospace, Menlo, Consolas, monospace`. Das Layout hängt nicht von den Schriftmetriken ab.
+Größen (rem, damit Textvergrößerung bis 200 % greift): Basis 0,9 rem / 1,5; Baumzeile 0,88 rem; Seitentitel und Knotentitel 1,35 rem semibold; Abschnitt 1,05 rem semibold; Marke/Meta 0,8 rem. Zahlen in Tabellen und Baumnummern mit tabellarischen Ziffern.
+
+## Form und Dichte
+Radius nach Ebene: Marken und Baumzeile 3 px, Schaltflächen und Felder 4 px, Ergebnisfläche, Nachrichten, Dialoge 6 px, Pillen voll rund. 4-/8-px-Raster. Dicht: Baumzeile 30 px, Schaltfläche 32 px, Mindest-Zielgröße 32 × 32 px. Kopfzeile 48 px, Baumspalte 320 px (fest in 0.1), Arbeitsbereich mit Innenabstand 20/32 px, Lesebreite für Fließtext höchstens 84 Zeichen. Dialogbreite 560 px (breit 620 px), Kontext-Panel 640 px; ein dezenter Schatten nur an Dialog und Panel.
+
+## Icons
+**Lucide** (ISC-Lizenz), Linienstil, Strichstärke 1,75, Größe 1,15 em (Baum und Pillen 14 px), als mitgelieferte Inline-SVGs (`mockups/icons.svg`), nur die verwendeten. Ein Icon, eine Bedeutung.
+| Bedeutung | Icon | Farbe | Zugänglicher Name / Tooltip |
+|---|---|---|---|
+| kein Ergebnis | circle-dashed | status-none | „No result yet“ |
+| Concept | circle-dot | status-concept | „Concept“ |
+| Fixed plan (auch Schaltfläche „Save as fixed plan“, UI-004: dieselbe Bedeutung, Ergebnis wird „Fixed plan“) | circle-check | status-fixed (Schaltfläche: on-primary) | „Fixed plan“ (Schaltfläche: Text steht daneben) |
+| KI läuft: Markierung „AI running“ im Baum, Laufanzeige „AI request running in <Nr> <Titel>“ (Chat; geöffneter Knoten in anderen Fenstern) | loader-circle (mit Text) | info | Text steht daneben (im Baum: im zugänglichen Namen der Zeile) |
+| Info: Info-Banner (MSG-011, Rückfluss-Hinweis, Hinweis „There is an unsaved AI draft for this node.“, „AI draft, not saved yet“ in UI-004) | info | info-text (Textfarbe des Banners) | – (Text steht daneben) |
+| Fehlerzustand: **jedes Fehlerbanner** (MSG-001, -002, -004, -005, -013, -015, -016; auch im Dialog: UI-002, -006, -007, -009; Liste nicht ladbar in UI-001), Fehlerdialog UI-011, Fehlertext „The context could not be loaded.“ (UI-008), Validierungsfehler am Feld, Marken an Nachrichten „incomplete“, „not sent“ und „not saved“ (MSG-012) | circle-x | error (Banner und Marken: error-text) | Text steht daneben (nennt die Art) |
+| **Warnbanner** (MSG-003, MSG-007, MSG-009) | triangle-alert | warning-text (Textfarbe des Banners) | Text steht daneben |
+| Marke „aborted“ (vom Planer gestoppt) | circle-slash | text-muted | Text „aborted“ steht daneben |
+| Marke „Simulated AI“ (Kopfzeile) | flask-conical | info | Text steht daneben; Tooltip „AI answers are simulated and do not come from a real AI.“ |
+| Marke „Draft“ (Baumzeile) | file-pen | tree-muted | Text „Draft“ steht daneben |
+| Warnung (Kopf der Warndialoge: Löschdialog UI-007 in error-Rot, Ersetzen-Dialog UI-010 in Bernstein) und Marke „Not readable“ in der Vorhabenliste | triangle-alert | error (UI-007), status-concept (UI-010), error-text auf error-bg (Marke, wie im Mockup) | Text steht daneben |
+| Ergebnis gesperrt / Marke „Read-only“ | lock | text-muted | „being edited in another window“ bzw. „Read-only“ |
+| Bild-Link (Bilder werden nicht geladen) | image | Link | Tooltip „Images are not loaded. Opens in a new tab.“ |
+| Absender „AI“ im Chat | bot | text-muted | Text „AI“ steht daneben |
+| Schließen (Dialog, Panel) | x | text | „Close“ |
+| Umbenennen | text-cursor-input | text-muted | „Rename“ |
+| Auftrag bearbeiten | file-text | text-muted | „Edit objective“ |
+| Unterpunkt hinzufügen | plus | text-muted | „Add child“ |
+| Nach oben / nach unten | arrow-up / arrow-down | text-muted | „Move up“ / „Move down“ |
+| Neues Vorhaben | folder-plus | on-primary | Text „New project“ steht daneben |
+| Ergebnis bearbeiten | pencil | text | Text steht daneben |
+| Zusammenfassen | sparkles | text | Text steht daneben |
+| Vorschläge | list-tree | text | Text steht daneben |
+| Vorschlag übernehmen | check | text bzw. on-primary | Text „Accept“ / „Accept all“ steht daneben |
+| Senden / Stopp | send / square | je Schaltfläche | Text steht daneben |
+| Nachricht erneut senden | undo-2 | text | Text „Send again“ steht daneben |
+| Sperre erneut prüfen | refresh-cw | text | Text „Check again“ steht daneben |
+| Kontext anzeigen | eye | text | Text steht daneben |
+| Export | download | text | Text steht daneben |
+| Knoten löschen | trash-2 | error | Text „Delete“ / „Delete permanently“ steht daneben |
+| Entwurf verwerfen | file-x | error | Text „Discard draft“ steht daneben |
+| Auf-/Zuklappen | chevron-right / chevron-down | tree-muted | `aria-expanded` |
+| Auf-/Zuklappen der Planspalte („Show plan“ / „Hide plan“, unter 1024 px) | chevron-right (zu) / chevron-down (offen) | text | Text steht daneben, `aria-expanded`; Anfangszustand „offen“ (Schaltfläche „Hide plan“), siehe `UI-003` |
+| Brotkrumen-Trenner (Kopfzeile) | chevron-right | text-muted | dekorativ (`aria-hidden`), keine eigene Bedeutung; die Reihenfolge trägt die Navigationsrolle (`nav`) |
+| **Erfolg** (Banner MSG-010 „Exported to …“, alle Toasts) | **kein Symbol** | – | Der Text trägt die Aussage (Banner zusätzlich in success-Farben); `circle-check` bleibt „Fixed plan“ vorbehalten |
+
+**Bewusst ohne Symbol** (jede dieser Stellen trägt die Bedeutung im Text; kein Platzhaltersymbol): Erfolgsbanner und Toasts (siehe oben: „Saved“, „Saved as concept“, „Saved as fixed plan“, „Project created“, „Node added“, „Node deleted“, „Moved to position n“, „No suggestions left“); Systemzeile MSG-008 (ruhige Zeile im Chat); Abweisungsseite MSG-014 und alle Terminal-Meldungen (TERM-*, kein Ramifold-Layout); Lade- und Wartetexte („Loading plan…“, „Loading node…“, „Loading projects…“, „Loading context…“, „Creating…“, „Saving…“, „Deleting…“, „Accepting…“; `loader-circle` bleibt „KI läuft“); Leerzustände („No project in this folder yet.“ mit Folgeaktion „New project“ `folder-plus`, „No result yet.“, „No messages yet.“, „No objective.“, „Nothing to preview.“; die Statuspille „No result yet“ trägt weiter `circle-dashed`); Hinweistexte („A summary is being created. …“, „Unsaved draft“ in der Fußleiste von UI-004, Einleitung in UI-005); Absender „You“ und alle Zeitangaben; Köpfe der Dialoge und Panels UI-002, UI-005, UI-006, UI-008, UI-009 (nur Titel, bei UI-002, UI-006, UI-008 mit Schließen `x`); Schaltflächen nur mit Text (Create project, Add node, Save title, Save objective, Cancel, Close, Continue, Keep my draft, Discard, Discard all, Save as concept, Dismiss, Details); Links („Data notice“, „Projects“, Titel in der Vorhabenliste); Tabellenköpfe; „+n“ und Wurzelknoten im Baum; Checkbox in UI-009 (Haken des Steuerelements, kein Icon der Tabelle); Seitensymbol (Favicon): für alle Instanzen gleich, kein Zustandssymbol, nicht Teil dieser Tabelle.
+
+Marken (REQ-062): Jede Marke zeigt **Symbol und Text** (incomplete, aborted, not sent, not saved, Simulated AI, Draft, Read-only, Not readable), nie nur Farbe. Mehrere Marken mit derselben Bedeutung teilen ein Symbol (die Art steht im Text: „incomplete“, „not sent“ und „not saved“ sind alle Fehlerzustände einer Nachricht mit `circle-x`); verschiedene Aktionen haben verschiedene Symbole. Marken an Nachrichten richten sich nach der Art des Zustands, Banner nach ihrer Schwere: das Banner MSG-007 (Warnung) trägt `triangle-alert`, die Marke „incomplete“ an der Nachricht `circle-x`. Banner tragen das Symbol ihrer Art in der Textfarbe des Banners: Fehler `circle-x`, Warnung `triangle-alert`, Info `info`, Erfolg kein Symbol. Ein Icon steht für genau eine Bedeutung; einzige Ausnahme ist der dekorative Brotkrumen-Trenner (`chevron-right`, siehe Tabelle).
+Ein Statussymbol allein trägt die Information über seine Form (nicht nur Farbe); das Wort steht im zugänglichen Namen und im Tooltip. Im Baum gehört der Tooltip zur Zeile, nicht zum Symbol, und es gibt **einen** Tooltip je Zeile: bei gekürztem Titel „<voller Titel> · <Statuswort>“ (z. B. „Embedding-Modell · Concept“), sonst nur das Statuswort („Concept“). Er erscheint bei Mausposition auf der Zeile und bei Tastaturfokus auf der Zeile (ohne Zusatzbedienung, `Esc` blendet ihn aus, WCAG 1.4.13). Der zugängliche Name der Baumzeile nennt, soweit an der Zeile sichtbar, in fester Reihenfolge: Nummer und Titel, Statuswort, „Draft“, „+n“, „AI running“ (z. B. „2.2 Embedding-Modell, Concept, Draft, +3“; „2.2 Embedding-Modell, Concept, AI running“); die Symbole und die sichtbare Laufanzeige tragen keinen eigenen Namen. Ein Icon steht für genau eine Bedeutung; „pencil“ ist ausschließlich „Edit result“. Die Statuspille im Abschnitt „Result“ zeigt Symbol und Wort.
+
+## Komponentenregeln
+- **Buttons:** primär (gefüllt primary, höchstens einer je Bereich), sekundär (Rand border), Text-Button für Nebenaktionen, destruktiv (gefüllt error, nur im Löschdialog; „Delete“ im Knotenkopf ist ein roter Text-Button mit Symbol). Beschriftung = Ergebnis der Aktion. Icon-Buttons: Tooltip, zugänglicher Name, 32 × 32 px. Deaktiviert: `aria-disabled`, gedämpft, bleibt fokussierbar.
+- **Formulare:** Label immer sichtbar über dem Feld, Pflichtfeld „(required)“ im Label, Fehlertext unter dem Feld in error mit Symbol, roter Rand 2 px, Fokus auf das erste fehlerhafte Feld.
+- **Baum:** Zeile = Auf-/Zuklapp-Pfeil, Nummer, Titel, „+n“, Markierungen „AI running“ und „Draft“, Statussymbol rechts. Ausgewählt: tree-sel-bg und 3-px-Balken.
+- **Pillen und Marken:** Status-Pille mit Symbol und Wort im Ergebnis; Zustandsmarken an Nachrichten („incomplete“, „aborted“, „not sent“, „not saved“) als Text-Pille mit Symbol und Ursache.
+- **Feedback:** Banner (bleibt); Warn- und Fehlerbanner `role="alert"`, Info- und Erfolgsmeldungen (Banner und Toasts) `role="status"`, Inline unter Feldern, Toast nur für flüchtigen Erfolg (6 s, schließbar). Dialoge modal, Fokus-Falle, ESC schließt, Fokus kehrt zurück.
+- **Chat:** Planer rechts auf you-bg, KI links auf bg mit Rand divider; Absender als Text („You“, „AI“) und Zeit.
+- **Muster:** Master-Detail (Baum links, Knoten rechts), Dialog für Formulare und Bestätigungen, Seitenpanel für den Kontext (UI-008), Sammelbereich der Vorschlagskarten (UI-005), Icon-Zeile für Knotenaktionen, Tooltips für Icons.
+- **Leerzustände:** ein Satz und genau eine Folgeaktion.
+- **Markdown:** Überschriften, Listen, Tabellen (Rand divider, horizontal scrollbar), Codeblöcke (code-bg, Mono, scrollbar), Links in neuem Tab; keine eingebetteten Bilder, ein Bild erscheint als Link mit Bild-Icon.
+- **Banner „ganzes Fenster“** (`read-only`, `server-down`): volle Breite, nicht schließbar, error-Farben, schiebt den Inhalt statt ihn zu überdecken.
+
+## Barrierefreiheit
+Ziel WCAG 2.2 AA für die sechs Kriterien aus REQ-062 (1.4.3, 1.4.4, 2.1.1, 2.4.3, 2.4.7, 4.1.2). Fokus: 2 px focus-Rahmen mit 2 px Abstand, nie entfernt. Mindest-Zielgröße 32 × 32 px. Keine dekorativen Animationen; die Laufanzeige ist Symbol plus Text, eine Drehung nur dezent und bei `prefers-reduced-motion` abgeschaltet.
+
+## Nicht verwenden
+(a) Elemente ohne Grundlage im Screen-Inventar, in den `screen.md` oder in den Requirements: Einstellungs-Zahnrad, Avatar/Profil, Benachrichtigungsglocke, globale Suche, Hamburger-Menü, Bottom-Navigation, Seitenleisten-Menüs außer dem Baum, Dark-Mode-Schalter, Hilfe-Icon, Kennzahlen, Diagramme, Fortschrittsbalken, Badges, Footer, Marketing-, Hilfe- und Platzhaltertexte, Onboarding; Anzeigen für Werkzeuge oder Skills der KI, Modellauswahl, Versionsverläufe, Verweise (spätere Slices).
+(b) Projektspezifisch: Verläufe, Schlagschatten außer an Dialog und Panel, dekorative Animationen, mehr als ein Primärbutton je Bereich, Großbuchstaben-Beschriftungen, Schriften und Icons von einem CDN.
