@@ -1,0 +1,96 @@
+# CI for every pull request (TechSpec 6, Baseline section 11): lint, typecheck, unit tests, smoke E2E with
+# Playwright report, integration tests with real temp folders and real git on Ubuntu and macOS, and the start
+# with ./start.sh from a fresh clone. No Claude Code: RAMIFOLD_AGENT=fake / fake-claude.
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, typecheck, unit, smoke E2E
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:unit
+      - run: npm run build
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Allow the Chromium sandbox (Ubuntu 24.04 restricts unprivileged user namespaces)
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: npm run test:e2e
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+  integration:
+    name: Integration (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:integration
+
+  start-from-clone:
+    name: ./start.sh from a fresh clone
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Start Ramifold with ./start.sh <folder> in a fresh clone
+        run: |
+          set -euo pipefail
+          clone="$RUNNER_TEMP/clone"
+          project="$(mktemp -d)"
+          git clone --quiet "$GITHUB_WORKSPACE" "$clone"
+          cd "$clone"
+          RAMIFOLD_AGENT=fake PORT=0 ./start.sh "$project" > "$RUNNER_TEMP/start.log" 2>&1 &
+          pid=$!
+          for _ in $(seq 1 300); do
+            grep -q "^Open http://127.0.0.1:" "$RUNNER_TEMP/start.log" && break
+            kill -0 "$pid" 2>/dev/null || { cat "$RUNNER_TEMP/start.log"; exit 1; }
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/start.log"
+          grep -qx "Ramifold is running for $(cd "$project" && pwd -P)" "$RUNNER_TEMP/start.log"
+          grep -qx "Simulated mode: AI answers are simulated and do not come from a real AI." "$RUNNER_TEMP/start.log"
+          url="$(grep -o 'http://127.0.0.1:[0-9]*' "$RUNNER_TEMP/start.log" | head -n 1)"
+          curl --fail --silent "$url/" | grep -q '<div id="root"></div>'
+          test -f "$project/.ramifold/area.json"
+          test -z "$(ls "$project/.ramifold/plans")"
+          test ! -e "$clone/.ramifold"
+          kill "$pid"
