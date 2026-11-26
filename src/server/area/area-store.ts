@@ -2,7 +2,8 @@ import { constants } from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import type { AreaPaths } from "./area-paths";
-import { nodeFileSchema, planFileSchema } from "./file-schemas";
+import { nodeFileSchema, planFileSchema, type SessionEntry } from "./file-schemas";
+import { LocalStateFiles } from "./local-state-files";
 
 // The only interface to the files in `.ramifold/` (TechSpec 4.3, REQ-052), plus the check of the project folder
 // itself (start step 3), because only `area` may use node:fs (TechSpec 4.1).
@@ -32,7 +33,20 @@ export async function inspectProjectFolder(absolutePath: string): Promise<Projec
 export type PlanSummary = { planId: string; createdAt: string | null; title: string | null };
 
 export class AreaStore {
-  constructor(private readonly paths: AreaPaths) {}
+  constructor(
+    private readonly paths: AreaPaths,
+    private readonly localState: LocalStateFiles = new LocalStateFiles(paths),
+  ) {}
+
+  /** Session entry of a chat from `local/sessions.json` (TechSpec 2.8, 3.2); null if missing or invalid. */
+  readSessionEntry(chatId: string): Promise<SessionEntry | null> {
+    return this.localState.readSession(chatId);
+  }
+
+  /** Writes the session entry of a chat atomically; if writing fails, the previous entry stays (TechSpec 2.7). */
+  writeSessionEntry(chatId: string, entry: SessionEntry): Promise<void> {
+    return this.localState.writeSession(chatId, entry);
+  }
 
   /**
    * Reads every folder in `plans/` that contains `plan.json`: creation date from plan.json and the title of the

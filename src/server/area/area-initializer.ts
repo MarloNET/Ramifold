@@ -3,7 +3,7 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import type { Clock } from "../clock";
 import type { AreaPaths } from "./area-paths";
-import { syncFolder, writeAndSync, writeFileAtomic } from "./atomic-write";
+import { syncFolder, writeAndSync, writeFileAtomic, writeJsonFileAtomic } from "./atomic-write";
 
 export type AreaFs = Pick<typeof fsp, "mkdir" | "open" | "link" | "rename" | "unlink" | "readFile" | "access">;
 
@@ -40,7 +40,7 @@ export class AreaInitializer {
     if (firstCreation) {
       await this.createAreaGitignoreOnce();
       const areaJson = { format: AREA_FORMAT, createdAt: this.clock.now().toISOString() };
-      await writeFileAtomic(p.areaJson, `${JSON.stringify(areaJson, null, 2)}\n`, this.fs);
+      await writeJsonFileAtomic(p.areaJson, areaJson, this.fs);
     }
     // plans/ always comes after area.json, so an aborted creation never looks damaged (FIND-036).
     await this.ensureFolder(p.plans);
