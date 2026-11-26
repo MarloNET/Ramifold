@@ -4,8 +4,12 @@ import path from "node:path";
 import type { Clock } from "../clock";
 import type { AreaPaths } from "./area-paths";
 import { syncFolder, writeAndSync, writeFileAtomic, writeJsonFileAtomic } from "./atomic-write";
+import { areaFileSchema } from "./file-schemas";
 
 export type AreaFs = Pick<typeof fsp, "mkdir" | "open" | "link" | "rename" | "unlink" | "readFile" | "access">;
+
+/** Result of start step 5; `path` is the one the terminal line names (TERM-010: area.json, TERM-011: .ramifold). */
+export type AreaCheck = { status: "ok" } | { status: "damaged"; path: string } | { status: "newer_version"; path: string };
 
 // Contents fixed by TechSpec 2.14 ("Regel je Datei").
 export const AREA_GITIGNORE_CONTENT =
@@ -26,6 +30,32 @@ export class AreaInitializer {
     private readonly clock: Clock,
     private readonly fs: AreaFs = fsp,
   ) {}
+
+  /**
+   * Start step 5 (TechSpec 2.1, CC-04), read-only: an existing area is damaged if area.json is missing although
+   * plans/ exists, or if area.json cannot be read, has conflict markers (not parsable) or violates the schema; a
+   * format above 1 comes from a newer Ramifold version. No area at all is fine; step 7 creates it.
+   */
+  async checkArea(): Promise<AreaCheck> {
+    const p = this.paths;
+    const damaged: AreaCheck = { status: "damaged", path: p.areaJson };
+    if (!(await this.exists(p.root))) return { status: "ok" };
+    let text: string;
+    try {
+      text = await this.fs.readFile(p.areaJson, "utf8");
+    } catch (error) {
+      if (errorCode(error) !== "ENOENT") return damaged;
+      return (await this.exists(p.plans)) ? damaged : { status: "ok" };
+    }
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      return damaged;
+    }
+    if (isNewerFormat(data)) return { status: "newer_version", path: p.root };
+    return areaFileSchema.safeParse(data).success ? { status: "ok" } : damaged;
+  }
 
   async ensureArea(): Promise<void> {
     const p = this.paths;
@@ -105,6 +135,12 @@ export class AreaInitializer {
       },
     );
   }
+}
+
+/** A whole-number `format` above the known one; checked before the schema, which a newer format may change. */
+function isNewerFormat(data: unknown): boolean {
+  if (typeof data !== "object" || data === null || !("format" in data)) return false;
+  return Number.isInteger(data.format) && (data.format as number) > AREA_FORMAT;
 }
 
 function errorCode(error: unknown): string | undefined {

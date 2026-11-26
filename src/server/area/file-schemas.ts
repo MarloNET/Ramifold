@@ -55,3 +55,13 @@ export type SessionEntry = z.infer<typeof sessionEntrySchema>;
 
 /** `local/sessions.json`: entries per chat id; each entry is checked on its own when read. */
 export const sessionsFileSchema = z.looseObject({ sessions: z.record(z.string(), z.unknown()) });
+
+/** `.ramifold/local/instance.lock` (TechSpec 3.2) */
+export const instanceLockFileSchema = z.object({
+  pid: z.number().int().positive(),
+  port: z.number().int().min(1).max(65535),
+  instanceId: z.uuid(),
+  projectFolder: z.string().min(1),
+  startedAt: isoTimestampSchema,
+});
+export type InstanceLockFile = z.infer<typeof instanceLockFileSchema>;

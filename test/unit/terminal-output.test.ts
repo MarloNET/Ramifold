@@ -80,4 +80,35 @@ describe("TerminalOutput", () => {
     expect(out.stderr).toBe("[ramifold] 2026-11-24T09:42:00.000Z startup_failed cause=port_in_use\n");
     expect(out.stdout).toBe("");
   });
+
+  it("TERM-003 on stderr with folder and address of the running instance", () => {
+    const { out, terminal } = capture();
+    terminal.alreadyRunning("/home/planner/code/rag", 6420);
+    expect(out.stderr).toBe("Ramifold is already running for /home/planner/code/rag at http://127.0.0.1:6420.\n");
+    expect(out.stdout).toBe("");
+  });
+
+  it("TERM-009 on stderr", () => {
+    const { out, terminal } = capture();
+    terminal.processNotResponding(4242, "/home/planner/code/rag");
+    expect(out.stderr).toBe(
+      "Cannot start: a Ramifold process (PID 4242) for /home/planner/code/rag is still running but does not respond. End that process, then start Ramifold again.\n",
+    );
+  });
+
+  it("TERM-010 on stderr", () => {
+    const { out, terminal } = capture();
+    terminal.areaDamaged("/home/planner/code/rag/.ramifold/area.json");
+    expect(out.stderr).toBe(
+      "Cannot start: the Ramifold data is damaged: /home/planner/code/rag/.ramifold/area.json. Ramifold changed nothing. Restore the file (for example with Git), then start Ramifold again.\n",
+    );
+  });
+
+  it("TERM-011 on stderr", () => {
+    const { out, terminal } = capture();
+    terminal.areaFromNewerVersion("/home/planner/code/rag/.ramifold");
+    expect(out.stderr).toBe(
+      "Cannot start: the Ramifold data in /home/planner/code/rag/.ramifold was created by a newer Ramifold version. Update Ramifold, then start it again.\n",
+    );
+  });
 });
