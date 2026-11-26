@@ -180,4 +180,50 @@ describe("ErrorReporter – no content text (K3)", () => {
     await reporter.report({ kind: "plan_unreadable", cause: "damaged", planId: PLAN, detail: "/etc/passwd" });
     expect(entries.map((e) => e.detail)).toEqual([`.ramifold/plans/${PLAN}/plan.json`, undefined]);
   });
+
+  // Values that start with a valid id, number or code and then append content text: the whole value must match,
+  // not only its beginning.
+  const SUFFIXES = [" Datenquellen und Ingestion", "\nDatenquellen und Ingestion"];
+  const PATH = `.ramifold/plans/${PLAN}/plan.json`;
+  const AI = { kind: "ai_request_failed", cause: "agent_exited", planId: PLAN, nodeId: NODE, nodeNumber: "1", requestKind: "chat" } as const;
+  const SAVE = { kind: "save_failed", cause: "disk_full", planId: PLAN, nodeId: NODE, nodeNumber: "1" } as const;
+  const PREFIXED: { name: string; field: keyof ErrorLogEntry; report: (suffix: string) => unknown }[] = [
+    { name: "planId", field: "planId", report: (s) => ({ ...AI, planId: PLAN + s }) },
+    { name: "nodeId", field: "nodeId", report: (s) => ({ ...AI, nodeId: NODE + s }) },
+    { name: "nodeNumber", field: "nodeNumber", report: (s) => ({ ...SAVE, nodeNumber: `2.1${s}` }) },
+    { name: "cause", field: "cause", report: (s) => ({ ...SAVE, cause: `disk_full${s}` }) },
+    { name: "requestKind", field: "requestKind", report: (s) => ({ ...AI, requestKind: `chat${s}` }) },
+    { name: "exit detail", field: "detail", report: (s) => ({ ...AI, detail: `exit=1${s}` }) },
+    { name: "signal detail", field: "detail", report: (s) => ({ ...AI, detail: `signal=SIGTERM${s}` }) },
+    { name: "errno detail", field: "detail", report: (s) => ({ ...SAVE, detail: `ENOSPC${s}` }) },
+    { name: "path detail", field: "detail", report: (s) => ({ kind: "plan_unreadable", cause: "damaged", planId: PLAN, detail: PATH + s }) },
+    { name: "error class detail", field: "detail", report: (s) => ({ kind: "internal_error", detail: `TypeError${s}` }) },
+  ];
+
+  describe.each(SUFFIXES)("drops a valid value followed by content text %j", (suffix) => {
+    it.each(PREFIXED)("$name", async ({ field, report }) => {
+      const { out, entries, reporter } = setup();
+      await reporter.report(report(suffix) as unknown as ErrorReport);
+      expect(out.stderr).not.toContain("Datenquellen");
+      expect(out.stderr.split("\n").filter(Boolean)).toHaveLength(1);
+      expect(entries).toHaveLength(1);
+      expect(entries[0]).not.toHaveProperty(field);
+      expect(JSON.stringify(entries[0])).not.toContain("Datenquellen");
+    });
+  });
+
+  it.each([
+    ".ramifold/../outside.json",
+    ".ramifold/plans/../../x",
+    `.ramifold/plans/${PLAN}/..`,
+    ".ramifold/./plans",
+    `.ramifold/plans/${PLAN}/Datenquellen und Ingestion.json`,
+    ".ramifold/plans/a\tb",
+    ".ramifold/plans/ä.json",
+  ])("drops a path detail that leaves the area or has an invalid segment: %j", async (detail) => {
+    const { out, entries, reporter } = setup();
+    await reporter.report({ kind: "plan_unreadable", cause: "damaged", planId: PLAN, detail });
+    expect(out.stderr).toBe(`[ramifold] ${AT} plan_unreadable cause=damaged plan=${PLAN}\n`);
+    expect(entries).toEqual([{ at: AT, kind: "plan_unreadable", cause: "damaged", planId: PLAN }]);
+  });
 });
