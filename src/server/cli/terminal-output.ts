@@ -49,6 +49,11 @@ export class TerminalOutput {
     );
   }
 
+  /** Error line of `ErrorReporter` (TechSpec 2.14, REQ-063); the reporter builds the content-free line. */
+  errorLine(line: string): void {
+    this.err(line);
+  }
+
   private out(line: string): void {
     this.streams.stdout.write(`${line}\n`);
   }

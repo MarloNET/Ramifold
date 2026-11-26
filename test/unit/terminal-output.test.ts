@@ -57,4 +57,11 @@ describe("TerminalOutput", () => {
       "Cannot start: an unexpected error occurred (EACCES). Details are in the error log if Ramifold could write it.\n",
     );
   });
+
+  it("error line of ErrorReporter on stderr, unchanged", () => {
+    const { out, terminal } = capture();
+    terminal.errorLine("[ramifold] 2026-11-24T09:42:00.000Z startup_failed cause=port_in_use");
+    expect(out.stderr).toBe("[ramifold] 2026-11-24T09:42:00.000Z startup_failed cause=port_in_use\n");
+    expect(out.stdout).toBe("");
+  });
 });
