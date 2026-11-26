@@ -25,6 +25,22 @@ describe("TerminalOutput", () => {
     expect(out.stdout).toBe("Simulated mode: AI answers are simulated and do not come from a real AI.\n");
   });
 
+  it("TERM-004 on stderr", () => {
+    const { out, terminal } = capture();
+    terminal.agentNotFound();
+    expect(out.stderr).toBe("Warning: Claude Code was not found. AI features will not work until it is installed.\n");
+    expect(out.stdout).toBe("");
+  });
+
+  it("TERM-005 on stderr", () => {
+    const { out, terminal } = capture();
+    terminal.agentTooOld();
+    expect(out.stderr).toBe(
+      'Warning: Claude Code is too old (need v2.1.248 or newer). Run "claude update". AI features will not work until then.\n',
+    );
+    expect(out.stdout).toBe("");
+  });
+
   it.each([
     ["missing", "Cannot start: ../rag does not exist.\n"],
     ["not_a_folder", "Cannot start: ../rag is not a folder.\n"],

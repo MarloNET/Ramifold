@@ -2,9 +2,13 @@ import { randomUUID } from "node:crypto";
 import type { AddressInfo } from "node:net";
 import { fileURLToPath } from "node:url";
 import { version as ramifoldVersion } from "../../package.json";
+import { resolveAgentCommand } from "./agent/agent-command";
+import { AgentGateway } from "./agent/agent-gateway";
+import { ClaudeCodeAdapter } from "./agent/claude-code/claude-code-adapter";
 import { AreaInitializer } from "./area/area-initializer";
 import { areaPaths } from "./area/area-paths";
 import { AreaStore } from "./area/area-store";
+import { writeFileAtomic } from "./area/atomic-write";
 import { parseStartArgs } from "./cli/parse-start-args";
 import { TerminalOutput } from "./cli/terminal-output";
 import { systemClock } from "./clock";
@@ -17,12 +21,19 @@ import { InstanceGuard } from "./startup/instance-guard";
 
 process.title = "ramifold-server";
 
-const options = parseStartArgs(process.argv.slice(2), process.env, process.cwd());
+const fakeClaudeScript = fileURLToPath(new URL("../../tools/fake-claude/fake-claude.mjs", import.meta.url));
+const agentCommand = resolveAgentCommand(process.env, fakeClaudeScript);
+const options = { ...parseStartArgs(process.argv.slice(2), process.env, process.cwd()), simulated: agentCommand.simulated };
 const instanceId = randomUUID();
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
+const terminal = new TerminalOutput();
+const agentGateway = new AgentGateway(
+  new ClaudeCodeAdapter({ command: agentCommand.command, writeRunFile: (file, content) => writeFileAtomic(file, content) }),
+  terminal,
+);
 
 const guard = new InstanceGuard({
-  terminal: new TerminalOutput(),
+  terminal,
   openHttp: (projectFolder) => {
     const windowHub = new WindowHub({ instanceId, simulated: options.simulated });
     const app = createHttpApp({
@@ -44,3 +55,4 @@ const guard = new InstanceGuard({
 
 const result = await guard.start(options);
 if (result.status === "aborted") process.exitCode = 1;
+else void agentGateway.checkAtStartup();

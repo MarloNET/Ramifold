@@ -1,0 +1,136 @@
+import path from "node:path";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { AgentGateway } from "../../src/server/agent/agent-gateway";
+import type { AgentFinding, AgentPort, AgentRunResult, AgentRunSpec } from "../../src/server/agent/agent-port";
+import { ClaudeCodeAdapter } from "../../src/server/agent/claude-code/claude-code-adapter";
+import { READ_ONLY_PLANNING, type ToolPolicy } from "../../src/server/agent/tool-policy";
+
+const FAKE = path.resolve(import.meta.dirname, "../../tools/fake-claude/fake-claude.mjs");
+
+function warnings() {
+  return { agentNotFound: vi.fn(), agentTooOld: vi.fn() };
+}
+
+/** AgentPort double: findings in order, runs end with the given result. */
+function fakePort(findings: AgentFinding[], runResult?: AgentRunResult, canForkSession = true) {
+  const started: Array<{ policy: ToolPolicy; spec: AgentRunSpec }> = [];
+  const port: AgentPort = {
+    kind: "claude-code",
+    capabilities: { canForkSession },
+    checkAvailability: vi.fn(async (): Promise<AgentFinding> => findings.shift() ?? { status: "ok", version: "2.1.300" }),
+    start: (policy, spec) => {
+      started.push({ policy, spec });
+      return { done: Promise.resolve(runResult ?? { outcome: "complete", sessionId: "S1", resultText: "" }), abort: vi.fn() };
+    },
+  };
+  return { port, started };
+}
+
+const spec = (session: AgentRunSpec["session"]): AgentRunSpec => ({
+  requestId: "R1",
+  projectFolder: "/p",
+  context: "",
+  message: "Hi",
+  session,
+  onText: () => undefined,
+});
+
+afterEach(() => vi.unstubAllEnvs());
+
+describe("AgentGateway", () => {
+  it("starts with the finding 'checking'", () => {
+    expect(new AgentGateway(fakePort([]).port, warnings()).finding).toEqual({ status: "checking", version: null });
+  });
+
+  it("finding 'not found' at the start prints TERM-004 (RAMIFOLD_CLAUDE_CMD=/nicht/vorhanden)", async () => {
+    const warn = warnings();
+    const gateway = new AgentGateway(new ClaudeCodeAdapter({ command: ["/nicht/vorhanden"], writeRunFile: async () => undefined }), warn);
+    expect(await gateway.checkAtStartup()).toEqual({ status: "not_found", version: null });
+    expect(gateway.finding.status).toBe("not_found");
+    expect(warn.agentNotFound).toHaveBeenCalledTimes(1);
+    expect(warn.agentTooOld).not.toHaveBeenCalled();
+  });
+
+  it("finding 'too old' at the start prints TERM-005 (scenario version_old)", async () => {
+    vi.stubEnv("RAMIFOLD_FAKE_SCENARIO", "version_old");
+    const warn = warnings();
+    const adapter = new ClaudeCodeAdapter({ command: [process.execPath, FAKE], writeRunFile: async () => undefined });
+    const gateway = new AgentGateway(adapter, warn);
+    expect(await gateway.checkAtStartup()).toEqual({ status: "too_old", version: "2.1.247" });
+    expect(warn.agentTooOld).toHaveBeenCalledTimes(1);
+    expect(warn.agentNotFound).not.toHaveBeenCalled();
+  });
+
+  it("prints no warning when Claude Code is ok", async () => {
+    const warn = warnings();
+    const gateway = new AgentGateway(fakePort([{ status: "ok", version: "2.1.300" }]).port, warn);
+    await gateway.checkAtStartup();
+    expect(warn.agentNotFound).not.toHaveBeenCalled();
+    expect(warn.agentTooOld).not.toHaveBeenCalled();
+  });
+
+  it("checks again before a request while the finding is negative, without restart (AC-REQ-004-*)", async () => {
+    const { port } = fakePort([
+      { status: "too_old", version: "2.1.247" },
+      { status: "too_old", version: "2.1.247" },
+      { status: "ok", version: "2.1.300" },
+    ]);
+    const warn = warnings();
+    const gateway = new AgentGateway(port, warn);
+    await gateway.checkAtStartup();
+    expect((await gateway.ensureAvailable()).status).toBe("too_old");
+    expect((await gateway.ensureAvailable()).status).toBe("ok");
+    expect(gateway.finding).toEqual({ status: "ok", version: "2.1.300" });
+    expect(warn.agentTooOld).toHaveBeenCalledTimes(1);
+    expect(port.checkAvailability).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not check again once the finding is ok", async () => {
+    const { port } = fakePort([{ status: "ok", version: "2.1.300" }]);
+    const gateway = new AgentGateway(port, warnings());
+    await gateway.checkAtStartup();
+    await gateway.ensureAvailable();
+    expect(port.checkAvailability).toHaveBeenCalledTimes(1);
+  });
+
+  it("shares a running check instead of starting a second one", async () => {
+    const { port } = fakePort([{ status: "ok", version: "2.1.300" }]);
+    const gateway = new AgentGateway(port, warnings());
+    await Promise.all([gateway.checkAtStartup(), gateway.ensureAvailable()]);
+    expect(port.checkAvailability).toHaveBeenCalledTimes(1);
+  });
+
+  it("always passes READ_ONLY_PLANNING, the only policy", async () => {
+    const { port, started } = fakePort([]);
+    const gateway = new AgentGateway(port, warnings());
+    for (const session of [{ mode: "new" }, { mode: "resume", sessionId: "S1" }, { mode: "fork", sessionId: "S1" }] as const) {
+      await gateway.run(spec(session)).done;
+    }
+    expect(started.map((s) => s.policy)).toEqual([READ_ONLY_PLANNING, READ_ONLY_PLANNING, READ_ONLY_PLANNING]);
+  });
+
+  it("never gives mode fork to an adapter with canForkSession false", () => {
+    const { port, started } = fakePort([], undefined, false);
+    const gateway = new AgentGateway(port, warnings());
+    expect(gateway.capabilities.canForkSession).toBe(false);
+    expect(() => gateway.run(spec({ mode: "fork", sessionId: "S1" }))).toThrow(/cannot fork/);
+    expect(started).toEqual([]);
+  });
+
+  it("turns an ok finding into not_found when the process start fails", async () => {
+    const { port } = fakePort([{ status: "ok", version: "2.1.300" }], { outcome: "failed", cause: "agent_not_found", sessionId: null });
+    const gateway = new AgentGateway(port, warnings());
+    await gateway.checkAtStartup();
+    expect(await gateway.run(spec({ mode: "new" })).done).toMatchObject({ cause: "agent_not_found" });
+    expect(gateway.finding).toEqual({ status: "not_found", version: null });
+  });
+});
+
+describe("ClaudeCodeAdapter capabilities", () => {
+  it("is of kind claude-code and can fork sessions; switchable off only by constructor", () => {
+    const options = { command: ["claude"], writeRunFile: async () => undefined };
+    expect(new ClaudeCodeAdapter(options).kind).toBe("claude-code");
+    expect(new ClaudeCodeAdapter(options).capabilities).toEqual({ canForkSession: true });
+    expect(new ClaudeCodeAdapter({ ...options, canForkSession: false }).capabilities).toEqual({ canForkSession: false });
+  });
+});

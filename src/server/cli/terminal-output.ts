@@ -25,6 +25,16 @@ export class TerminalOutput {
     this.out("Simulated mode: AI answers are simulated and do not come from a real AI.");
   }
 
+  /** TERM-004; a warning after the start, Ramifold keeps running. */
+  agentNotFound(): void {
+    this.err("Warning: Claude Code was not found. AI features will not work until it is installed.");
+  }
+
+  /** TERM-005; a warning after the start, Ramifold keeps running. */
+  agentTooOld(): void {
+    this.err('Warning: Claude Code is too old (need v2.1.248 or newer). Run "claude update". AI features will not work until then.');
+  }
+
   /** TERM-002 */
   folderProblem(folder: string, problem: FolderProblem): void {
     this.err(`Cannot start: ${folder} ${FOLDER_PROBLEM_TEXT[problem]}.`);
