@@ -1,0 +1,208 @@
+import fsp from "node:fs/promises";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { AreaInitializer } from "../../src/server/area/area-initializer";
+import { areaPaths, type AreaPaths } from "../../src/server/area/area-paths";
+import type { Clock } from "../../src/server/clock";
+import { errnoError, faultFs, InjectedFault } from "../helpers/fault-fs";
+import { createTempProject, type TempProject } from "../helpers/temp-project";
+
+// Expected contents are copied from TechSpec 2.14 ("Regel je Datei").
+const AREA_GITIGNORE =
+  '# Created once by Ramifold. Delete the line "plans/*/chats/" to include chats in Git.\nlocal/\n*.tmp-*\nplans/*/chats/\n';
+const LOCAL_GITIGNORE = "*\n";
+const CREATED_AT = "2026-11-24T09:42:00.000Z";
+const AREA_JSON = `{\n  "format": 1,\n  "createdAt": "${CREATED_AT}"\n}\n`;
+
+const fixedClock: Clock = { now: () => new Date(CREATED_AT) };
+
+let project: TempProject;
+let paths: AreaPaths;
+beforeEach(async () => {
+  project = await createTempProject();
+  paths = areaPaths(project.dir);
+});
+afterEach(() => project.cleanup());
+
+const exists = (p: string) =>
+  fsp.access(p).then(
+    () => true,
+    () => false,
+  );
+const read = (p: string) => fsp.readFile(p, "utf8");
+
+async function listTree(dir: string): Promise<string[]> {
+  const entries = await fsp.readdir(dir, { recursive: true, withFileTypes: true });
+  return entries
+    .map((e) => path.relative(project.dir, path.join(e.parentPath, e.name)) + (e.isDirectory() ? "/" : ""))
+    .sort();
+}
+
+async function expectCompleteArea() {
+  expect(await listTree(paths.root)).toEqual(
+    [
+      ".ramifold/.gitignore",
+      ".ramifold/area.json",
+      ".ramifold/local/",
+      ".ramifold/local/.gitignore",
+      ".ramifold/local/tmp/",
+      ".ramifold/plans/",
+    ].sort(),
+  );
+  expect(await read(paths.gitignore)).toBe(AREA_GITIGNORE);
+  expect(await read(paths.localGitignore)).toBe(LOCAL_GITIGNORE);
+}
+
+describe("AreaInitializer – first creation", () => {
+  it("creates the complete area with the specified contents", async () => {
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await expectCompleteArea();
+    expect(await read(paths.areaJson)).toBe(AREA_JSON);
+  });
+
+  it("creates the parts in the order .ramifold, local, local/tmp, local/.gitignore, .gitignore, area.json, plans", async () => {
+    const { fs, calls } = faultFs();
+    await new AreaInitializer(paths, fixedClock, fs).ensureArea();
+    const created = calls
+      .filter((c) => c.op === "mkdir" || c.op === "rename" || c.op === "link")
+      .map((c) => path.relative(project.dir, c.path!));
+    expect(created).toEqual([
+      ".ramifold",
+      ".ramifold/local",
+      ".ramifold/local/tmp",
+      ".ramifold/local/.gitignore",
+      ".ramifold/.gitignore",
+      ".ramifold/area.json",
+      ".ramifold/plans",
+    ]);
+  });
+
+  it("writes nothing outside .ramifold", async () => {
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    expect(await fsp.readdir(project.dir)).toEqual([".ramifold"]);
+  });
+});
+
+describe("AreaInitializer – later starts", () => {
+  it("in a fresh clone only adds local/, local/.gitignore, local/tmp/ and plans/; versioned files stay byte-equal", async () => {
+    await fsp.mkdir(paths.root);
+    await fsp.writeFile(paths.gitignore, "local/\n# changed by the team\n");
+    await fsp.writeFile(paths.areaJson, '{"format":1,"createdAt":"2026-01-01T00:00:00.000Z"}');
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    expect(await read(paths.gitignore)).toBe("local/\n# changed by the team\n");
+    expect(await read(paths.areaJson)).toBe('{"format":1,"createdAt":"2026-01-01T00:00:00.000Z"}');
+    expect(await read(paths.localGitignore)).toBe(LOCAL_GITIGNORE);
+    expect(await exists(paths.localTmp)).toBe(true);
+    expect(await exists(paths.plans)).toBe(true);
+  });
+
+  it("does not restore a deleted .ramifold/.gitignore (AC-REQ-051-03)", async () => {
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await fsp.rm(paths.gitignore);
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    expect(await exists(paths.gitignore)).toBe(false);
+  });
+
+  it("restores a deleted local/.gitignore and local/tmp/", async () => {
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await fsp.rm(paths.local, { recursive: true });
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await expectCompleteArea();
+  });
+
+  it("completes an aborted first creation (.ramifold/ without area.json and plans/)", async () => {
+    await fsp.mkdir(paths.root);
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await expectCompleteArea();
+    expect(await read(paths.areaJson)).toBe(AREA_JSON);
+  });
+
+  it("keeps an existing .ramifold/.gitignore with other content when area.json is missing", async () => {
+    await fsp.mkdir(paths.root);
+    await fsp.writeFile(paths.gitignore, "custom\n");
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    expect(await read(paths.gitignore)).toBe("custom\n");
+    expect(await read(paths.areaJson)).toBe(AREA_JSON);
+  });
+});
+
+describe("AreaInitializer – abort after every step of the first creation (FIND-036)", () => {
+  it("never leaves plans/ without area.json, and the next start completes the area", async () => {
+    let step = 1;
+    for (; ; step += 1) {
+      await fsp.rm(paths.root, { recursive: true, force: true });
+      const { fs } = faultFs({ failAtStep: step });
+      const result = await new AreaInitializer(paths, fixedClock, fs).ensureArea().then(
+        () => "done" as const,
+        (error: unknown) => error,
+      );
+      if (result === "done") break;
+      expect(result).toBeInstanceOf(InjectedFault);
+      // The state that start check 5 rates as damaged must never arise.
+      expect((await exists(paths.plans)) && !(await exists(paths.areaJson))).toBe(false);
+
+      await new AreaInitializer(paths, fixedClock).ensureArea();
+      expect(await read(paths.gitignore)).toBe(AREA_GITIGNORE);
+      expect(await read(paths.areaJson)).toBe(AREA_JSON);
+      expect(await read(paths.localGitignore)).toBe(LOCAL_GITIGNORE);
+      expect(await exists(paths.localTmp)).toBe(true);
+      expect(await exists(paths.plans)).toBe(true);
+    }
+    // Sanity check that the loop really injected faults into every step of the creation.
+    expect(step).toBeGreaterThan(15);
+  });
+});
+
+describe("AreaInitializer – file system without hard links (FIND-037, TS-R-13)", () => {
+  it.each(["EPERM", "ENOTSUP", "EOPNOTSUPP"])(
+    "creates .ramifold/.gitignore via the fallback when link fails with %s",
+    async (code) => {
+      const { fs } = faultFs({ override: { link: () => Promise.reject(errnoError(code)) } });
+      await new AreaInitializer(paths, fixedClock, fs).ensureArea();
+      await expectCompleteArea();
+      expect(await read(paths.areaJson)).toBe(AREA_JSON);
+    },
+  );
+
+  it("keeps an existing file unchanged when the exclusive create of the fallback meets EEXIST", async () => {
+    await fsp.mkdir(paths.root);
+    await fsp.writeFile(paths.gitignore, "custom\n");
+    const { fs } = faultFs({ override: { link: () => Promise.reject(errnoError("EPERM")) } });
+    await new AreaInitializer(paths, fixedClock, fs).ensureArea();
+    expect(await read(paths.gitignore)).toBe("custom\n");
+  });
+
+  it.each([
+    ["empty", ""],
+    ["truncated", AREA_GITIGNORE.slice(0, 30)],
+  ])("completes a %s .ramifold/.gitignore left by an aborted fallback while area.json is missing", async (_n, content) => {
+    await fsp.mkdir(paths.root);
+    await fsp.writeFile(paths.gitignore, content);
+    const { fs } = faultFs({ override: { link: () => Promise.reject(errnoError("EPERM")) } });
+    await new AreaInitializer(paths, fixedClock, fs).ensureArea();
+    await expectCompleteArea();
+  });
+
+  it("completes the area after an abort in the middle of the fallback write", async () => {
+    const link = () => Promise.reject(errnoError("ENOTSUP"));
+    const probe = faultFs({ override: { link } });
+    await new AreaInitializer(paths, fixedClock, probe.fs).ensureArea();
+    const fallbackWrite = probe.calls.findIndex((c) => c.op === "handle.writeFile" && c.path === paths.gitignore) + 1;
+    expect(fallbackWrite).toBeGreaterThan(0);
+
+    await fsp.rm(paths.root, { recursive: true });
+    const crash = faultFs({ failAtStep: fallbackWrite, override: { link } });
+    await expect(new AreaInitializer(paths, fixedClock, crash.fs).ensureArea()).rejects.toBeInstanceOf(InjectedFault);
+    expect(await read(paths.gitignore)).not.toBe(AREA_GITIGNORE);
+
+    await new AreaInitializer(paths, fixedClock, faultFs({ override: { link } }).fs).ensureArea();
+    await expectCompleteArea();
+  });
+
+  it("treats any other link error as a failed creation", async () => {
+    const { fs } = faultFs({ override: { link: () => Promise.reject(errnoError("EACCES")) } });
+    await expect(new AreaInitializer(paths, fixedClock, fs).ensureArea()).rejects.toMatchObject({ code: "EACCES" });
+    expect(await exists(paths.areaJson)).toBe(false);
+    expect((await fsp.readdir(paths.root)).filter((n) => n.includes(".tmp-"))).toEqual([]);
+  });
+});

@@ -1,0 +1,37 @@
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { startRamifold } from "../helpers/ramifold-process";
+import { createTempProject, type TempProject } from "../helpers/temp-project";
+
+// Example integration test with a real temp folder and real git; runs on Ubuntu and macOS in CI (TechSpec 6).
+
+let project: TempProject;
+beforeEach(async () => (project = await createTempProject({ git: true })));
+afterEach(() => project.cleanup());
+
+describe("Ramifold area in a Git repository", () => {
+  it("offers only the versioned area files to Git; local/ stays out", async () => {
+    const running = await startRamifold({ folder: project.dir });
+    await running.stop();
+    const status = await project.git("status", "--porcelain", "--untracked-files=all");
+    expect(status.split("\n").filter(Boolean).sort()).toEqual(["?? .ramifold/.gitignore", "?? .ramifold/area.json"]);
+  });
+
+  it("starts in a fresh clone: local parts are created, versioned files stay byte-equal", async () => {
+    const first = await startRamifold({ folder: project.dir });
+    await first.stop();
+    await project.git("add", "-A");
+    await project.git("commit", "--quiet", "-m", "area");
+    const clone = await createTempProject();
+    try {
+      await clone.git("clone", "--quiet", project.dir, "repo");
+      const repo = `${clone.dir}/repo`;
+      const before = await clone.git("-C", repo, "ls-files", "-s");
+      const second = await startRamifold({ folder: repo });
+      await second.stop();
+      expect(await clone.git("-C", repo, "ls-files", "-s")).toBe(before);
+      expect(await clone.git("-C", repo, "status", "--porcelain", "--untracked-files=all")).toBe("");
+    } finally {
+      await clone.cleanup();
+    }
+  });
+});

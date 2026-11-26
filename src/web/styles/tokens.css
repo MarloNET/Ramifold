@@ -1,0 +1,79 @@
+/* Design tokens (TechSpec 2.16): names and values from docs/ux/DESIGN.md and the :root block of
+   docs/ux/mockups/base.css (Design v0.4.6). Component CSS uses only these tokens. New contrast pairs go into
+   test/unit/tokens.test.ts. */
+:root {
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+
+  --fs-body: 0.9rem;
+  --fs-tree: 0.88rem;
+  --fs-h1: 1.35rem;
+  --fs-h2: 1.05rem;
+  --w-h: 600;
+  --h-tracking: 0;
+  --brand-tracking: 0.02em;
+
+  --bg: #ffffff;
+  --surface: #f3f5f7;
+  --hover: #e6ebef;
+  --divider: #d3d9df;
+  --border: #66727f;
+  --text: #17202a;
+  --text-muted: #4a5561;
+  --primary: #0b6073;
+  --on-primary: #ffffff;
+  --focus: #0b57d0;
+  --code-bg: #eef1f4;
+
+  --header-bg: #ffffff;
+  --header-text: #17202a;
+  --header-muted: #4a5561;
+  --header-brand: #0b6073;
+  --header-border: #d3d9df;
+  --header-btn-bg: #ffffff;
+  --header-btn-border: #66727f;
+
+  --tree-bg: #edf0f3;
+  --tree-text: #17202a;
+  --tree-muted: #4a5561;
+  --tree-sel-bg: #d5e7ea;
+  --tree-sel-text: #0a3f4c;
+  --tree-sel-bar: #0b6073;
+
+  --status-none: #4a5561;
+  --status-concept: #8a4b08;
+  --status-fixed: #0a6b3d;
+  --none-bg: #ebeef1;
+  --none-text: #3c4651;
+  --concept-bg: #fcefd2;
+  --concept-text: #7a4206;
+  --fixed-bg: #ddf2e5;
+  --fixed-text: #08592f;
+
+  --info: #0b57d0;
+  --info-bg: #e8f0fd;
+  --info-border: #b4ccf3;
+  --info-text: #0a3e94;
+  --error: #b42318;
+  --error-bg: #fdecea;
+  --error-border: #f0b5af;
+  --error-text: #8e1b12;
+  --success-bg: #e4f5ea;
+  --success-border: #a8d9bc;
+  --success-text: #08592f;
+  --warning-bg: #fef3c7;
+  --warning-border: #e6ce82;
+  --warning-text: #6e3b05;
+
+  --you-bg: #e3f0f2;
+  --you-border: #b6d4da;
+  --scrim: rgba(23, 32, 42, 0.45);
+
+  --r-s: 3px;
+  --r-m: 4px;
+  --r-l: 6px;
+  --ctl-h: 32px;
+  --row-h: 30px;
+  --work-pad: 20px 32px 40px;
+  --icon-stroke: 1.75;
+}
