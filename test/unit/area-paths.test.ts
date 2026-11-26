@@ -12,6 +12,7 @@ describe("areaPaths", () => {
     expect(p.local).toBe(path.join("/work/project", ".ramifold", "local"));
     expect(p.localGitignore).toBe(path.join("/work/project", ".ramifold", "local", ".gitignore"));
     expect(p.localTmp).toBe(path.join("/work/project", ".ramifold", "local", "tmp"));
+    expect(p.errorsLog).toBe(path.join("/work/project", ".ramifold", "local", "errors.log"));
   });
 
   it("builds plan file paths from the plan id", () => {

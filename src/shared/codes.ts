@@ -1,4 +1,5 @@
-// Error codes, cause codes, write causes and unreadable causes (TechSpec 2.0, 2.3, 2.6, CC-12).
+// Error codes, cause codes, write causes, unreadable causes, error kinds and startup causes
+// (TechSpec 2.0, 2.3, 2.6, 2.14, CC-12).
 // Changes only together with a specification change (TechSpec 4.4).
 
 export const ERROR_CODES = [
@@ -54,3 +55,28 @@ export type WriteCause = (typeof WRITE_CAUSES)[number];
 /** Causes of an unreadable plan (TechSpec 2.3). */
 export const UNREADABLE_CAUSES = ["newer_version", "git_conflict", "damaged", "inconsistent"] as const;
 export type UnreadableCause = (typeof UNREADABLE_CAUSES)[number];
+
+/** Kinds of the error report in the terminal and in `local/errors.log` (TechSpec 2.14, REQ-063). */
+export const ERROR_KINDS = [
+  "startup_failed",
+  "ai_request_failed",
+  "ai_session_rebuilt",
+  "save_failed",
+  "plan_unreadable",
+  "internal_error",
+] as const;
+export type ErrorKind = (typeof ERROR_KINDS)[number];
+
+/** Causes of `startup_failed` (TechSpec 2.14); the rejected second start is no error case (REQ-070). */
+export const STARTUP_FAILURE_CAUSES = [
+  "invalid_port",
+  "folder_missing",
+  "not_a_folder",
+  "folder_not_writable",
+  "instance_hanging",
+  "area_damaged",
+  "area_newer_version",
+  "port_in_use",
+  "unexpected",
+] as const;
+export type StartupFailureCause = (typeof STARTUP_FAILURE_CAUSES)[number];
