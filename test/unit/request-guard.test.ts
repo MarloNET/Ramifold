@@ -132,3 +132,45 @@ describe("requestGuard – step 5, preflight", () => {
     expect(Object.keys(res.headers).filter((h) => h.startsWith("access-control-"))).toEqual([]);
   });
 });
+
+// CR-165-01: the router decodes percent-encoding, so the guard must classify the decoded path.
+describe("requestGuard – percent-encoded API paths", () => {
+  it.each(["/%61pi/plans", "/%61pi/instance", "/%61pi/events", "/%61%70%69/plans", "/api/%70lans"])(
+    "rejects a cross-site request to %s with 403 forbidden_origin",
+    async (url) => {
+      const res = await t.app.inject({
+        url,
+        headers: { host: t.host, "sec-fetch-site": "cross-site", origin: "http://evil.example" },
+      });
+      expect(res.statusCode).toBe(403);
+      expect(res.json()).toEqual({ error: { code: "forbidden_origin" } });
+    },
+  );
+
+  it("answers /%61pi/plans without X-Ramifold-Instance with 403 missing_instance_header", async () => {
+    const res = await t.app.inject({ url: "/%61pi/plans", headers: { host: t.host } });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: { code: "missing_instance_header" } });
+  });
+
+  it("answers POST /%61pi/plans without JSON body with 415 unsupported_media_type", async () => {
+    const res = await t.app.inject({
+      method: "POST",
+      url: "/%61pi/plans",
+      headers: { ...apiHeaders(openWindow()), "x-ramifold-request-id": "4d0f4b9e-3f55-4b8a-9b8e-2f1c7a2e7c11" },
+      payload: "x",
+    });
+    expect(res.statusCode).toBe(415);
+  });
+
+  it("does not exempt a path from the instance headers only because it decodes to /api/instance", async () => {
+    const res = await t.app.inject({ url: "/api%2Finstance", headers: { host: t.host } });
+    expect(res.statusCode).toBe(403);
+    expect(res.json()).toEqual({ error: { code: "missing_instance_header" } });
+  });
+
+  it("still serves /%61pi/instance to the own page", async () => {
+    const res = await t.app.inject({ url: "/%61pi/instance", headers: { host: t.host, "sec-fetch-site": "same-origin" } });
+    expect(res.statusCode).toBe(200);
+  });
+});

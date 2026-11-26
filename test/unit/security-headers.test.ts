@@ -32,6 +32,13 @@ describe("securityHeaders", () => {
     },
   );
 
+  // CR-165-01: the router decodes percent-encoding, so encoded API paths are API answers too.
+  it.each(["/%61pi/instance", "/%61%70%69/instance"])("sets Cache-Control: no-store on %s", async (url) => {
+    const res = await t.app.inject({ url, headers: { host: t.host } });
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["cache-control"]).toBe("no-store");
+  });
+
   it("sets the headers also on API errors", async () => {
     const res = await t.app.inject({ url: "/api/plans", headers: { host: t.host } });
     expect(res.statusCode).toBe(403);

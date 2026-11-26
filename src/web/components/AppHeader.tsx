@@ -11,9 +11,10 @@ export function AppHeader({ instance, simulated }: { instance: InstanceInfoDto |
     <header className="app-header">
       <span className="app-header__brand">{messages["AppHeader.brand"]}</span>
       {instance && (
-        <span className="app-header__folder" title={instance.projectFolder.absolutePath}>
-          {messages["AppHeader.projectFolder"](instance.projectFolder.displayPath)}
-        </span>
+        <ProjectFolder
+          displayPath={instance.projectFolder.displayPath}
+          absolutePath={instance.projectFolder.absolutePath}
+        />
       )}
       <div className="app-header__actions">
         {simulated && (
@@ -25,5 +26,21 @@ export function AppHeader({ instance, simulated }: { instance: InstanceInfoDto |
         <Link className="app-header__link">{messages["AppHeader.dataNotice"]}</Link>
       </div>
     </header>
+  );
+}
+
+/**
+ * "Project folder: <path>", shortened in the middle with "…" when too long (UI-001 screen.md): the beginning is cut
+ * off with an ellipsis, the last path segment (the folder name) stays visible. Full path as tooltip.
+ */
+function ProjectFolder({ displayPath, absolutePath }: { displayPath: string; absolutePath: string }) {
+  const text = messages["AppHeader.projectFolder"](displayPath);
+  // Path without "/" (the home folder "~"): the whole path is the tail.
+  const split = Math.max(text.lastIndexOf("/"), text.length - displayPath.length);
+  return (
+    <span className="app-header__folder" title={absolutePath}>
+      <span className="app-header__folder-head">{text.slice(0, split)}</span>
+      <span className="app-header__folder-tail">{text.slice(split)}</span>
+    </span>
   );
 }

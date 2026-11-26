@@ -13,6 +13,8 @@ const noFs = (modules = FS_MODULES) =>
 const noLucide = { name: "lucide-react", message: "Import symbols only through src/web/components/Icon.tsx (TechSpec 2.16)." };
 const noServer = { regex: "(^|/)server(/|$)", message: "web and shared import nothing from src/server (TechSpec 4.1)." };
 const noWeb = { regex: "(^|/)web(/|$)", message: "Server code imports nothing from src/web (TechSpec 4.1)." };
+/** Forbids imports of the given src/server modules (direction of dependencies, TechSpec 4.1). */
+const noModules = (modules, message) => ({ regex: `(^|/)(${modules.join("|")})(/|$)`, message });
 
 const restrict = (paths, patterns = []) => ["error", { paths, patterns }];
 
@@ -59,7 +61,12 @@ export default tseslint.config(
   },
   {
     files: ["src/server/area/**"],
-    rules: { "no-restricted-imports": restrict([], [noWeb]) },
+    rules: {
+      "no-restricted-imports": restrict(
+        [],
+        [noWeb, noModules(["http", "plan", "events"], "area imports neither http, plan nor events (TechSpec 4.1).")],
+      ),
+    },
   },
   {
     files: ["src/server/http/**"],
@@ -70,7 +77,14 @@ export default tseslint.config(
           regex: "(^|/)plan/(?!plan-service$)",
           message: "http uses only plan/plan-service from src/server/plan (TechSpec 2.15, ADR-004).",
         },
+        noModules(["area", "agent", "context"], "http reaches area, agent and context only via plan/plan-service (TechSpec 4.1)."),
       ]),
+    },
+  },
+  {
+    files: ["src/server/plan/**"],
+    rules: {
+      "no-restricted-imports": restrict(noFs(), [noWeb, noModules(["http"], "plan does not import http (TechSpec 4.1).")]),
     },
   },
   {
@@ -88,11 +102,17 @@ export default tseslint.config(
       "no-restricted-imports": restrict(noFs(), [
         noWeb,
         { regex: "(^|/)plan(/|$)", message: "agent knows no plan (TechSpec 4.1)." },
+        noModules(["http", "events"], "agent imports neither http nor events; it reports via callbacks (TechSpec 4.1)."),
       ]),
     },
   },
   {
     files: ["src/server/context/**"],
-    rules: { "no-restricted-imports": restrict(noFs(IO_MODULES), [noWeb]) },
+    rules: {
+      "no-restricted-imports": restrict(noFs(IO_MODULES), [
+        noWeb,
+        noModules(["http", "plan", "events"], "context imports neither http, plan nor events (TechSpec 4.1)."),
+      ]),
+    },
   },
 );

@@ -59,13 +59,24 @@ button {
 }
 
 .app-header__folder {
+  display: flex;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   font-family: var(--font-mono);
   font-size: 0.85rem;
   color: var(--header-muted);
+}
+
+/* Shortened in the middle: the beginning ends in "…", the folder name at the end stays visible (UI-001). */
+.app-header__folder-head {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.app-header__folder-tail {
+  flex-shrink: 0;
 }
 
 .app-header__actions {

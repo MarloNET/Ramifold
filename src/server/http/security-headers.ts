@@ -1,4 +1,4 @@
-import type { onRequestHookHandler } from "fastify";
+import type { FastifyRequest, onRequestHookHandler } from "fastify";
 
 // CSP and protection headers for all answers of the web-ui and the API (TechSpec 2.2, REQ-060, REQ-061).
 
@@ -18,12 +18,26 @@ export function securityHeaders(): onRequestHookHandler {
     raw.setHeader("Referrer-Policy", "no-referrer");
     raw.setHeader("Cross-Origin-Opener-Policy", "same-origin");
     raw.setHeader("Cross-Origin-Resource-Policy", "same-origin");
-    if (isApiPath(request.url)) raw.setHeader("Cache-Control", "no-store");
+    if (isApiRequest(request)) raw.setHeader("Cache-Control", "no-store");
     done();
   };
 }
 
-export function isApiPath(url: string): boolean {
-  const path = url.split("?")[0]!;
+/**
+ * Whether a request targets the API. The router matches the percent-decoded path, so the check uses the matched
+ * route and the decoded path; a path that cannot be decoded counts as API (fail closed).
+ */
+export function isApiRequest(request: FastifyRequest): boolean {
+  const routeUrl = request.routeOptions.url;
+  if (routeUrl !== undefined && isApiPath(routeUrl)) return true;
+  const path = request.url.split("?")[0]!;
+  try {
+    return isApiPath(decodeURIComponent(path));
+  } catch {
+    return true;
+  }
+}
+
+function isApiPath(path: string): boolean {
   return path === "/api" || path.startsWith("/api/");
 }

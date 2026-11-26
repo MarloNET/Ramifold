@@ -88,4 +88,36 @@ test.describe("UI-001.default", () => {
     const axe = await new AxeBuilder({ page }).analyze();
     expect(axe.violations).toEqual([]);
   });
+
+  // CR-165-03: "bei Überlänge mittig mit „…“ gekürzt, voller Pfad als Tooltip/title" (UI-001 screen.md, Kopfzeile).
+  test("shortens an overlong project folder in the middle with …, the folder name stays visible", async ({
+    page,
+    project,
+  }) => {
+    await page.goto("/");
+    const folder = page.getByRole("banner").getByText(`Project folder: ${displayPath(project.dir)}`);
+    await expect(folder).toHaveAttribute("title", project.dir);
+    // Make the path overlong for the available width.
+    await folder.evaluate((element) => ((element as HTMLElement).style.maxWidth = "200px"));
+
+    const parts = await folder.evaluate((element) =>
+      Array.from(element.children, (child) => {
+        const style = getComputedStyle(child);
+        return {
+          text: child.textContent,
+          clipped: child.scrollWidth > child.clientWidth,
+          ellipsis: style.textOverflow === "ellipsis",
+          right: child.getBoundingClientRect().right,
+        };
+      }),
+    );
+    const box = (await folder.boundingBox())!;
+    expect(parts).toHaveLength(2);
+    const [head, tail] = parts as [(typeof parts)[0], (typeof parts)[0]];
+    // The beginning ends in "…", the end with the folder name is shown completely and within the header.
+    expect(head.clipped && head.ellipsis).toBe(true);
+    expect(tail.text).toBe(`/${path.basename(project.dir)}`);
+    expect(tail.clipped).toBe(false);
+    expect(tail.right).toBeLessThanOrEqual(box.x + box.width + 0.5);
+  });
 });

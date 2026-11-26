@@ -1,8 +1,8 @@
-import type { FastifyReply, FastifyRequest, onRequestHookHandler } from "fastify";
+import type { FastifyReply, onRequestHookHandler } from "fastify";
 import type { ErrorCode } from "../../shared/codes";
 import { hostRejectionPage } from "./host-rejection-page";
 import { errorBody } from "./http-error-mapper";
-import { isApiPath } from "./security-headers";
+import { isApiRequest } from "./security-headers";
 
 // Checks Host, origin, headers and Content-Type of every request, in this order (TechSpec 2.0, 2.2, ADR-007).
 
@@ -31,7 +31,7 @@ export function requestGuard(options: RequestGuardOptions): onRequestHookHandler
     }
     // 5. No preflight is ever granted; answered here so that no later check can treat it as a normal request.
     if (request.method === "OPTIONS") return sendError(reply, 403, "forbidden_origin");
-    if (!isApiPath(request.url)) return;
+    if (!isApiRequest(request)) return;
 
     // 2. Origin of API requests.
     const fetchSite = request.headers["sec-fetch-site"];
@@ -47,8 +47,8 @@ export function requestGuard(options: RequestGuardOptions): onRequestHookHandler
       if (!request.headers["x-ramifold-request-id"]) return sendError(reply, 400, "bad_request");
     }
 
-    // 4. Instance and window, except for instance and events.
-    if (!WITHOUT_INSTANCE_HEADERS.has(pathOf(request))) {
+    // 4. Instance and window, except for the matched routes instance and events.
+    if (!WITHOUT_INSTANCE_HEADERS.has(request.routeOptions.url ?? "")) {
       const instanceId = request.headers["x-ramifold-instance"];
       if (instanceId === undefined) return sendError(reply, 403, "missing_instance_header");
       const windowId = request.headers["x-ramifold-window"];
@@ -61,10 +61,6 @@ export function requestGuard(options: RequestGuardOptions): onRequestHookHandler
 
 function sendError(reply: FastifyReply, statusCode: number, code: ErrorCode) {
   return reply.code(statusCode).send(errorBody(code));
-}
-
-function pathOf(request: FastifyRequest): string {
-  return request.url.split("?")[0]!;
 }
 
 function isJsonContentType(value: string | undefined): boolean {
