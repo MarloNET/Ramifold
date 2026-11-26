@@ -8,6 +8,8 @@ import type { ClaudeResult } from "./stream-json-parser";
 export type RawRunEnd = {
   abortedBy: AbortReason | null;
   idleTimeout: boolean;
+  /** An exception inside the adapter after the start (e.g. while reading the output), TechSpec 2.6, N-08. */
+  unexpectedError: boolean;
   /** errno code when the process could not be started. */
   spawnErrorCode: string | null;
   protocolError: boolean;
@@ -42,6 +44,7 @@ export function classifyAgentFailure(end: RawRunEnd): RunClassification {
   if (end.abortedBy === "planner") return { outcome: "aborted", cause: "aborted_by_planner" };
   if (end.abortedBy === "instance_stopped") return failed("instance_stopped");
   if (end.idleTimeout) return failed("timeout");
+  if (end.unexpectedError) return failed("unknown");
   if (end.spawnErrorCode !== null && SPAWN_NOT_FOUND.has(end.spawnErrorCode)) return failed("agent_not_found");
   if (end.protocolError) return failed("agent_protocol");
   if (end.result !== null && !end.result.isError && end.result.subtype === "success") return { outcome: "complete" };

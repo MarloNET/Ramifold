@@ -1,7 +1,8 @@
-import type { AgentFinding, AgentPort, AgentRunHandle, AgentRunSpec } from "./agent-port";
+import type { AgentFinding, AgentPort, AgentRunFile, AgentRunHandle, AgentRunSpec } from "./agent-port";
 import { READ_ONLY_PLANNING } from "./tool-policy";
 
-// Keeps the finding about the agent, starts and aborts runs (TechSpec 2.6, REQ-004, REQ-021).
+// Keeps the finding about the agent, chooses the policy, gets the run files, starts and aborts runs
+// (TechSpec 2.6, REQ-004, REQ-021). Idle limit and cause live in the adapter (N-09).
 
 /** Startup warnings TERM-004 and TERM-005 (implemented by TerminalOutput). */
 export type AgentWarnings = {
@@ -43,11 +44,15 @@ export class AgentGateway {
     return this.current.status === "ok" ? this.current : this.check();
   }
 
+  /** Files of the run, to be written by LocalStateFiles before `run` (N-07); pure, throws only on a contract violation. */
+  runFiles(spec: AgentRunSpec): AgentRunFile[] {
+    this.assertSessionSupported(spec);
+    return this.agent.runFiles(READ_ONLY_PLANNING, spec);
+  }
+
   /** Starts a run, always with the read-only policy; a failed process start turns an `ok` finding into `not_found`. */
   run(spec: AgentRunSpec): AgentRunHandle {
-    if (spec.session.mode === "fork" && !this.agent.capabilities.canForkSession) {
-      throw new Error(`Agent ${this.agent.kind} cannot fork sessions.`);
-    }
+    this.assertSessionSupported(spec);
     const handle = this.agent.start(READ_ONLY_PLANNING, spec);
     const done = handle.done.then((result) => {
       if (result.outcome === "failed" && result.cause === "agent_not_found") {
@@ -56,6 +61,12 @@ export class AgentGateway {
       return result;
     });
     return { done, abort: (reason) => handle.abort(reason) };
+  }
+
+  private assertSessionSupported(spec: AgentRunSpec): void {
+    if (spec.session.mode === "fork" && !this.agent.capabilities.canForkSession) {
+      throw new Error(`Agent ${this.agent.kind} cannot fork sessions.`);
+    }
   }
 
   private check(): Promise<AgentFinding> {

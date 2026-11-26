@@ -5,7 +5,10 @@ import { READ_ONLY_PLANNING } from "../../src/server/agent/tool-policy";
 
 const PROJECT = "/home/planner/code/rag";
 const TMP = `${PROJECT}/.ramifold/local/tmp`;
-const run = (session: AgentSession) => buildClaudeArgs(READ_ONLY_PLANNING, { requestId: "R1", projectFolder: PROJECT, session });
+const ID = "01JDQ7Z3X8V4M2N6P9R5S7T1W3";
+const CONTEXT = "# Context\n\nNode 1";
+const run = (session: AgentSession, requestId = ID) =>
+  buildClaudeArgs(READ_ONLY_PLANNING, { requestId, projectFolder: PROJECT, context: CONTEXT, session });
 const MODES: AgentSession[] = [{ mode: "new" }, { mode: "resume", sessionId: "S-1_a" }, { mode: "fork", sessionId: "S-1_a" }];
 
 describe("buildClaudeArgs", () => {
@@ -26,9 +29,9 @@ describe("buildClaudeArgs", () => {
       "--strict-mcp-config",
       "--disable-slash-commands",
       "--settings",
-      `${TMP}/R1.settings.json`,
+      `${TMP}/${ID}.settings.json`,
       "--append-system-prompt-file",
-      `${TMP}/R1.context.md`,
+      `${TMP}/${ID}.context.md`,
     ]);
   });
 
@@ -57,27 +60,46 @@ describe("buildClaudeArgs", () => {
   });
 
   it.each(MODES)("contains --restricted and --settings <project>/.ramifold/local/tmp/<requestId>.settings.json in mode $mode (AC-REQ-025-01)", (session) => {
-    const { args, settingsFile, settings } = run(session);
+    const { args, settings } = run(session);
     expect(args).toContain("--restricted");
-    expect(args[args.indexOf("--settings") + 1]).toBe(`${TMP}/R1.settings.json`);
-    expect(settingsFile).toBe(`${TMP}/R1.settings.json`);
+    expect(args[args.indexOf("--settings") + 1]).toBe(`${TMP}/${ID}.settings.json`);
     expect(settings.permissions.blockReadsOutsideWorkingDirectories).toBe(true);
     expect(settings.permissions.deny).toContain("Read(./.ramifold/**)");
   });
 
   it("differs between new, resume and fork only by --resume <id> and --fork-session at the end", () => {
-    const [created, resumed, forked] = MODES.map(run);
+    const [created, resumed, forked] = MODES.map((session) => run(session));
     expect(resumed!.args).toEqual([...created!.args, "--resume", "S-1_a"]);
     expect(forked!.args).toEqual([...created!.args, "--resume", "S-1_a", "--fork-session"]);
     expect(resumed!.settings).toEqual(created!.settings);
     expect(forked!.settings).toEqual(created!.settings);
-    expect(forked!.contextFile).toBe(created!.contextFile);
+    expect(resumed!.files).toEqual(created!.files);
+    expect(forked!.files).toEqual(created!.files);
   });
 
   it.each(["-x", "", "_a", "a b", "a/b", "a".repeat(129), "--settings"])("never passes the invalid session id %j", (sessionId) => {
     for (const mode of ["resume", "fork"] as const) {
       expect(() => run({ mode, sessionId })).toThrow(/Invalid session id/);
     }
+  });
+
+  it("returns exactly the run files <requestId>.settings.json and <requestId>.context.md, names without a path (N-07)", () => {
+    const { files, settings } = run({ mode: "new" });
+    expect(files).toEqual([
+      { name: `${ID}.settings.json`, content: JSON.stringify(settings) },
+      { name: `${ID}.context.md`, content: CONTEXT },
+    ]);
+  });
+
+  it.each(["", "R1", "../x", "a/b", "01jdq7z3x8v4m2n6p9r5s7t1w3", `${ID}/..`, `${ID.slice(0, 25)}U`, `../${ID}`])(
+    "rejects the request id %j before building any path (CR-174-05)",
+    (requestId) => {
+      expect(() => run({ mode: "new" }, requestId)).toThrow(/Invalid request id/);
+    },
+  );
+
+  it("checks the request id before the session id", () => {
+    expect(() => run({ mode: "resume", sessionId: "-x" }, "../x")).toThrow(/Invalid request id/);
   });
 
   it("accepts the longest valid session id", () => {

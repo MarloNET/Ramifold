@@ -3,6 +3,7 @@ import type {
   AbortReason,
   AgentFinding,
   AgentPort,
+  AgentRunFile,
   AgentRunHandle,
   AgentRunResult,
   AgentRunSpec,
@@ -13,7 +14,8 @@ import { classifyAgentFailure, type RawRunEnd } from "./failure-classifier";
 import { StreamJsonParser } from "./stream-json-parser";
 import { checkClaudeVersion } from "./version-check";
 
-// AgentPort for Claude Code: process, stdin, stdout (TechSpec 2.6, REQ-017, REQ-021).
+// AgentPort for Claude Code: run files, process, stdin, stdout, idle limit and cause (TechSpec 2.6, REQ-017, REQ-021).
+// Writes no files (N-07): LocalStateFiles writes the run files to `local/tmp/` before `start`.
 
 /** 5 min without an output line on stdout -> end the process, cause `timeout`. */
 export const AGENT_IDLE_TIMEOUT_MS = 300_000;
@@ -23,8 +25,6 @@ const STDERR_BUFFER_BYTES = 8 * 1024;
 
 export type ClaudeCodeAdapterOptions = {
   command: readonly string[];
-  /** Writes a temp file of a run in `.ramifold/local/tmp/` (file access only in area, TechSpec 4.1). */
-  writeRunFile(file: string, content: string): Promise<void>;
   /** Only for tests; Claude Code can fork sessions from v2.1.248 on. */
   canForkSession?: boolean;
   /** Only for tests, never from the environment. */
@@ -44,13 +44,19 @@ export class ClaudeCodeAdapter implements AgentPort {
     return checkClaudeVersion(this.options.command);
   }
 
+  runFiles(policy: ToolPolicy, spec: AgentRunSpec): AgentRunFile[] {
+    return buildClaudeArgs(policy, spec).files;
+  }
+
   start(policy: ToolPolicy, spec: AgentRunSpec): AgentRunHandle {
-    const run = new ClaudeRun(this.options, policy, spec);
+    // Throws on a contract violation before the process exists (N-08).
+    const { args } = buildClaudeArgs(policy, spec);
+    const run = new ClaudeRun(this.options, spec, args);
     return { done: run.done, abort: (reason) => run.abort(reason) };
   }
 }
 
-/** One process of Claude Code from start to classification. */
+/** One process of Claude Code from start to classification; `done` never rejects. */
 class ClaudeRun {
   readonly done: Promise<AgentRunResult>;
   private child: ChildProcess | null = null;
@@ -59,6 +65,7 @@ class ClaudeRun {
   private readonly end: RawRunEnd = {
     abortedBy: null,
     idleTimeout: false,
+    unexpectedError: false,
     spawnErrorCode: null,
     protocolError: false,
     result: null,
@@ -71,10 +78,10 @@ class ClaudeRun {
 
   constructor(
     private readonly options: ClaudeCodeAdapterOptions,
-    policy: ToolPolicy,
     private readonly spec: AgentRunSpec,
+    args: readonly string[],
   ) {
-    this.done = this.run(policy);
+    this.done = new Promise<void>((resolve) => this.runProcess(args, resolve)).then(() => this.result());
   }
 
   abort(reason: AbortReason): void {
@@ -83,26 +90,18 @@ class ClaudeRun {
     this.terminate();
   }
 
-  private async run(policy: ToolPolicy): Promise<AgentRunResult> {
-    const { spec } = this;
-    const built = buildClaudeArgs(policy, spec);
-    await this.options.writeRunFile(built.settingsFile, JSON.stringify(built.settings));
-    await this.options.writeRunFile(built.contextFile, spec.context);
-    if (this.end.abortedBy === null) await this.runProcess(built.args);
-    return this.result();
-  }
-
-  private runProcess(args: readonly string[]): Promise<void> {
-    const [file, ...leading] = this.options.command;
-    return new Promise((resolve) => {
+  /** Starts the process synchronously; `resolve` is called once the process has ended or never started. */
+  private runProcess(args: readonly string[], resolve: () => void): void {
+    const finish = () => {
+      if (this.exited) return;
+      this.exited = true;
+      this.clearTimers();
+      resolve();
+    };
+    try {
+      const [file, ...leading] = this.options.command;
       const child = spawn(file!, [...leading, ...args], { cwd: this.spec.projectFolder, stdio: ["pipe", "pipe", "pipe"] });
       this.child = child;
-      const finish = () => {
-        if (this.exited) return;
-        this.exited = true;
-        this.clearTimers();
-        resolve();
-      };
       child.once("error", (error: NodeJS.ErrnoException) => {
         // Only a failed start ends the run here; errors of a running process are followed by "close".
         if (child.pid !== undefined) return;
@@ -121,7 +120,17 @@ class ClaudeRun {
       });
       this.readLines(child);
       this.resetIdleTimer();
-    });
+    } catch {
+      this.failUnexpectedly();
+      if (this.child === null) finish();
+    }
+  }
+
+  /** An unexpected exception ends the process like an abort and the run with `unknown` (N-08). */
+  private failUnexpectedly(): void {
+    if (this.exited || this.end.unexpectedError) return;
+    this.end.unexpectedError = true;
+    this.terminate();
   }
 
   private readLines(child: ChildProcess): void {
@@ -144,9 +153,17 @@ class ClaudeRun {
   }
 
   private handleLine(parser: StreamJsonParser, line: string): void {
-    if (this.end.protocolError || this.end.abortedBy !== null || this.end.idleTimeout) return;
+    if (this.end.protocolError || this.end.unexpectedError || this.end.abortedBy !== null || this.end.idleTimeout) return;
     this.resetIdleTimer();
-    for (const event of parser.push(line)) {
+    try {
+      this.handleEvents(parser.push(line));
+    } catch {
+      this.failUnexpectedly();
+    }
+  }
+
+  private handleEvents(events: ReturnType<StreamJsonParser["push"]>): void {
+    for (const event of events) {
       if (event.type === "session") {
         this.sessionId = event.sessionId;
         this.spec.onSessionId?.(event.sessionId);
@@ -191,6 +208,7 @@ class ClaudeRun {
     const classification = classifyAgentFailure(this.end);
     const { sessionId } = this;
     if (classification.outcome === "complete") return { outcome: "complete", sessionId, resultText: this.end.result!.text };
-    return { ...classification, sessionId };
+    if (classification.outcome === "aborted") return { ...classification, sessionId };
+    return { ...classification, sessionId, exitCode: this.end.exitCode, signal: this.end.signal };
   }
 }

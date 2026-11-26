@@ -6,6 +6,7 @@ import { classifyAgentFailure, type RawRunEnd } from "../../src/server/agent/cla
 const base: RawRunEnd = {
   abortedBy: null,
   idleTimeout: false,
+  unexpectedError: false,
   spawnErrorCode: null,
   protocolError: false,
   result: null,
@@ -32,6 +33,12 @@ describe("classifyAgentFailure", () => {
 
   it("rule 3: idle limit -> timeout", () => {
     expect(classifyAgentFailure(end({ idleTimeout: true, protocolError: true, signal: "SIGTERM" }))).toEqual(failed("timeout"));
+  });
+
+  it("an unexpected exception in the adapter after the start -> unknown, after rules 1 to 3 (N-08)", () => {
+    expect(classifyAgentFailure(end({ unexpectedError: true, result: success, signal: "SIGTERM" }))).toEqual(failed("unknown"));
+    expect(classifyAgentFailure(end({ unexpectedError: true, abortedBy: "planner" }))).toMatchObject({ outcome: "aborted" });
+    expect(classifyAgentFailure(end({ unexpectedError: true, idleTimeout: true }))).toEqual(failed("timeout"));
   });
 
   it.each(["ENOENT", "EACCES", "ENOTDIR"])("rule 4: process start fails with %s -> agent_not_found", (code) => {

@@ -1,7 +1,7 @@
 import path from "node:path";
 import { areaPaths } from "../../area/area-paths";
 import { SESSION_ID_PATTERN } from "../../area/file-schemas";
-import type { AgentSession } from "../agent-port";
+import type { AgentRunFile, AgentSession } from "../agent-port";
 import type { ToolPolicy } from "../tool-policy";
 
 // Policy and run -> argument list and settings of Claude Code (TechSpec 2.6, 2.15; REQ-024, REQ-025).
@@ -18,19 +18,25 @@ export type ClaudeSettings = {
   };
 };
 
-export type ClaudeRun = { requestId: string; projectFolder: string; session: AgentSession };
+export type ClaudeRun = { requestId: string; projectFolder: string; context: string; session: AgentSession };
 
 export type ClaudeArgs = {
   args: string[];
-  settingsFile: string;
   settings: ClaudeSettings;
-  contextFile: string;
+  /** `<requestId>.settings.json` and `<requestId>.context.md`; written by LocalStateFiles to `local/tmp/` (N-07). */
+  files: AgentRunFile[];
 };
 
+const REQUEST_ID_PATTERN = /^[0-9A-HJKMNP-TV-Z]{26}$/;
+
+/** Throws on an invalid request or session id before anything else (TechSpec 2.6, N-08). */
 export function buildClaudeArgs(policy: ToolPolicy, run: ClaudeRun): ClaudeArgs {
+  // The request id becomes part of file names and paths; checked before any of them is built.
+  if (!REQUEST_ID_PATTERN.test(run.requestId)) throw new Error("Invalid request id; expected a ULID.");
+  const resume = sessionArgs(run.session);
+  const settingsName = `${run.requestId}.settings.json`;
+  const contextName = `${run.requestId}.context.md`;
   const tmp = areaPaths(run.projectFolder).localTmp;
-  const settingsFile = path.join(tmp, `${run.requestId}.settings.json`);
-  const contextFile = path.join(tmp, `${run.requestId}.context.md`);
   const tools = policy.allowedTools.join(",");
   const args = [
     "-p",
@@ -41,9 +47,9 @@ export function buildClaudeArgs(policy: ToolPolicy, run: ClaudeRun): ClaudeArgs 
     ...["--permission-mode", "dontAsk"],
     "--strict-mcp-config",
     "--disable-slash-commands",
-    ...["--settings", settingsFile],
-    ...["--append-system-prompt-file", contextFile],
-    ...sessionArgs(run.session),
+    ...["--settings", path.join(tmp, settingsName)],
+    ...["--append-system-prompt-file", path.join(tmp, contextName)],
+    ...resume,
   ];
   const settings: ClaudeSettings = {
     permissions: {
@@ -52,7 +58,11 @@ export function buildClaudeArgs(policy: ToolPolicy, run: ClaudeRun): ClaudeArgs 
       blockReadsOutsideWorkingDirectories: policy.readScope === "project_folder",
     },
   };
-  return { args, settingsFile, settings, contextFile };
+  const files = [
+    { name: settingsName, content: JSON.stringify(settings) },
+    { name: contextName, content: run.context },
+  ];
+  return { args, settings, files };
 }
 
 function sessionArgs(session: AgentSession): string[] {

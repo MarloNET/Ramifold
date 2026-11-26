@@ -34,9 +34,20 @@ export type AgentFailureCause = Exclude<CauseCode, "aborted_by_planner" | "unusa
 export type AgentRunResult =
   | { outcome: "complete"; sessionId: string | null; resultText: string }
   | { outcome: "aborted"; cause: "aborted_by_planner"; sessionId: string | null }
-  | { outcome: "failed"; cause: AgentFailureCause; sessionId: string | null };
+  | {
+      outcome: "failed";
+      cause: AgentFailureCause;
+      sessionId: string | null;
+      /** For `detail` of `ai_request_failed` (`exit=<code>`, `signal=<sig>`, TechSpec 2.14); null if the process never ran. */
+      exitCode: number | null;
+      signal: string | null;
+    };
+
+/** A file a run needs in `.ramifold/local/tmp/`; `name` is always `<requestId>.<extension>`, without a path. */
+export type AgentRunFile = { name: string; content: string };
 
 export type AgentRunHandle = {
+  /** Never rejects: every end of the run is an AgentRunResult (TechSpec 2.6, N-08). */
   readonly done: Promise<AgentRunResult>;
   /** Ends the process (SIGTERM, after 3 s SIGKILL); without effect once the run has ended. */
   abort(reason: AbortReason): void;
@@ -45,10 +56,18 @@ export type AgentRunHandle = {
 /** Last finding about the agent (TechSpec 3.3). */
 export type AgentFinding = { status: "checking" | "ok" | "not_found" | "too_old"; version: string | null };
 
+/**
+ * Contract (TechSpec 2.6, N-08): `runFiles` and `start` throw only on errors of the caller (`requestId` no ULID,
+ * invalid `sessionId`, `fork` without the capability), synchronously and before any side effect. Every adapter ends a
+ * run without output for longer than its idle limit with `failed` `timeout`.
+ */
 export interface AgentPort {
   readonly kind: AgentKind;
   readonly capabilities: { readonly canForkSession: boolean };
   /** Checks whether the agent can be started (REQ-004); never rejects. */
   checkAvailability(): Promise<AgentFinding>;
+  /** Files the run needs; pure (no I/O, no process). They are written by `LocalStateFiles` before `start`. */
+  runFiles(policy: ToolPolicy, spec: AgentRunSpec): AgentRunFile[];
+  /** Starts the process synchronously and returns the handle at once; expects the run files and writes nothing. */
   start(policy: ToolPolicy, spec: AgentRunSpec): AgentRunHandle;
 }

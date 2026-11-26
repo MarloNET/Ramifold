@@ -8,7 +8,6 @@ import { ClaudeCodeAdapter } from "./agent/claude-code/claude-code-adapter";
 import { AreaInitializer } from "./area/area-initializer";
 import { areaPaths } from "./area/area-paths";
 import { AreaStore } from "./area/area-store";
-import { writeFileAtomic } from "./area/atomic-write";
 import { parseStartArgs } from "./cli/parse-start-args";
 import { TerminalOutput } from "./cli/terminal-output";
 import { systemClock } from "./clock";
@@ -27,10 +26,7 @@ const options = { ...parseStartArgs(process.argv.slice(2), process.env, process.
 const instanceId = randomUUID();
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
 const terminal = new TerminalOutput();
-const agentGateway = new AgentGateway(
-  new ClaudeCodeAdapter({ command: agentCommand.command, writeRunFile: (file, content) => writeFileAtomic(file, content) }),
-  terminal,
-);
+const agentGateway = new AgentGateway(new ClaudeCodeAdapter({ command: agentCommand.command }), terminal);
 
 const guard = new InstanceGuard({
   terminal,
