@@ -20,6 +20,11 @@ export async function writeFileAtomic(target: string, content: string, fs: Atomi
   await syncFolder(fs, path.dirname(target));
 }
 
+/** Writes a JSON file atomically in the format of TechSpec 3: indented by two spaces, with a final newline. */
+export function writeJsonFileAtomic(target: string, value: unknown, fs: AtomicWriteFs = fsp): Promise<void> {
+  return writeFileAtomic(target, `${JSON.stringify(value, null, 2)}\n`, fs);
+}
+
 /** Opens a file with the given flags, writes the content in one call and fsyncs it. */
 export async function writeAndSync(fs: Pick<typeof fsp, "open">, file: string, content: string, flags: string) {
   const handle = await fs.open(file, flags);

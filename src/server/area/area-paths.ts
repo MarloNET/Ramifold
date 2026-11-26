@@ -17,6 +17,7 @@ export function areaPaths(projectFolder: string) {
     local,
     localGitignore: path.join(local, ".gitignore"),
     localTmp: path.join(local, "tmp"),
+    sessionsJson: path.join(local, "sessions.json"),
     planDir,
     planJson: (planId: string) => path.join(planDir(planId), "plan.json"),
     nodesDir: (planId: string) => path.join(planDir(planId), "nodes"),
