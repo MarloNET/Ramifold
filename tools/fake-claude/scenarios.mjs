@@ -3,6 +3,7 @@
 // A scenario has the same form as a file for RAMIFOLD_FAKE_SCENARIO_FILE:
 //   {"version"?: string, "timestamps"?: boolean, "requests": [step, ...], "default": step}
 // Request n (counted in <record dir>/state.json) runs requests[n], or `default` once the list is used up.
+// A scenario file of another form is rejected with exit code 2 before the request is recorded.
 // A step is {"actions": [action, ...]}; the actions run in order:
 //   {"type": "init"}                                   system init event with the session ID
 //   {"type": "reply", "parts", "partMs", "text"?, "stopAfter"?}

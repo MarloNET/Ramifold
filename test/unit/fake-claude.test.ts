@@ -122,6 +122,53 @@ function sequence(events: Array<Record<string, unknown>>): string[] {
   });
 }
 
+/** Like `sequence`, per stdout line; a line that is not JSON is "raw". */
+function lineSequence(lines: string[]): string[] {
+  return lines.flatMap((line) => {
+    try {
+      return sequence([JSON.parse(line) as Record<string, unknown>]);
+    } catch {
+      return ["raw"];
+    }
+  });
+}
+
+/** Completed reply with `parts` text parts. */
+const completed = (parts: number) => ["init", ...Array<string>(parts).fill("text"), "assistant", "result:ok"];
+const DEMO_SEQUENCE = completed(5);
+
+interface Expected {
+  sequence: string[];
+  exitCode: number | "pending";
+  /** Duration with the fake clock: parts × partMs of the scenario description. */
+  ms: number;
+}
+
+/** Expected course of every scenario that behaves the same on each request (scenarios.mjs, TechSpec 2.6). */
+const SINGLE_RUN: Array<[string, string, Expected]> = [
+  ["demo", "Hello", { sequence: DEMO_SEQUENCE, exitCode: 0, ms: 1500 }],
+  ["parts_5x2s", "Hello", { sequence: completed(5), exitCode: 0, ms: 10_000 }],
+  ["slow_10s", "Hello", { sequence: completed(10), exitCode: 0, ms: 10_000 }],
+  ["slow_60s", "Hello", { sequence: completed(60), exitCode: 0, ms: 60_000 }],
+  ["network_after_2", "Hello", { sequence: ["init", "text", "text", "result:error"], exitCode: 1, ms: 600 }],
+  ["usage_limit", "Hello", { sequence: ["init", "result:error"], exitCode: 1, ms: 0 }],
+  [
+    "usage_limit_after_30s",
+    "Hello",
+    { sequence: ["init", ...Array<string>(6).fill("text"), "result:error"], exitCode: 1, ms: 30_000 },
+  ],
+  ["provider_error", "Hello", { sequence: ["init", "result:error"], exitCode: 1, ms: 0 }],
+  ["exit_unexpected", "Hello", { sequence: ["init", "text"], exitCode: 1, ms: 300 }],
+  ["protocol_garbage", "Hello", { sequence: ["init", "raw"], exitCode: 0, ms: 0 }],
+  ["hang", "Hello", { sequence: ["init"], exitCode: "pending", ms: 0 }],
+  ["not_authenticated", "Hello", { sequence: ["init", "result:error"], exitCode: 1, ms: 0 }],
+  ["version_old", "Hello", { sequence: DEMO_SEQUENCE, exitCode: 0, ms: 1500 }],
+  ["suggest_empty", SUGGEST_TASK, { sequence: completed(1), exitCode: 0, ms: 300 }],
+  ["suggest_missing_title", SUGGEST_TASK, { sequence: completed(1), exitCode: 0, ms: 300 }],
+  ["summary_empty", SUMMARY_TASK, { sequence: completed(1), exitCode: 0, ms: 300 }],
+  ["timestamps", "Hello", { sequence: completed(5), exitCode: 0, ms: 250 }],
+];
+
 function textOf(events: Array<Record<string, unknown>>): string {
   return events
     .filter((event) => event.type === "stream_event")
@@ -214,63 +261,47 @@ describe("fake-claude scenarios (K1, TechSpec 2.6)", () => {
     expect(result).not.toContain('"suggestions"');
   });
 
-  it.each([
-    ["parts_5x2s", 5, 10_000],
-    ["slow_10s", 10, 10_000],
-    ["slow_60s", 60, 60_000],
-  ])("%s streams %i parts within %i ms and completes", async (name, parts, duration) => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv(name));
-    expect(outcome.exitCode).toBe(0);
-    expect(sequence(outcome.events)).toEqual(["init", ...Array<string>(parts).fill("text"), "assistant", "result:ok"]);
-    expect(outcome.elapsedMs).toBe(duration);
+  it.each(SINGLE_RUN)("%s: event sequence, exit code and duration", async (name, stdin, expected) => {
+    const outcome = await simulate(RUN_ARGS, scenarioEnv(name), stdin);
+    expect(lineSequence(outcome.lines)).toEqual(expected.sequence);
+    expect(outcome.exitCode).toBe(expected.exitCode);
+    expect(outcome.elapsedMs).toBe(expected.ms);
   });
 
-  it("network_after_2 delivers 2 parts, then fails with a network error", async () => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv("network_after_2"));
-    expect(sequence(outcome.events)).toEqual(["init", "text", "text", "result:error"]);
-    expect(String(resultOf(outcome.events).result)).toMatch(/connection error|fetch failed/i);
-    expect(outcome.exitCode).toBe(1);
+  it("covers every shipped scenario with its event sequence, exit code and duration", () => {
+    const multiRun = ["session_unknown_then_ok", "session_unknown_then_usage_limit"];
+    expect([...SINGLE_RUN.map(([name]) => name), ...multiRun].sort()).toEqual([...SHIPPED].sort());
   });
 
   it.each([
+    ["network_after_2", /connection error|fetch failed/i],
     ["usage_limit", /usage limit/i],
+    ["usage_limit_after_30s", /usage limit/i],
     ["provider_error", /overloaded|api error/i],
     ["not_authenticated", /^Invalid API key · Please run \/login$/],
-  ])("%s fails immediately with the sample error text", async (name, pattern) => {
+  ])("%s reports the sample error text", async (name, pattern) => {
     const outcome = await simulate(RUN_ARGS, scenarioEnv(name));
-    expect(sequence(outcome.events)).toEqual(["init", "result:error"]);
     expect(String(resultOf(outcome.events).result)).toMatch(pattern);
-    expect(outcome.exitCode).toBe(1);
-    expect(outcome.elapsedMs).toBe(0);
   });
 
-  it("usage_limit_after_30s streams parts for 30 s, then reports the usage limit", async () => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv("usage_limit_after_30s"));
-    const seq = sequence(outcome.events);
-    expect(seq[0]).toBe("init");
-    expect(seq.at(-1)).toBe("result:error");
-    expect(seq.filter((name) => name === "text").length).toBeGreaterThan(0);
-    expect(String(resultOf(outcome.events).result)).toMatch(/usage limit/i);
-    expect(outcome.elapsedMs).toBe(30_000);
-    expect(outcome.exitCode).toBe(1);
-  });
-
-  it("exit_unexpected ends with exit code 1 after a part, without result", async () => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv("exit_unexpected"));
-    expect(sequence(outcome.events)).toEqual(["init", "text"]);
-    expect(outcome.exitCode).toBe(1);
-  });
-
-  it("protocol_garbage writes a line that is not JSON", async () => {
+  it("protocol_garbage writes a line that is not JSON after init", async () => {
     const outcome = await simulate(RUN_ARGS, scenarioEnv("protocol_garbage"));
-    expect(outcome.lines.length).toBeGreaterThan(outcome.events.length);
-    expect(sequence(outcome.events)[0]).toBe("init");
+    expect(outcome.lines[1]).toBe("fake-claude: this line is not JSON");
+    expect(() => JSON.parse(outcome.lines[1]!) as unknown).toThrow();
   });
 
-  it("hang sends init and then nothing, without ending", async () => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv("hang"));
-    expect(sequence(outcome.events)).toEqual(["init"]);
-    expect(outcome.exitCode).toBe("pending");
+  it.each([
+    ["chat", "Hello"],
+    ["suggest", SUGGEST_TASK],
+    ["summarize", SUMMARY_TASK],
+  ])("slow_60s splits the %s answer into 60 non-empty parts", async (_task, stdin) => {
+    const outcome = await simulate(RUN_ARGS, scenarioEnv("slow_60s"), stdin);
+    const deltas = outcome.events
+      .filter((event) => (event.event as { type?: string } | undefined)?.type === "content_block_delta")
+      .map((event) => (event.event as { delta: { text: string } }).delta.text);
+    expect(deltas).toHaveLength(60);
+    for (const delta of deltas) expect(delta).not.toBe("");
+    expect(deltas.join("")).toBe(resultOf(outcome.events).result);
   });
 
   it.each([
@@ -295,25 +326,32 @@ describe("fake-claude scenarios (K1, TechSpec 2.6)", () => {
   it("session_unknown_then_usage_limit: first run session unknown, second run usage limit, then demo", async () => {
     const env = scenarioEnv("session_unknown_then_usage_limit", tmp);
     const first = await simulate([...RUN_ARGS, "--resume", "S1", "--fork-session"], env);
+    expect(lineSequence(first.lines)).toEqual(["result:error"]);
     expect(String(resultOf(first.events).result)).toBe("No conversation found with session ID: S1");
     expect(first.exitCode).toBe(1);
+    expect(first.elapsedMs).toBe(0);
+
     const second = await simulate(RUN_ARGS, env);
-    expect(String(resultOf(second.events).result)).toMatch(/usage limit/i);
+    expect(lineSequence(second.lines)).toEqual(["init", "result:error"]);
+    expect(String(resultOf(second.events).result)).toBe("Claude usage limit reached. Your limit will reset at 5pm.");
     expect(second.exitCode).toBe(1);
+    expect(second.elapsedMs).toBe(0);
+
     const third = await simulate(RUN_ARGS, env);
+    expect(lineSequence(third.lines)).toEqual(DEMO_SEQUENCE);
     expect(third.exitCode).toBe(0);
+    expect(third.elapsedMs).toBe(1500);
   });
 
-  it("timestamps records the receipt and the delivery time of each part", async () => {
-    const outcome = await simulate(RUN_ARGS, scenarioEnv("timestamps", tmp));
-    expect(outcome.exitCode).toBe(0);
+  it("timestamps records the receipt and the delivery of 5 parts at 50 ms intervals", async () => {
+    await simulate(RUN_ARGS, scenarioEnv("timestamps", tmp));
     const record = JSON.parse(await readFile(path.join(tmp, "1.json"), "utf8")) as {
       timestamps: { receivedAt: number; deliveredAt: number[] };
     };
-    const parts = sequence(outcome.events).filter((name) => name === "text").length;
-    expect(record.timestamps.receivedAt).toBe(1_000_000);
-    expect(record.timestamps.deliveredAt).toHaveLength(parts);
-    expect(record.timestamps.deliveredAt.every((at) => at >= record.timestamps.receivedAt)).toBe(true);
+    expect(record.timestamps).toEqual({
+      receivedAt: 1_000_000,
+      deliveredAt: [1_000_050, 1_000_100, 1_000_150, 1_000_200, 1_000_250],
+    });
   });
 
   it("follows a scenario file: one step per request, then the default step", async () => {
@@ -330,6 +368,25 @@ describe("fake-claude scenarios (K1, TechSpec 2.6)", () => {
     const outcome = await simulate(RUN_ARGS, scenarioEnv("no_such_scenario"));
     expect(outcome.exitCode).toBe(2);
     expect(outcome.stderr).toContain("no_such_scenario");
+  });
+
+  const validStep = { actions: [{ type: "init" }] };
+  it.each([
+    ["without requests", { default: validStep }, /"requests" must be an array of steps/],
+    ["with a step without actions", { requests: [{}], default: validStep }, /requests\[0\]: "actions" must be an array/],
+    ["without default", { requests: [] }, /default: "actions" must be an array/],
+    ["with an unknown action", { requests: [], default: { actions: [{ type: "dance" }] } }, /default: unknown action "dance"/],
+    ["that is not an object", [validStep], /must be a JSON object/],
+  ])("rejects a scenario file %s with exit code 2 before recording", async (_case, content, message) => {
+    const file = path.join(tmp, "scenario.json");
+    const recordDir = path.join(tmp, "record");
+    await writeFile(file, JSON.stringify(content));
+    const outcome = await simulate(RUN_ARGS, { RAMIFOLD_FAKE_SCENARIO_FILE: file, RAMIFOLD_FAKE_RECORD_DIR: recordDir });
+    expect(outcome.exitCode).toBe(2);
+    expect(outcome.stderr).toMatch(message);
+    expect(outcome.stderr).toContain(file);
+    expect(outcome.lines).toEqual([]);
+    await expect(readdir(recordDir)).rejects.toMatchObject({ code: "ENOENT" });
   });
 
   it("imports no network module (CI without network, REQ-064)", async () => {
@@ -422,12 +479,15 @@ describe("fake-claude sessions (K3)", () => {
   ])("session_unknown_then_ok (%s): first run session unknown, the new session afterwards succeeds", async (_mode, extra) => {
     const env = scenarioEnv("session_unknown_then_ok", tmp);
     const first = await simulate([...RUN_ARGS, ...extra], env);
-    expect(sequence(first.events)).toEqual(["result:error"]);
+    expect(lineSequence(first.lines)).toEqual(["result:error"]);
     expect(resultOf(first.events).result).toBe("No conversation found with session ID: S7");
     expect(first.exitCode).toBe(1);
+    expect(first.elapsedMs).toBe(0);
 
     const second = await simulate(RUN_ARGS, env);
+    expect(lineSequence(second.lines)).toEqual(DEMO_SEQUENCE);
     expect(second.exitCode).toBe(0);
+    expect(second.elapsedMs).toBe(1500);
     expect(initId(second)).toMatch(UUID);
     expect(resultOf(second.events)).toMatchObject({ subtype: "success", is_error: false });
   });

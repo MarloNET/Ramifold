@@ -26,8 +26,30 @@ function optionValue(argv, name) {
   return index >= 0 && index + 1 < argv.length ? argv[index + 1] : null;
 }
 
+/** Action types of a scenario step (scenarios.mjs). */
+const ACTION_TYPES = new Set(["init", "reply", "error", "session_unknown", "raw", "hang", "exit"]);
+
+/** Checks the form of a scenario file, so that a broken file fails clearly before anything is recorded. */
+function checkScenario(scenario, file) {
+  const fail = (problem) => {
+    throw new UsageError(`invalid scenario file ${file}: ${problem}`);
+  };
+  const checkStep = (step, where) => {
+    if (!Array.isArray(step?.actions)) fail(`${where}: "actions" must be an array`);
+    for (const action of step.actions) {
+      if (!ACTION_TYPES.has(action?.type)) fail(`${where}: unknown action "${action?.type}"`);
+    }
+  };
+  if (scenario === null || typeof scenario !== "object" || Array.isArray(scenario)) fail("must be a JSON object");
+  if (!Array.isArray(scenario.requests)) fail('"requests" must be an array of steps');
+  scenario.requests.forEach((step, index) => checkStep(step, `requests[${index}]`));
+  checkStep(scenario.default, "default");
+  return scenario;
+}
+
 function loadScenario(env) {
-  if (env.RAMIFOLD_FAKE_SCENARIO_FILE) return JSON.parse(readFileSync(env.RAMIFOLD_FAKE_SCENARIO_FILE, "utf8"));
+  const file = env.RAMIFOLD_FAKE_SCENARIO_FILE;
+  if (file) return checkScenario(JSON.parse(readFileSync(file, "utf8")), file);
   const name = env.RAMIFOLD_FAKE_SCENARIO || "demo";
   const scenario = fakeScenarios[name];
   if (!scenario) throw new UsageError(`unknown scenario "${name}" (RAMIFOLD_FAKE_SCENARIO)`);
@@ -41,11 +63,14 @@ function taskOf(stdin) {
   return "chat";
 }
 
-/** Splits `text` into `count` parts of nearly equal length (by code points). */
+/**
+ * Splits `text` into `count` parts whose lengths differ by at most one code point; no part is empty as long as
+ * the text has at least `count` code points.
+ */
 function splitParts(text, count) {
   const chars = Array.from(text);
-  const size = Math.ceil(chars.length / count);
-  return Array.from({ length: count }, (_, i) => chars.slice(i * size, (i + 1) * size).join(""));
+  const boundary = (i) => Math.floor((i * chars.length) / count);
+  return Array.from({ length: count }, (_, i) => chars.slice(boundary(i), boundary(i + 1)).join(""));
 }
 
 /** Request counter in <record dir>/state.json; without a record dir every request is the first. */
