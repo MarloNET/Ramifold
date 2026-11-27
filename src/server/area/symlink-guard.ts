@@ -1,5 +1,6 @@
 import { constants } from "node:fs";
 import fsp from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 
 // The only place for symbolic links in the area (TechSpec 4.3, 2.14 "Keine symbolischen Links im Bereich",
@@ -27,4 +28,39 @@ export async function findSymlink(areaRoot: string, relPath: string): Promise<st
     if (stats.isSymbolicLink()) return current;
   }
   return null;
+}
+
+/**
+ * Like `findSymlink` for the folder `relFolder`, then every entry directly in it (by name); a missing folder or a
+ * file in its place is no finding (start step 5, TechSpec 2.1).
+ */
+export async function findSymlinkInFolder(areaRoot: string, relFolder: string): Promise<string | null> {
+  const link = await findSymlink(areaRoot, relFolder);
+  if (link !== null) return link;
+  const folder = path.join(areaRoot, relFolder);
+  let entries;
+  try {
+    entries = await fsp.readdir(folder, { withFileTypes: true });
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT" || code === "ENOTDIR") return null;
+    throw error;
+  }
+  const [first] = entries.filter((entry) => entry.isSymbolicLink()).map((entry) => entry.name).sort();
+  return first === undefined ? null : path.join(folder, first);
+}
+
+/**
+ * Before writing below `relPath`: every path part from `areaRoot` on must be a real folder or file. A link rejects
+ * like a write error with `errno` `ELOOP` (cause `file_system_error`, TechSpec 2.14).
+ */
+export async function assertNoSymlink(areaRoot: string, relPath: string): Promise<void> {
+  const link = await findSymlink(areaRoot, relPath);
+  if (link === null) return;
+  const error: NodeJS.ErrnoException = new Error(`ELOOP: symbolic link in the Ramifold area, '${link}'`);
+  error.code = "ELOOP";
+  error.errno = -os.constants.errno.ELOOP;
+  error.syscall = "lstat";
+  error.path = link;
+  throw error;
 }

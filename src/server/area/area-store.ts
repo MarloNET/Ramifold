@@ -6,6 +6,7 @@ import type { SessionEntry } from "./file-schemas";
 import { LocalStateFiles } from "./local-state-files";
 import { loadPlanFromDisk } from "./plan-loader";
 import { PlanStamp } from "./plan-stamp";
+import { assertNoSymlink } from "./symlink-guard";
 import type { PlanTreeCheck } from "./plan-validator";
 
 // The only interface to the files in `.ramifold/` (TechSpec 4.3, REQ-052), plus the check of the project folder
@@ -79,10 +80,12 @@ export class AreaStore {
 
   /**
    * Creates `local/instance.lock` exclusively (`wx`), writes the content and fsyncs it (start step 7, TechSpec 2.1).
-   * Rejects with EEXIST if the file exists; after any other error no lock file stays behind.
+   * Rejects with EEXIST if the file exists; after any other error no lock file stays behind. `local/` as a link
+   * rejects with `ELOOP` before anything is written (N-06).
    */
   async createInstanceLock(content: string): Promise<void> {
     const file = this.paths.instanceLock;
+    await assertNoSymlink(this.paths.root, "local");
     try {
       await writeAndSync(fsp, file, content, "wx");
     } catch (error) {
@@ -92,8 +95,9 @@ export class AreaStore {
     await syncFolder(fsp, this.paths.local);
   }
 
-  /** Deletes `local/instance.lock`; a missing file is fine. */
+  /** Deletes `local/instance.lock`; a missing file is fine. `local/` as a link rejects with `ELOOP` (N-06). */
   async deleteInstanceLock(): Promise<void> {
+    await assertNoSymlink(this.paths.root, "local");
     try {
       await fsp.unlink(this.paths.instanceLock);
     } catch (error) {

@@ -1,9 +1,11 @@
 import fsp from "node:fs/promises";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { areaPaths, type AreaPaths } from "../../src/server/area/area-paths";
 import { AreaStore } from "../../src/server/area/area-store";
 import type { Clock } from "../../src/server/clock";
 import { InstanceLock } from "../../src/server/startup/instance-lock";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 const STARTED_AT = "2026-11-24T09:42:00.000Z";
@@ -134,5 +136,35 @@ describe("InstanceLock.release", () => {
     await fsp.writeFile(paths.instanceLock, lockText(OWN_ID));
     await newLock().release();
     expect(await exists()).toBe(true);
+  });
+});
+
+describe("InstanceLock – local/ as a symbolic link (DER-70-04, TechSpec 2.14 N-06)", () => {
+  let outside: TempProject;
+  beforeEach(async () => {
+    outside = await createTempProject();
+    await fsp.rmdir(paths.local);
+    await fsp.symlink(outside.dir, paths.local);
+  });
+  afterEach(() => outside.cleanup());
+
+  it("acquire rejects like a write error with ELOOP and creates no lock in the target", async () => {
+    await expect(newLock().acquire(6420, { state: "missing" })).rejects.toMatchObject({ code: "ELOOP" });
+    expect(await checksums(outside.dir)).toEqual({});
+  });
+
+  it("acquire does not delete an orphaned lock in the target and leaves it byte-equal", async () => {
+    await fsp.writeFile(path.join(outside.dir, "instance.lock"), lockText(OTHER_ID));
+    const before = await checksums(outside.dir);
+    const orphan = await newLock().read();
+    await expect(newLock().acquire(6420, orphan)).rejects.toMatchObject({ code: "ELOOP" });
+    expect(await checksums(outside.dir)).toEqual(before);
+  });
+
+  it("AreaStore.deleteInstanceLock rejects with ELOOP and leaves the target byte-equal", async () => {
+    await fsp.writeFile(path.join(outside.dir, "instance.lock"), lockText(OWN_ID));
+    const before = await checksums(outside.dir);
+    await expect(new AreaStore(paths).deleteInstanceLock()).rejects.toMatchObject({ code: "ELOOP" });
+    expect(await checksums(outside.dir)).toEqual(before);
   });
 });
