@@ -14,6 +14,8 @@ export type RamifoldRunOptions = {
   port?: string | null;
   env?: Record<string, string | undefined>;
   cwd?: string;
+  /** Options of Node.js before the starter, for example `--require` of a preload. */
+  nodeArgs?: string[];
 };
 
 export type RunningRamifold = {
@@ -31,7 +33,7 @@ export type RunningRamifold = {
 
 function spawnRamifold(options: RamifoldRunOptions): ChildProcess {
   const portArgs = options.port === undefined ? ["--port", "0"] : options.port === null ? [] : ["--port", options.port];
-  const args = [STARTER, ...(options.folder === undefined ? [] : [options.folder]), ...portArgs, ...(options.args ?? [])];
+  const args = [...(options.nodeArgs ?? []), STARTER, ...(options.folder === undefined ? [] : [options.folder]), ...portArgs, ...(options.args ?? [])];
   const merged: Record<string, string | undefined> = { ...process.env, RAMIFOLD_AGENT: "fake", PORT: undefined, ...options.env };
   const env = Object.fromEntries(Object.entries(merged).filter(([, value]) => value !== undefined));
   return spawn(process.execPath, args, { cwd: options.cwd, env, stdio: ["ignore", "pipe", "pipe"] });

@@ -1,13 +1,17 @@
 import path from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
+import type { StartupFailureCause } from "../../shared/codes";
 import type { StartOptions } from "../cli/parse-start-args";
-import type { TerminalOutput } from "../cli/terminal-output";
+import type { FolderProblem, TerminalOutput } from "../cli/terminal-output";
 import type { AreaCheck } from "../area/area-initializer";
 import { inspectProjectFolder } from "../area/area-store";
+import type { ErrorReporter } from "../observability/error-reporter";
 import type { InstanceLock, LockReading } from "./instance-lock";
 import type { RunningInstanceProbe } from "./running-instance-probe";
 
-// Start checks 2 to 8 in fixed order (TechSpec 2.1, Baseline section 9). Every abort writes exactly one line.
+// Start checks 2 to 8 in fixed order (TechSpec 2.1, Baseline section 9). Every abort writes exactly one line, the TERM
+// text, and then lets the error reporter add the entry `startup_failed` to `errors.log` (v0.13, N-05); the second
+// start (TERM-003) is no error case and gets no entry.
 
 export const DEFAULT_PORT = 6420;
 /** Step 4b: wait before asking a living lock owner a second time. */
@@ -26,6 +30,8 @@ export type InstanceGuardDeps = {
   createAreaInitializer(projectFolder: string): { checkArea(): Promise<AreaCheck>; ensureArea(): Promise<void> };
   createInstanceLock(projectFolder: string): Pick<InstanceLock, "read" | "acquire" | "release">;
   probe: Pick<RunningInstanceProbe, "isAlive" | "queryInstanceId" | "isRamifoldProcess">;
+  /** Error reporter writing to `.ramifold/local/errors.log` below the given folder (only if that exists and is writable). */
+  createErrorReporter(projectFolder: string): Pick<ErrorReporter, "recordStartupFailure">;
   /** Called with server and lock before TERM-001, so that the orderly shutdown works from then on. */
   onRunning(instance: RunningInstance): void;
   sleep?(ms: number): Promise<unknown>;
@@ -35,8 +41,18 @@ export type RunningInstance = { http: HttpListener; lock: Pick<InstanceLock, "re
 
 export type StartResult = { status: "running"; projectFolder: string; port: number } | { status: "aborted" };
 
-/** A start abort whose terminal line was already written. */
-class StartAborted extends Error {}
+/** A start abort whose terminal line was already written; `failureCause` null means no error log entry (TERM-003). */
+class StartAborted extends Error {
+  constructor(readonly failureCause: StartupFailureCause | null) {
+    super(failureCause ?? "already_running");
+  }
+}
+
+const FOLDER_PROBLEM_CAUSE: Record<FolderProblem, StartupFailureCause> = {
+  missing: "folder_missing",
+  not_a_folder: "not_a_folder",
+  not_writable: "folder_not_writable",
+};
 
 export class InstanceGuard {
   constructor(private readonly deps: InstanceGuardDeps) {}
@@ -47,9 +63,12 @@ export class InstanceGuard {
       await http?.close().catch(() => undefined);
       http = null;
     };
+    // Folder of the error log: the given folder until step 3 has found the canonical path.
+    let logFolder = path.resolve(options.cwd, options.folderArg ?? options.cwd);
     try {
       const explicitPort = this.checkPort(options.portArg);
       const projectFolder = await this.checkProjectFolder(options);
+      logFolder = projectFolder;
       const lock = this.deps.createInstanceLock(projectFolder);
       const area = this.deps.createAreaInitializer(projectFolder);
       let orphan = await this.checkRunningInstance(lock);
@@ -70,8 +89,11 @@ export class InstanceGuard {
         orphan = await this.checkRunningInstance(lock);
       }
     } catch (error) {
-      if (!(error instanceof StartAborted)) this.deps.terminal.unexpectedError(errorCode(error));
+      let cause: StartupFailureCause | null = "unexpected";
+      if (error instanceof StartAborted) cause = error.failureCause;
+      else this.deps.terminal.unexpectedError(errorCode(error));
       await closeHttp();
+      if (cause !== null) await this.deps.createErrorReporter(logFolder).recordStartupFailure(cause);
       return { status: "aborted" };
     }
   }
@@ -81,7 +103,7 @@ export class InstanceGuard {
     if (portArg === null) return null;
     if (!/^\d{1,5}$/.test(portArg) || Number(portArg) > 65535) {
       this.deps.terminal.invalidPort(portArg);
-      throw new StartAborted();
+      throw new StartAborted("invalid_port");
     }
     return Number(portArg);
   }
@@ -92,7 +114,7 @@ export class InstanceGuard {
     const result = await inspectProjectFolder(path.resolve(options.cwd, given));
     if (result.status !== "ok") {
       this.deps.terminal.folderProblem(given, result.status);
-      throw new StartAborted();
+      throw new StartAborted(FOLDER_PROBLEM_CAUSE[result.status]);
     }
     return result.canonicalPath;
   }
@@ -116,20 +138,23 @@ export class InstanceGuard {
     if (answer.status === "answered") {
       if (answer.instanceId !== instanceId) return reading;
       this.deps.terminal.alreadyRunning(projectFolder, port);
-      throw new StartAborted();
+      throw new StartAborted(null);
     }
     if (!(await probe.isRamifoldProcess(pid))) return reading;
     this.deps.terminal.processNotResponding(pid, projectFolder);
-    throw new StartAborted();
+    throw new StartAborted("instance_hanging");
   }
 
   /** Step 5, read-only: damaged area (TERM-010) or area of a newer version (TERM-011). */
   private async checkArea(area: { checkArea(): Promise<AreaCheck> }): Promise<void> {
     const result = await area.checkArea();
     if (result.status === "ok") return;
-    if (result.status === "damaged") this.deps.terminal.areaDamaged(result.path);
-    else this.deps.terminal.areaFromNewerVersion(result.path);
-    throw new StartAborted();
+    if (result.status === "damaged") {
+      this.deps.terminal.areaDamaged(result.path);
+      throw new StartAborted("area_damaged");
+    }
+    this.deps.terminal.areaFromNewerVersion(result.path);
+    throw new StartAborted("area_newer_version");
   }
 
   /** Step 6: explicit port or 6420; without a given port, EADDRINUSE silently falls back to a free port. */
@@ -140,7 +165,7 @@ export class InstanceGuard {
       if (errorCode(error) !== "EADDRINUSE") throw error;
       if (explicitPort === null) return http.listen(0);
       this.deps.terminal.portInUse(explicitPort);
-      throw new StartAborted();
+      throw new StartAborted("port_in_use");
     }
   }
 
@@ -165,7 +190,7 @@ export class InstanceGuard {
     } catch (error) {
       if (!hasErrnoCode(error)) throw error;
       this.deps.terminal.folderProblem(path.join(projectFolder, ".ramifold"), "not_writable");
-      throw new StartAborted();
+      throw new StartAborted("folder_not_writable");
     }
   }
 }

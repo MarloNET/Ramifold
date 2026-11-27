@@ -14,8 +14,8 @@ import { TerminalOutput } from "./cli/terminal-output";
 import { systemClock } from "./clock";
 import { WindowHub } from "./events/window-hub";
 import { createHttpApp } from "./http/create-http-app";
-import { PlanService } from "./plan/plan-service";
 import { ErrorReporter } from "./observability/error-reporter";
+import { PlanService } from "./plan/plan-service";
 import { PlanRegistry } from "./plan/plan-registry";
 import { InstanceGuard } from "./startup/instance-guard";
 import { InstanceLock } from "./startup/instance-lock";
@@ -33,14 +33,17 @@ const instanceId = randomUUID();
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
 const terminal = new TerminalOutput();
 const agentGateway = new AgentGateway(new ClaudeCodeAdapter({ command: agentCommand.command }), terminal);
+const createErrorReporter = (projectFolder: string) =>
+  new ErrorReporter({ terminal, clock: systemClock, errorLog: new ErrorLog(areaPaths(projectFolder)) });
 
 const guard = new InstanceGuard({
   terminal,
   openHttp: (projectFolder) => {
     const windowHub = new WindowHub({ instanceId, simulated: options.simulated });
-    const paths = areaPaths(projectFolder);
-    const errorReporter = new ErrorReporter({ terminal, clock: systemClock, errorLog: new ErrorLog(paths) });
-    const planRegistry = new PlanRegistry({ areaStore: new AreaStore(paths), errorReporter });
+    const planRegistry = new PlanRegistry({
+      areaStore: new AreaStore(areaPaths(projectFolder)),
+      errorReporter: createErrorReporter(projectFolder),
+    });
     const app = createHttpApp({
       instance: { instanceId, projectFolder, simulated: options.simulated, ramifoldVersion },
       windowHub,
@@ -70,6 +73,7 @@ const guard = new InstanceGuard({
       pid: process.pid,
     }),
   probe: new RunningInstanceProbe(),
+  createErrorReporter,
   onRunning: ({ http, lock }) =>
     new ShutdownController({
       // Hook for ending a running AI request with `instance_stopped`; the AI coordination follows with #105.

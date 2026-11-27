@@ -9,20 +9,23 @@ import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 type RamifoldFixtures = {
   scenario: keyof typeof SEED_SCENARIOS;
+  /** Environment of the instance on top of startRamifold's (which sets RAMIFOLD_AGENT=fake). */
+  ramifoldEnv: Record<string, string | undefined>;
   project: TempProject;
   ramifold: RunningRamifold;
 };
 
 export const ramifoldTest = base.extend<RamifoldFixtures>({
   scenario: ["empty", { option: true }],
+  ramifoldEnv: [{}, { option: true }],
   project: async ({ scenario }, use) => {
     const project = await createTempProject();
     await SEED_SCENARIOS[scenario]!(project.dir);
     await use(project);
     await project.cleanup();
   },
-  ramifold: async ({ project }, use) => {
-    const ramifold = await startRamifold({ folder: project.dir });
+  ramifold: async ({ project, ramifoldEnv }, use) => {
+    const ramifold = await startRamifold({ folder: project.dir, env: ramifoldEnv });
     await use(ramifold);
     await ramifold.stop();
   },

@@ -1,11 +1,11 @@
 import { spawn } from "node:child_process";
-import { createHash } from "node:crypto";
 import fsp from "node:fs/promises";
 import http from "node:http";
 import net from "node:net";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runRamifoldToExit, startRamifold, type RunningRamifold } from "../helpers/ramifold-process";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // Instance lock, start checks 4 and 5 and the orderly shutdown (TechSpec 2.1, 3.2; Story #17, task #73).
@@ -28,23 +28,12 @@ async function start(options: Parameters<typeof startRamifold>[0]): Promise<Runn
   return instance;
 }
 
-/** SHA-256 of every file and the list of all folders below `dir` (paths relative to `dir`). */
-async function checksums(dir: string): Promise<Record<string, string>> {
-  const result: Record<string, string> = {};
-  for (const entry of await fsp.readdir(dir, { recursive: true, withFileTypes: true })) {
-    const full = path.join(entry.parentPath, entry.name);
-    const key = path.relative(dir, full);
-    if (entry.isDirectory()) result[key] = "folder";
-    else {
-      const content = await fsp.readFile(full).catch(() => null);
-      const { size, mtimeMs } = await fsp.stat(full);
-      // A file the test made unreadable is compared by size and modification time.
-      result[key] = content ? createHash("sha256").update(content).digest("hex") : `unreadable ${size} ${mtimeMs}`;
-    }
-  }
-  return result;
-}
-
+const errorsLog = path.join(".ramifold", "local", "errors.log");
+const readErrorLog = async () =>
+  (await fsp.readFile(path.join(project.dir, errorsLog), "utf8"))
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => JSON.parse(line) as unknown);
 const lockFile = () => path.join(project.dir, ".ramifold", "local", "instance.lock");
 const readLock = async () => JSON.parse(await fsp.readFile(lockFile(), "utf8")) as Record<string, unknown>;
 const exists = (file: string) =>
@@ -127,7 +116,7 @@ describe("second start for the same project folder (REQ-070)", () => {
 });
 
 describe("lock of a living process that does not answer (CC-08)", () => {
-  it("DER-17-02: stops after about 3 s with TERM-009 when the process is a Ramifold; no file changes", async () => {
+  it("DER-17-02: stops after about 3 s with TERM-009 when the process is a Ramifold; no file changes except the error log", async () => {
     const first = await start({ folder: project.dir });
     first.kill("SIGSTOP");
     const before = await checksums(project.dir);
@@ -144,7 +133,11 @@ describe("lock of a living process that does not answer (CC-08)", () => {
         "End that process, then start Ramifold again.\n",
     });
     expect(duration).toBeGreaterThanOrEqual(3000);
-    expect(await checksums(project.dir)).toEqual(before);
+    const { [errorsLog]: log, ...after } = await checksums(project.dir);
+    expect(after).toEqual(before);
+    expect(log).toBeDefined();
+    // DER-16-07: exactly one entry startup_failed with cause instance_hanging (TechSpec v0.13, N-05).
+    expect(await readErrorLog()).toEqual([{ at: expect.any(String), kind: "startup_failed", cause: "instance_hanging" }]);
     first.kill("SIGCONT");
   });
 

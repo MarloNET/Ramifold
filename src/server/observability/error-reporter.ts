@@ -4,7 +4,6 @@ import {
   UNREADABLE_CAUSES,
   WRITE_CAUSES,
   type CauseCode,
-  type ErrorKind,
   type StartupFailureCause,
   type UnreadableCause,
   type WriteCause,
@@ -16,7 +15,8 @@ import { isoNow, type Clock } from "../clock";
 
 // Error reporting of TechSpec 2.14 (REQ-063): per case exactly one line on stderr and, if `.ramifold/local/` exists
 // and is writable, exactly one entry in `local/errors.log`. Rejections by fixed rules (REQ-069, REQ-071, REQ-074,
-// second start) are no error cases; callers do not report them.
+// second start) are no error cases; callers do not report them. At a start abort the line is the TERM text of
+// TerminalOutput, so `recordStartupFailure` writes only the entry and `report()` does not take `startup_failed` (N-05).
 
 type NodeRef = { nodeId: string; nodeNumber: string | null } | { nodeId?: undefined; nodeNumber?: undefined };
 
@@ -24,7 +24,6 @@ export type AiRequestKind = AiRequestInfo["kind"];
 
 /** One case per kind with the fields of TechSpec 2.14. Only ids, numbers, codes, exit codes, signals, errno codes and paths in the area. */
 export type ErrorReport =
-  | { kind: "startup_failed"; cause: StartupFailureCause }
   | {
       kind: "ai_request_failed";
       cause: CauseCode;
@@ -46,8 +45,9 @@ const ULID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 const NODE_NUMBER = /^[1-9]\d*(?:\.[1-9]\d*)*$/;
 const REQUEST_KINDS: readonly string[] = aiRequestInfoSchema.shape.kind.options;
 
-const CAUSES: Record<ErrorKind, readonly string[]> = {
-  startup_failed: STARTUP_FAILURE_CAUSES,
+type ReportKind = ErrorReport["kind"];
+
+const CAUSES: Record<ReportKind, readonly string[]> = {
   ai_request_failed: CAUSE_CODES,
   ai_session_rebuilt: [],
   save_failed: WRITE_CAUSES,
@@ -56,8 +56,7 @@ const CAUSES: Record<ErrorKind, readonly string[]> = {
 };
 
 /** Allowed shape of `detail` per kind (TechSpec 2.14). */
-const DETAIL: Record<ErrorKind, RegExp | null> = {
-  startup_failed: null,
+const DETAIL: Record<ReportKind, RegExp | null> = {
   ai_request_failed: /^(?:exit=\d{1,3}|signal=SIG[A-Z0-9]{1,12})$/,
   ai_session_rebuilt: null,
   save_failed: /^E[A-Z0-9]{1,15}$/,
@@ -77,8 +76,20 @@ export class ErrorReporter {
 
   /** Writes the terminal line first, then the log entry; never throws. */
   async report(report: ErrorReport): Promise<void> {
+    if (!Object.hasOwn(CAUSES, report.kind)) return;
     const entry = toEntry(isoNow(this.deps.clock), report);
     this.deps.terminal.errorLine(formatLine(entry));
+    await this.append(entry);
+  }
+
+  /** Start abort: only the entry `startup_failed`; the terminal line is the TERM text already written. Never throws. */
+  async recordStartupFailure(cause: StartupFailureCause): Promise<void> {
+    const entry: ErrorLogEntry = { at: isoNow(this.deps.clock), kind: "startup_failed" };
+    if (STARTUP_FAILURE_CAUSES.includes(cause)) entry.cause = cause;
+    await this.append(entry);
+  }
+
+  private async append(entry: ErrorLogEntry): Promise<void> {
     await this.deps.errorLog?.append(entry).catch(() => false);
   }
 }
@@ -89,7 +100,7 @@ export class ErrorReporter {
  */
 function toEntry(at: string, report: ErrorReport): ErrorLogEntry {
   const r = report as Partial<Record<keyof ErrorLogEntry, unknown>>;
-  const kind = report.kind;
+  const kind: ReportKind = report.kind;
   const entry: ErrorLogEntry = { at, kind };
   if (typeof r.cause === "string" && CAUSES[kind].includes(r.cause)) entry.cause = r.cause;
   if (typeof r.planId === "string" && ULID.test(r.planId)) entry.planId = r.planId;
