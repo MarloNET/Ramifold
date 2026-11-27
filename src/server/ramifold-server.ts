@@ -8,12 +8,15 @@ import { ClaudeCodeAdapter } from "./agent/claude-code/claude-code-adapter";
 import { AreaInitializer } from "./area/area-initializer";
 import { areaPaths } from "./area/area-paths";
 import { AreaStore } from "./area/area-store";
+import { ErrorLog } from "./area/error-log";
 import { parseStartArgs } from "./cli/parse-start-args";
 import { TerminalOutput } from "./cli/terminal-output";
 import { systemClock } from "./clock";
 import { WindowHub } from "./events/window-hub";
 import { createHttpApp } from "./http/create-http-app";
 import { PlanService } from "./plan/plan-service";
+import { ErrorReporter } from "./observability/error-reporter";
+import { PlanRegistry } from "./plan/plan-registry";
 import { InstanceGuard } from "./startup/instance-guard";
 import { InstanceLock } from "./startup/instance-lock";
 import { RunningInstanceProbe } from "./startup/running-instance-probe";
@@ -35,10 +38,13 @@ const guard = new InstanceGuard({
   terminal,
   openHttp: (projectFolder) => {
     const windowHub = new WindowHub({ instanceId, simulated: options.simulated });
+    const paths = areaPaths(projectFolder);
+    const errorReporter = new ErrorReporter({ terminal, clock: systemClock, errorLog: new ErrorLog(paths) });
+    const planRegistry = new PlanRegistry({ areaStore: new AreaStore(paths), errorReporter });
     const app = createHttpApp({
       instance: { instanceId, projectFolder, simulated: options.simulated, ramifoldVersion },
       windowHub,
-      planService: new PlanService(new AreaStore(areaPaths(projectFolder))),
+      planService: new PlanService({ planRegistry }),
       webRoot,
     });
     return {

@@ -1,10 +1,12 @@
 import { constants } from "node:fs";
 import fsp from "node:fs/promises";
-import path from "node:path";
 import type { AreaPaths } from "./area-paths";
 import { syncFolder, writeAndSync } from "./atomic-write";
-import { nodeFileSchema, planFileSchema, type SessionEntry } from "./file-schemas";
+import type { SessionEntry } from "./file-schemas";
 import { LocalStateFiles } from "./local-state-files";
+import { loadPlanFromDisk } from "./plan-loader";
+import { PlanStamp } from "./plan-stamp";
+import type { PlanTreeCheck } from "./plan-validator";
 
 // The only interface to the files in `.ramifold/` (TechSpec 4.3, REQ-052), plus the check of the project folder
 // itself (start step 3), because only `area` may use node:fs (TechSpec 4.1).
@@ -31,8 +33,6 @@ export async function inspectProjectFolder(absolutePath: string): Promise<Projec
   return { status: "ok", canonicalPath: await fsp.realpath(absolutePath) };
 }
 
-export type PlanSummary = { planId: string; createdAt: string | null; title: string | null };
-
 export class AreaStore {
   constructor(
     private readonly paths: AreaPaths,
@@ -50,10 +50,10 @@ export class AreaStore {
   }
 
   /**
-   * Reads every folder in `plans/` that contains `plan.json`: creation date from plan.json and the title of the
-   * root node. Parts that cannot be read are null; the readability check (TechSpec 2.3) follows with task #74.
+   * Names of the entries in `plans/` that can be plans, sorted: folders and symbolic links (never followed; a link is
+   * unreadable by rule 0, TechSpec 2.3) with a plan id as name. Read anew on every listing.
    */
-  async readPlanSummaries(): Promise<PlanSummary[]> {
+  async listPlanFolders(): Promise<string[]> {
     let entries;
     try {
       entries = await fsp.readdir(this.paths.plans, { withFileTypes: true });
@@ -61,19 +61,10 @@ export class AreaStore {
       if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
       throw error;
     }
-    const summaries: PlanSummary[] = [];
-    for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
-      const planJson = await readJson(this.paths.planJson(entry.name));
-      if (planJson === MISSING) continue;
-      const plan = planFileSchema.safeParse(planJson);
-      summaries.push({
-        planId: entry.name,
-        createdAt: plan.success ? plan.data.createdAt : null,
-        title: await this.readRootTitle(entry.name),
-      });
-    }
-    return summaries;
+    return entries
+      .filter((entry) => (entry.isDirectory() || entry.isSymbolicLink()) && PLAN_ID.test(entry.name))
+      .map((entry) => entry.name)
+      .sort();
   }
 
   /** Raw text of `local/instance.lock`; null if the file does not exist. Other read errors are passed on. */
@@ -110,30 +101,15 @@ export class AreaStore {
     }
   }
 
-  private async readRootTitle(planId: string): Promise<string | null> {
-    const nodesDir = this.paths.nodesDir(planId);
-    const files = await fsp.readdir(nodesDir).catch(() => []);
-    for (const file of files.filter((f) => f.endsWith(".json")).sort()) {
-      const node = nodeFileSchema.safeParse(await readJson(path.join(nodesDir, file)));
-      if (node.success && node.data.parentId === null) return node.data.title;
-    }
-    return null;
+  /**
+   * Loads a plan completely and checks it (TechSpec 2.3); the file stamp is recorded before reading, so that a change
+   * during loading shows up as a deviation (TechSpec 2.12). null if the folder has no `plan.json` (aborted creation).
+   */
+  async loadPlan(planId: string): Promise<{ check: PlanTreeCheck; stamp: PlanStamp } | null> {
+    const stamp = await PlanStamp.capture(this.paths.planDir(planId));
+    const check = await loadPlanFromDisk(this.paths, planId);
+    return check === null ? null : { check, stamp };
   }
 }
 
-const MISSING = Symbol("missing");
-
-/** Parsed JSON, `MISSING` if the file does not exist, null if it cannot be read or parsed. */
-async function readJson(file: string): Promise<unknown> {
-  let text;
-  try {
-    text = await fsp.readFile(file, "utf8");
-  } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "ENOENT" ? MISSING : null;
-  }
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return null;
-  }
-}
+const PLAN_ID = /^[0-9A-HJKMNP-TV-Z]{26}$/;

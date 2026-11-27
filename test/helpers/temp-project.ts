@@ -3,6 +3,7 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
+import { SEED_SCENARIOS } from "../../tools/seed/seed-scenarios";
 
 const run = promisify(execFile);
 
@@ -13,8 +14,11 @@ export type TempProject = {
   cleanup(): Promise<void>;
 };
 
-/** Creates an empty project folder in the system temp folder, optionally as a Git repository. */
-export async function createTempProject(options: { git?: boolean } = {}): Promise<TempProject> {
+/**
+ * Creates a project folder in the system temp folder, optionally as a Git repository and filled with a seed
+ * scenario (`tools/seed/seed-scenarios.ts`); without a scenario it is empty.
+ */
+export async function createTempProject(options: { git?: boolean; scenario?: keyof typeof SEED_SCENARIOS } = {}): Promise<TempProject> {
   const dir = await fsp.realpath(await fsp.mkdtemp(path.join(os.tmpdir(), "ramifold-test-")));
   const git = async (...args: string[]) => {
     const { stdout } = await run("git", args, { cwd: dir });
@@ -26,5 +30,6 @@ export async function createTempProject(options: { git?: boolean } = {}): Promis
     await git("config", "user.name", "Ramifold Test");
     await git("config", "commit.gpgsign", "false");
   }
+  if (options.scenario !== undefined) await SEED_SCENARIOS[options.scenario]!(dir);
   return { dir, git, cleanup: () => fsp.rm(dir, { recursive: true, force: true }) };
 }

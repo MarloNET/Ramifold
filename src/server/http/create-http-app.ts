@@ -2,12 +2,12 @@ import type { AddressInfo } from "node:net";
 import Fastify, { type FastifyInstance } from "fastify";
 import type { WindowHub } from "../events/window-hub";
 import type { PlanService } from "../plan/plan-service";
-import { BODY_LIMIT_BYTES, toHttpError } from "./http-error-mapper";
+import { BODY_LIMIT_BYTES, errorBody, toHttpError } from "./http-error-mapper";
 import { requestGuard } from "./request-guard";
 import { registerEventRoutes } from "./routes/event-routes";
 import { registerInstanceRoutes, type InstanceDeps } from "./routes/instance-routes";
 import { registerPlanRoutes } from "./routes/plan-routes";
-import { securityHeaders } from "./security-headers";
+import { isApiRequest, securityHeaders } from "./security-headers";
 import { staticAssets } from "./static-assets";
 
 export type HttpAppDeps = {
@@ -34,6 +34,14 @@ export function createHttpApp(deps: HttpAppDeps): FastifyInstance {
   app.setErrorHandler((error, _request, reply) => {
     const { statusCode, body } = toHttpError(error);
     return reply.code(statusCode).send(body);
+  });
+  // Unknown route under /api (TechSpec 2.0, v0.11, N-01): runs after requestGuard; no terminal line, no log entry.
+  // Other paths keep the body of the Fastify default.
+  app.setNotFoundHandler((request, reply) => {
+    if (isApiRequest(request)) return reply.code(404).send(errorBody("route_not_found"));
+    return reply
+      .code(404)
+      .send({ message: `Route ${request.method}:${request.url} not found`, error: "Not Found", statusCode: 404 });
   });
 
   // Route modules: one line per module, alphabetical (TechSpec 4.4).
