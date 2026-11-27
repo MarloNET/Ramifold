@@ -483,10 +483,6 @@ code {
 }
 
 /* Tree (PlanTree, TechSpec 2.16 "Baumzeile") */
-.plan-tree {
-  outline: none;
-}
-
 .tree-row {
   position: relative;
   display: flex;
@@ -522,9 +518,11 @@ code {
   background: var(--tree-sel-bar);
 }
 
+/* Above the neighbouring rows, which would otherwise paint over the ring outside the row. */
 .tree-row[data-focus-visible] {
+  z-index: 1;
   outline: 2px solid var(--focus);
-  outline-offset: -2px;
+  outline-offset: 2px;
 }
 
 .tree-row[data-root] .tree-row__title {
@@ -546,10 +544,6 @@ code {
 .tree-row__number {
   color: var(--tree-muted);
   font-variant-numeric: tabular-nums;
-}
-
-.tree-row[data-selected] .tree-row__number {
-  color: inherit;
 }
 
 .tree-row__title {

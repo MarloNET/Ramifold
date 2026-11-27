@@ -380,6 +380,10 @@ test("UI-003 keyboard (DER-19-05): one tab stop, arrows, Home/End, Enter opens t
   });
   expect(bar).toEqual({ content: '""', width: "3px" });
   await expect(root).not.toHaveCSS("background-color", await retrieval.evaluate((e) => getComputedStyle(e).backgroundColor));
+  // The number keeps tree-muted in the selected row (mockup); the focus ring lies 2 px outside the row (TechSpec 2.16).
+  await expect(retrieval.locator(".tree-row__number")).toHaveCSS("color", "rgb(74, 85, 97)");
+  await expect(retrieval).toHaveCSS("outline-style", "solid");
+  await expect(retrieval).toHaveCSS("outline-offset", "2px");
 
   // Mouse click opens a node too.
   await chunking.click();
