@@ -5,15 +5,17 @@ import type { ApiClient } from "../../api/api-client";
 import { usePageTitle } from "../../app/page-title";
 import { Icon } from "../../components/Icon";
 import { messages } from "../../text/messages";
+import { UnreadableProjectDialog, type UnreadableProjectInfo } from "./UnreadableProjectDialog";
 
-// UI-001 project list: states loading, empty and default (TechSpec 2.3). "New project" opens UI-002 with task #76;
-// unreadable entries (permission/disabled) and the error state follow with their tasks.
+// UI-001 project list: states loading, empty, default and permission/disabled (unreadable entry with "Details" ->
+// UI-011, TechSpec 2.3). "New project" opens UI-002 with task #76; the error state follows with its task.
 
 const createdFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export function ProjectListScreen(props: { api: ApiClient; connected: boolean; folderName: string | null }) {
   const { api, connected, folderName } = props;
   const [plans, setPlans] = useState<PlanListItemDto[] | null>(null);
+  const [unreadableDetails, setUnreadableDetails] = useState<UnreadableProjectInfo | null>(null);
 
   usePageTitle(folderName === null ? null : messages["UI-001.pageTitle"](folderName));
 
@@ -55,23 +57,53 @@ export function ProjectListScreen(props: { api: ApiClient; connected: boolean; f
             <tr>
               <th scope="col">{messages["UI-001.columnTitle"]}</th>
               <th scope="col">{messages["UI-001.columnCreated"]}</th>
+              <th scope="col">
+                <span className="visually-hidden">{messages["UI-001.columnActions"]}</span>
+              </th>
             </tr>
           </thead>
           <tbody>
-            {plans.map((plan) => (
-              <tr key={plan.planId}>
-                <td>
-                  <Link className="project-table__title-link" href={`/plans/${plan.planId}`}>
-                    {plan.title ?? messages["UI-001.untitled"]}
-                  </Link>
-                </td>
-                <td className="project-table__created">
-                  {plan.createdAt === null ? "" : createdFormat.format(new Date(plan.createdAt))}
-                </td>
-              </tr>
-            ))}
+            {plans.map((plan) => {
+              const title = plan.title ?? messages["UI-001.untitled"];
+              const unreadable = plan.unreadable;
+              return (
+                <tr key={plan.planId} className={unreadable === null ? undefined : "project-table__row--unreadable"}>
+                  <td>
+                    {unreadable === null ? (
+                      <Link className="project-table__title-link" href={`/plans/${plan.planId}`}>
+                        {title}
+                      </Link>
+                    ) : (
+                      <>
+                        <span className="project-table__title-text">{title}</span>
+                        <span className="mark mark--error">
+                          <Icon name="warning" size="compact" />
+                          {messages["UI-001.notReadable"]}
+                        </span>
+                      </>
+                    )}
+                  </td>
+                  <td className="project-table__created">
+                    {plan.createdAt === null ? "" : createdFormat.format(new Date(plan.createdAt))}
+                  </td>
+                  <td className="project-table__actions">
+                    {unreadable !== null && (
+                      <Button
+                        className="button"
+                        onPress={() => setUnreadableDetails({ title: plan.title, ...unreadable })}
+                      >
+                        {messages["UI-001.details"]}
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
+      )}
+      {unreadableDetails !== null && (
+        <UnreadableProjectDialog {...unreadableDetails} onClose={() => setUnreadableDetails(null)} />
       )}
     </main>
   );

@@ -1,10 +1,10 @@
-import { createHash } from "node:crypto";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { areaPaths } from "../../src/server/area/area-paths";
 import { loadPlanFromDisk } from "../../src/server/area/plan-loader";
 import { UNREADABLE_SEED, writeSeedArea, writeSeedPlan } from "../../tools/seed/seed-scenarios";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // TechSpec 2.3 "Laden" and rule 0 (v0.13, N-06), 2.14 "Mehrere Chats je Knoten"; DER-18-04 to DER-18-08.
@@ -44,17 +44,6 @@ async function seedPlan() {
       },
     ],
   });
-}
-
-/** SHA-256 of every file below the folder, links by their target path (never followed). */
-async function checksums(dir: string): Promise<Record<string, string>> {
-  const sums: Record<string, string> = {};
-  for (const entry of await fsp.readdir(dir, { withFileTypes: true, recursive: true })) {
-    const file = path.join(entry.parentPath, entry.name);
-    const content = entry.isSymbolicLink() ? await fsp.readlink(file) : entry.isFile() ? await fsp.readFile(file) : null;
-    if (content !== null) sums[path.relative(dir, file)] = createHash("sha256").update(content).digest("hex");
-  }
-  return sums;
 }
 
 async function outsideFile(name: string, content = "{}\n") {

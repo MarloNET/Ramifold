@@ -72,11 +72,11 @@ test.describe("UI-001.default", () => {
     await page.goto("/");
 
     const table = page.getByRole("table");
-    await expect(table.getByRole("columnheader")).toHaveText(["Title", "Created"]);
+    await expect(table.getByRole("columnheader")).toHaveText(["Title", "Created", "Actions"]);
     const rows = table.getByRole("row").filter({ has: page.getByRole("cell") });
     await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0).getByRole("cell")).toHaveText(["Eigenes produktives RAG", "Nov 3, 2026"]);
-    await expect(rows.nth(1).getByRole("cell")).toHaveText(["Migration Billing-Service", "Nov 12, 2026"]);
+    await expect(rows.nth(0).getByRole("cell")).toHaveText(["Eigenes produktives RAG", "Nov 3, 2026", ""]);
+    await expect(rows.nth(1).getByRole("cell")).toHaveText(["Migration Billing-Service", "Nov 12, 2026", ""]);
     await expect(rows.nth(0).getByRole("link", { name: "Eigenes produktives RAG" })).toHaveAttribute(
       "href",
       "/plans/01JDQ7Z8M3A6Y2W4X5V7T9R1P1",
