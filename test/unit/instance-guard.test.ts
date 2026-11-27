@@ -447,17 +447,18 @@ describe("InstanceGuard – error log entry per abort (DER-16-07, TechSpec v0.13
     expect(records(events)).toEqual([`record ${path.join(project.dir, "sub")} invalid_port`]);
   });
 
-  it("records not_a_folder and folder_not_writable for step 3", async () => {
+  it("records not_a_folder for step 3", async () => {
     await fsp.writeFile(path.join(project.dir, "notes.txt"), "x");
-    const first = setup();
-    await first.start({ folderArg: "notes.txt" });
-    expect(records(first.events)).toEqual([`record ${path.join(project.dir, "notes.txt")} not_a_folder`]);
+    const { events, start } = setup();
+    await start({ folderArg: "notes.txt" });
+    expect(records(events)).toEqual([`record ${path.join(project.dir, "notes.txt")} not_a_folder`]);
+  });
 
-    if (process.getuid?.() === 0) return;
+  it.skipIf(process.getuid?.() === 0)("records folder_not_writable for step 3", async () => {
     await fsp.chmod(project.dir, 0o555);
-    const second = setup();
-    await second.start({});
-    expect(records(second.events)).toEqual([`record ${project.dir} folder_not_writable`]);
+    const { events, start } = setup();
+    await start({});
+    expect(records(events)).toEqual([`record ${project.dir} folder_not_writable`]);
   });
 
   it("records folder_not_writable for a failed area or lock creation in step 7, with the canonical folder", async () => {
