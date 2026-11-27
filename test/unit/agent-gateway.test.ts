@@ -1,9 +1,12 @@
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentGateway } from "../../src/server/agent/agent-gateway";
 import type { AgentFinding, AgentPort, AgentRunResult, AgentRunSpec } from "../../src/server/agent/agent-port";
 import { ClaudeCodeAdapter } from "../../src/server/agent/claude-code/claude-code-adapter";
 import { READ_ONLY_PLANNING, type ToolPolicy } from "../../src/server/agent/tool-policy";
+import { newId } from "../../src/server/ids";
 
 const FAKE = path.resolve(import.meta.dirname, "../../tools/fake-claude/fake-claude.mjs");
 
@@ -54,6 +57,22 @@ describe("AgentGateway", () => {
     expect(gateway.finding.status).toBe("not_found");
     expect(warn.agentNotFound).toHaveBeenCalledTimes(1);
     expect(warn.agentTooOld).not.toHaveBeenCalled();
+  });
+
+  it("finding 'not found' and run agent_not_found when a path component of the command is a file (ENOTDIR, CR-174-06)", async () => {
+    const dir = await mkdtemp(path.join(os.tmpdir(), "ramifold-gateway-"));
+    try {
+      await writeFile(path.join(dir, "plain-file"), "");
+      const warn = warnings();
+      const gateway = new AgentGateway(new ClaudeCodeAdapter({ command: [path.join(dir, "plain-file", "claude")] }), warn);
+      expect(await gateway.checkAtStartup()).toEqual({ status: "not_found", version: null });
+      expect(warn.agentNotFound).toHaveBeenCalledTimes(1);
+      const result = await gateway.run({ ...spec({ mode: "new" }), requestId: newId(), projectFolder: dir }).done;
+      expect(result).toEqual({ outcome: "failed", cause: "agent_not_found", sessionId: null, exitCode: null, signal: null });
+      expect(gateway.finding).toEqual({ status: "not_found", version: null });
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
   });
 
   it("finding 'too old' at the start prints TERM-005 (scenario version_old)", async () => {

@@ -190,6 +190,13 @@ describe("ClaudeCodeAdapter with fake-claude", () => {
     expect(result).toEqual({ outcome: "failed", cause: "agent_not_found", sessionId: null, exitCode: null, signal: null });
   });
 
+  it("agent_not_found when a path component of the command is a file (ENOTDIR, thrown synchronously) (CR-174-06)", async () => {
+    const file = path.join(project.dir, "plain-file");
+    await writeFile(file, "");
+    const result = await (await start(adapter({ command: [path.join(file, "claude")] }))).handle.done;
+    expect(result).toEqual({ outcome: "failed", cause: "agent_not_found", sessionId: null, exitCode: null, signal: null });
+  });
+
   it("slow_10s: aborts a running process on request and leaves no process behind", async () => {
     vi.stubEnv("RAMIFOLD_FAKE_SCENARIO", "slow_10s");
     const run = await start(adapter());

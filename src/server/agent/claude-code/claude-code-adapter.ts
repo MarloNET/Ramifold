@@ -120,7 +120,9 @@ class ClaudeRun {
       });
       this.readLines(child);
       this.resetIdleTimer();
-    } catch {
+    } catch (error) {
+      // spawn throws some start errors (e.g. ENOTDIR) instead of emitting "error"; they count as a failed start (rule 4).
+      if (this.child === null) this.end.spawnErrorCode = (error as NodeJS.ErrnoException).code ?? null;
       this.failUnexpectedly();
       if (this.child === null) finish();
     }

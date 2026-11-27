@@ -45,6 +45,13 @@ describe("classifyAgentFailure", () => {
     expect(classifyAgentFailure(end({ spawnErrorCode: code, exitCode: null, protocolError: true }))).toEqual(failed("agent_not_found"));
   });
 
+  it("a start failure thrown synchronously by spawn: rule 4 before the unexpected exception (CR-174-06)", () => {
+    expect(classifyAgentFailure(end({ spawnErrorCode: "ENOTDIR", unexpectedError: true, exitCode: null }))).toEqual(
+      failed("agent_not_found"),
+    );
+    expect(classifyAgentFailure(end({ spawnErrorCode: "EPERM", unexpectedError: true, exitCode: null }))).toEqual(failed("unknown"));
+  });
+
   it("rule 5: a line is no JSON -> agent_protocol", () => {
     expect(classifyAgentFailure(end({ protocolError: true, result: success }))).toEqual(failed("agent_protocol"));
   });

@@ -44,8 +44,9 @@ export function classifyAgentFailure(end: RawRunEnd): RunClassification {
   if (end.abortedBy === "planner") return { outcome: "aborted", cause: "aborted_by_planner" };
   if (end.abortedBy === "instance_stopped") return failed("instance_stopped");
   if (end.idleTimeout) return failed("timeout");
-  if (end.unexpectedError) return failed("unknown");
+  // Rule 4 before the unexpected exception: spawn throws some start errors (e.g. ENOTDIR) synchronously.
   if (end.spawnErrorCode !== null && SPAWN_NOT_FOUND.has(end.spawnErrorCode)) return failed("agent_not_found");
+  if (end.unexpectedError) return failed("unknown");
   if (end.protocolError) return failed("agent_protocol");
   if (end.result !== null && !end.result.isError && end.result.subtype === "success") return { outcome: "complete" };
   const text = end.result !== null ? end.result.text : end.stderr;

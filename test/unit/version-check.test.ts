@@ -53,6 +53,12 @@ describe("checkClaudeVersion", () => {
     expect((await checkClaudeVersion([file])).status).toBe("not_found");
   });
 
+  it("not_found when a path component is a file (ENOTDIR, thrown synchronously by Node.js), never rejects (CR-174-06)", async () => {
+    const file = path.join(tmp, "plain-file");
+    await writeFile(file, "");
+    expect(await checkClaudeVersion([path.join(file, "claude")])).toEqual({ status: "not_found", version: null });
+  });
+
   it("not_found for exit code != 0", async () => {
     expect((await checkClaudeVersion(node('console.log("2.1.300"); process.exit(3)'))).status).toBe("not_found");
   });
