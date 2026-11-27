@@ -3,7 +3,7 @@ import type { ErrorLogEntry } from "../../src/server/area/error-log";
 import { TerminalOutput } from "../../src/server/cli/terminal-output";
 import type { Clock } from "../../src/server/clock";
 import { ErrorReporter, type ErrorReport } from "../../src/server/observability/error-reporter";
-import { ERROR_KINDS } from "../../src/shared/codes";
+import { ERROR_KINDS, STARTUP_FAILURE_CAUSES } from "../../src/shared/codes";
 
 // TechSpec 2.14 "Fehler melden", REQ-063. Line format:
 // [ramifold] <ISO time UTC> <kind> cause=<cause> plan=<planId> node=<nodeNumber or root>/<nodeId> <detail>
@@ -32,11 +32,6 @@ const NODE_PART = String.raw`node=(?:root|\d+(?:\.\d+)*)\/${ULID}`;
 // One case per kind with the fields of TechSpec 2.14, the expected line and a regular expression of the format (K1).
 const CASES: { report: ErrorReport; line: string; pattern: RegExp }[] = [
   {
-    report: { kind: "startup_failed", cause: "port_in_use" },
-    line: `[ramifold] ${AT} startup_failed cause=port_in_use`,
-    pattern: new RegExp(`^\\[ramifold\\] ${ISO} startup_failed cause=[a-z_]+$`),
-  },
-  {
     report: { kind: "ai_request_failed", cause: "agent_exited", planId: PLAN, nodeId: NODE, nodeNumber: "2.1", requestKind: "chat", detail: "exit=1" },
     line: `[ramifold] ${AT} ai_request_failed cause=agent_exited plan=${PLAN} node=2.1/${NODE} exit=1`,
     pattern: new RegExp(`^\\[ramifold\\] ${ISO} ai_request_failed cause=[a-z_]+ plan=${ULID} ${NODE_PART} (?:exit=\\d+|signal=SIG[A-Z0-9]+)$`),
@@ -64,8 +59,8 @@ const CASES: { report: ErrorReport; line: string; pattern: RegExp }[] = [
 ];
 
 describe("ErrorReporter – terminal line (K1)", () => {
-  it("covers all six kinds of TechSpec 2.14", () => {
-    expect(CASES.map((c) => c.report.kind)).toEqual([...ERROR_KINDS]);
+  it("covers all kinds of TechSpec 2.14 except startup_failed (only recordStartupFailure, N-05)", () => {
+    expect(CASES.map((c) => c.report.kind)).toEqual(ERROR_KINDS.filter((kind) => kind !== "startup_failed"));
   });
 
   it.each(CASES)("$report.kind: exactly one line on stderr in the specified format", async ({ report, line, pattern }) => {
@@ -102,8 +97,8 @@ describe("ErrorReporter – terminal line (K1)", () => {
 
   it("writes the line even without an error log", async () => {
     const { out, reporter } = setup({ withLog: false });
-    await reporter.report({ kind: "startup_failed", cause: "folder_missing" });
-    expect(out.stderr).toBe(`[ramifold] ${AT} startup_failed cause=folder_missing\n`);
+    await reporter.report({ kind: "internal_error", detail: "TypeError" });
+    expect(out.stderr).toBe(`[ramifold] ${AT} internal_error TypeError\n`);
   });
 
   it("writes the line even when the error log fails", async () => {
@@ -135,7 +130,6 @@ const CONTENT = [
 describe("ErrorReporter – no content text (K3)", () => {
   const poisoned = (text: string): ErrorReport[] =>
     [
-      { kind: "startup_failed", cause: text },
       { kind: "ai_request_failed", cause: text, planId: text, nodeId: text, nodeNumber: text, requestKind: text, detail: text },
       { kind: "ai_request_failed", cause: "agent_exited", planId: PLAN, nodeId: NODE, nodeNumber: "1", requestKind: "chat", detail: `exit=1 ${text}` },
       { kind: "ai_session_rebuilt", planId: text, nodeId: NODE, nodeNumber: text },
@@ -225,5 +219,49 @@ describe("ErrorReporter – no content text (K3)", () => {
     await reporter.report({ kind: "plan_unreadable", cause: "damaged", planId: PLAN, detail });
     expect(out.stderr).toBe(`[ramifold] ${AT} plan_unreadable cause=damaged plan=${PLAN}\n`);
     expect(entries).toEqual([{ at: AT, kind: "plan_unreadable", cause: "damaged", planId: PLAN }]);
+  });
+});
+
+// TechSpec v0.13 N-05, 2.14: at a start abort the terminal line is the TERM text of TerminalOutput; the reporter
+// only adds the log entry `startup_failed` and never accepts this kind in report().
+describe("ErrorReporter – recordStartupFailure (DER-16-07)", () => {
+  it.each(STARTUP_FAILURE_CAUSES)("%s: writes exactly one entry and no terminal line", async (cause) => {
+    const { out, entries, reporter } = setup();
+    await reporter.recordStartupFailure(cause);
+    expect(entries).toEqual([{ at: AT, kind: "startup_failed", cause }]);
+    expect(out).toEqual({ stdout: "", stderr: "" });
+  });
+
+  it("writes nothing without an error log", async () => {
+    const { out, reporter } = setup({ withLog: false });
+    await reporter.recordStartupFailure("port_in_use");
+    expect(out).toEqual({ stdout: "", stderr: "" });
+  });
+
+  it("never throws and writes no line when the error log fails", async () => {
+    const out = { stdout: "", stderr: "" };
+    const terminal = new TerminalOutput({
+      stdout: { write: (s: string) => ((out.stdout += s), true) },
+      stderr: { write: (s: string) => ((out.stderr += s), true) },
+    });
+    const errorLog = { append: () => Promise.reject(new Error("boom")) };
+    await expect(
+      new ErrorReporter({ terminal, clock: fixedClock, errorLog }).recordStartupFailure("unexpected"),
+    ).resolves.toBeUndefined();
+    expect(out).toEqual({ stdout: "", stderr: "" });
+  });
+
+  it("leaves out a cause that is no startup cause (no content text)", async () => {
+    const { entries, reporter } = setup();
+    await reporter.recordStartupFailure("Datenquellen und Ingestion" as never);
+    expect(entries).toEqual([{ at: AT, kind: "startup_failed" }]);
+  });
+
+  it("report() does not accept startup_failed: no line and no entry", async () => {
+    const { out, entries, reporter } = setup();
+    // @ts-expect-error startup_failed is no kind of report() (N-05)
+    await reporter.report({ kind: "startup_failed", cause: "port_in_use" });
+    expect(out.stderr).toBe("");
+    expect(entries).toEqual([]);
   });
 });

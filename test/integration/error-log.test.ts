@@ -73,9 +73,27 @@ describe("ErrorReporter with ErrorLog on a real file system", () => {
 
   it("creates 0 new files inside and outside the project folder when the area is missing", async () => {
     const before = await snapshot();
-    await reporter.report({ kind: "startup_failed", cause: "area_damaged" });
+    await reporter.report(REPORT);
+    await reporter.recordStartupFailure("area_damaged");
     expect(await snapshot()).toEqual(before);
-    expect(stderr).toMatch(/^\[ramifold\] \S+ startup_failed cause=area_damaged\n$/);
+    expect(stderr).toMatch(/^\[ramifold\] \S+ save_failed cause=disk_full /);
+    expect(stderr.split("\n").filter(Boolean)).toHaveLength(1);
+  });
+
+  it("recordStartupFailure adds exactly one startup_failed entry and no terminal line (N-05)", async () => {
+    await new AreaInitializer(paths, systemClock).ensureArea();
+    const before = await snapshot();
+
+    await reporter.recordStartupFailure("port_in_use");
+
+    const after = await snapshot();
+    const errorsLogKey = path.relative(outside.dir, paths.errorsLog);
+    expect(Object.keys(after).sort()).toEqual([...Object.keys(before), errorsLogKey].sort());
+    const lines = after[errorsLogKey]!.split("\n").filter(Boolean);
+    expect(lines.map((line) => JSON.parse(line) as unknown)).toEqual([
+      { at: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/), kind: "startup_failed", cause: "port_in_use" },
+    ]);
+    expect(stderr).toBe("");
   });
 
   it("creates 0 new files when .ramifold/ exists but local/ is missing", async () => {

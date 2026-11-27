@@ -14,6 +14,7 @@ import { TerminalOutput } from "./cli/terminal-output";
 import { systemClock } from "./clock";
 import { WindowHub } from "./events/window-hub";
 import { createHttpApp } from "./http/create-http-app";
+import { ErrorReporter } from "./observability/error-reporter";
 import { PlanService } from "./plan/plan-service";
 import { ErrorReporter } from "./observability/error-reporter";
 import { PlanRegistry } from "./plan/plan-registry";
@@ -70,6 +71,8 @@ const guard = new InstanceGuard({
       pid: process.pid,
     }),
   probe: new RunningInstanceProbe(),
+  createErrorReporter: (projectFolder) =>
+    new ErrorReporter({ terminal, clock: systemClock, errorLog: new ErrorLog(areaPaths(projectFolder)) }),
   onRunning: ({ http, lock }) =>
     new ShutdownController({
       // Hook for ending a running AI request with `instance_stopped`; the AI coordination follows with #105.

@@ -1,4 +1,5 @@
 import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -32,4 +33,21 @@ export async function createTempProject(options: { git?: boolean; scenario?: key
   }
   if (options.scenario !== undefined) await SEED_SCENARIOS[options.scenario]!(dir);
   return { dir, git, cleanup: () => fsp.rm(dir, { recursive: true, force: true }) };
+}
+
+/** SHA-256 of every file and the list of all folders below `dir` (paths relative to `dir`). */
+export async function checksums(dir: string): Promise<Record<string, string>> {
+  const result: Record<string, string> = {};
+  for (const entry of await fsp.readdir(dir, { recursive: true, withFileTypes: true })) {
+    const full = path.join(entry.parentPath, entry.name);
+    const key = path.relative(dir, full);
+    if (entry.isDirectory()) result[key] = "folder";
+    else {
+      const content = await fsp.readFile(full).catch(() => null);
+      const { size, mtimeMs } = await fsp.stat(full);
+      // A file the test made unreadable is compared by size and modification time.
+      result[key] = content ? createHash("sha256").update(content).digest("hex") : `unreadable ${size} ${mtimeMs}`;
+    }
+  }
+  return result;
 }

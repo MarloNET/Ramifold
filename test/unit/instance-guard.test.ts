@@ -118,6 +118,11 @@ function setup(
         return options.probe?.ramifold ?? false;
       },
     },
+    createErrorReporter: (projectFolder) => ({
+      async recordStartupFailure(cause) {
+        events.push(`record ${projectFolder} ${cause}`);
+      },
+    }),
     onRunning: ({ http, lock }) => events.push(`onRunning ${typeof http.close} ${typeof lock.release}`),
     sleep: async (ms) => events.push(`sleep ${ms}`),
   });
@@ -131,7 +136,7 @@ describe("InstanceGuard – step 2, port", () => {
     const { out, events, start } = setup();
     await expect(start({ portArg: port })).resolves.toEqual({ status: "aborted" });
     expect(out.stderr).toBe(`Cannot start: "${port}" is not a valid port. Use a whole number from 0 to 65535.\n`);
-    expect(events).toEqual(["stderr"]);
+    expect(events).toEqual(["stderr", `record ${project.dir} invalid_port`]);
   });
 
   it.each([
@@ -157,7 +162,7 @@ describe("InstanceGuard – step 3, project folder", () => {
     const { out, events, start } = setup();
     await expect(start({ folderArg: "missing/rag" })).resolves.toEqual({ status: "aborted" });
     expect(out.stderr).toBe("Cannot start: missing/rag does not exist.\n");
-    expect(events).toEqual(["stderr"]);
+    expect(events).toEqual(["stderr", `record ${path.join(project.dir, "missing/rag")} folder_missing`]);
     expect(await fsp.readdir(project.dir)).toEqual([]);
   });
 
@@ -279,6 +284,7 @@ describe("InstanceGuard – step 4, running instance (REQ-070)", () => {
     });
     await expect(start({})).resolves.toEqual({ status: "aborted" });
     expect(out).toEqual({ stdout: "", stderr: TERM_003 });
+    // The second start is no error case: no log entry (REQ-063, REQ-070).
     expect(events).toEqual(["readLock", `alive ${LOCK.pid}`, `query ${LOCK.port}`, "stderr"]);
   });
 
@@ -304,6 +310,7 @@ describe("InstanceGuard – step 4, running instance (REQ-070)", () => {
       `query ${LOCK.port}`,
       `ps ${LOCK.pid}`,
       "stderr",
+      `record ${project.dir} instance_hanging`,
     ]);
   });
 
@@ -354,7 +361,7 @@ describe("InstanceGuard – step 5, area (CC-04)", () => {
       stdout: "",
       stderr: `Cannot start: the Ramifold data is damaged: ${file}. Ramifold changed nothing. Restore the file (for example with Git), then start Ramifold again.\n`,
     });
-    expect(events).toEqual(["readLock", "checkArea", "stderr"]);
+    expect(events).toEqual(["readLock", "checkArea", "stderr", `record ${project.dir} area_damaged`]);
   });
 
   it("stops with TERM-011 and the path of .ramifold (DER-17-04)", async () => {
@@ -364,7 +371,7 @@ describe("InstanceGuard – step 5, area (CC-04)", () => {
     expect(out.stderr).toBe(
       `Cannot start: the Ramifold data in ${area} was created by a newer Ramifold version. Update Ramifold, then start it again.\n`,
     );
-    expect(events).toEqual(["readLock", "checkArea", "stderr"]);
+    expect(events).toEqual(["readLock", "checkArea", "stderr", `record ${project.dir} area_newer_version`]);
   });
 });
 
@@ -422,5 +429,70 @@ describe("InstanceGuard – step 7, lock", () => {
     expect(out.stderr).toBe(`Cannot start: ${path.join(project.dir, ".ramifold")} is not writable.\n`);
     expect(out.stdout).toBe("");
     expect(events).toContain("close");
+  });
+});
+
+describe("InstanceGuard – error log entry per abort (DER-16-07, TechSpec v0.13 N-05)", () => {
+  const records = (events: Events) => events.filter((e) => e.startsWith("record"));
+
+  it("writes the TERM text first and records the entry afterwards", async () => {
+    const { events, start } = setup({ listenResults: [errnoError("EADDRINUSE")] });
+    await start({ portArg: "7000" });
+    expect(events.slice(-3)).toEqual(["stderr", "close", `record ${project.dir} port_in_use`]);
+  });
+
+  it("records an invalid port for the folder resolved against the current folder", async () => {
+    const { events, start } = setup();
+    await start({ portArg: "abc", folderArg: "sub", cwd: project.dir });
+    expect(records(events)).toEqual([`record ${path.join(project.dir, "sub")} invalid_port`]);
+  });
+
+  it("records not_a_folder and folder_not_writable for step 3", async () => {
+    await fsp.writeFile(path.join(project.dir, "notes.txt"), "x");
+    const first = setup();
+    await first.start({ folderArg: "notes.txt" });
+    expect(records(first.events)).toEqual([`record ${path.join(project.dir, "notes.txt")} not_a_folder`]);
+
+    if (process.getuid?.() === 0) return;
+    await fsp.chmod(project.dir, 0o555);
+    const second = setup();
+    await second.start({});
+    expect(records(second.events)).toEqual([`record ${project.dir} folder_not_writable`]);
+  });
+
+  it("records folder_not_writable for a failed area or lock creation in step 7, with the canonical folder", async () => {
+    await fsp.mkdir(path.join(project.dir, "real"));
+    await fsp.symlink(path.join(project.dir, "real"), path.join(project.dir, "link"));
+    const area = setup({ areaError: errnoError("EACCES") });
+    await area.start({ folderArg: "link" });
+    expect(records(area.events)).toEqual([`record ${path.join(project.dir, "real")} folder_not_writable`]);
+
+    const lock = setup({ lock: { acquire: [errnoError("ENOSPC")] } });
+    await lock.start({});
+    expect(records(lock.events)).toEqual([`record ${project.dir} folder_not_writable`]);
+  });
+
+  it.each([
+    ["a bind error", { listenResults: [errnoError("EACCES")] }],
+    ["an error without errno code", { areaError: new RangeError("boom") }],
+    ["a second EEXIST", { lock: { acquire: [false, false] } }],
+  ])("records unexpected for TERM-013 after %s", async (_name, options) => {
+    const { out, events, start } = setup(options);
+    await start({});
+    expect(out.stderr).toMatch(/^Cannot start: an unexpected error occurred \(\w+\)\./);
+    expect(records(events)).toEqual([`record ${project.dir} unexpected`]);
+  });
+
+  it("records nothing for the second start after EEXIST (TERM-003) and nothing for a successful start", async () => {
+    const second = setup({
+      lock: { reading: [{ state: "missing" }, present()], acquire: [false] },
+      probe: { answers: [{ status: "answered", instanceId: LOCK.instanceId }] },
+    });
+    await second.start({});
+    expect(records(second.events)).toEqual([]);
+
+    const ok = setup();
+    await ok.start({ simulated: true });
+    expect(records(ok.events)).toEqual([]);
   });
 });
