@@ -19,6 +19,7 @@ export function areaPaths(projectFolder: string) {
     localTmp: path.join(local, "tmp"),
     sessionsJson: path.join(local, "sessions.json"),
     errorsLog: path.join(local, "errors.log"),
+    instanceLock: path.join(local, "instance.lock"),
     planDir,
     planJson: (planId: string) => path.join(planDir(planId), "plan.json"),
     nodesDir: (planId: string) => path.join(planDir(planId), "nodes"),

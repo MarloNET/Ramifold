@@ -15,6 +15,9 @@ import { WindowHub } from "./events/window-hub";
 import { createHttpApp } from "./http/create-http-app";
 import { PlanService } from "./plan/plan-service";
 import { InstanceGuard } from "./startup/instance-guard";
+import { InstanceLock } from "./startup/instance-lock";
+import { RunningInstanceProbe } from "./startup/running-instance-probe";
+import { ShutdownController } from "./startup/shutdown-controller";
 
 // Composition root (TechSpec 4.3, 4.4): only creates and wires services, then starts.
 
@@ -43,10 +46,31 @@ const guard = new InstanceGuard({
         await app.listen({ host: "127.0.0.1", port });
         return (app.server.address() as AddressInfo).port;
       },
-      close: () => app.close(),
+      close: async () => {
+        const closed = app.close();
+        // Open SSE streams would keep the server open; ending them closes the streams of all windows.
+        app.server.closeAllConnections();
+        await closed;
+      },
     };
   },
   createAreaInitializer: (projectFolder) => new AreaInitializer(areaPaths(projectFolder), systemClock),
+  createInstanceLock: (projectFolder) =>
+    new InstanceLock({
+      store: new AreaStore(areaPaths(projectFolder)),
+      clock: systemClock,
+      instanceId,
+      projectFolder,
+      pid: process.pid,
+    }),
+  probe: new RunningInstanceProbe(),
+  onRunning: ({ http, lock }) =>
+    new ShutdownController({
+      // Hook for ending a running AI request with `instance_stopped`; the AI coordination follows with #105.
+      stopAiRequest: async () => undefined,
+      closeHttp: () => http.close(),
+      releaseLock: () => lock.release(),
+    }).install(),
 });
 
 const result = await guard.start(options);

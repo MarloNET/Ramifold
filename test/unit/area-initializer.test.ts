@@ -206,3 +206,65 @@ describe("AreaInitializer – file system without hard links (FIND-037, TS-R-13)
     expect((await fsp.readdir(paths.root)).filter((n) => n.includes(".tmp-"))).toEqual([]);
   });
 });
+
+describe("AreaInitializer.checkArea – start step 5 (CC-04)", () => {
+  const check = () => new AreaInitializer(paths, fixedClock).checkArea();
+  const writeAreaJson = async (content: string) => {
+    await fsp.mkdir(paths.root, { recursive: true });
+    await fsp.writeFile(paths.areaJson, content);
+  };
+
+  it("accepts a missing area and changes nothing", async () => {
+    await expect(check()).resolves.toEqual({ status: "ok" });
+    expect(await fsp.readdir(project.dir)).toEqual([]);
+  });
+
+  it("accepts a complete area", async () => {
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await expect(check()).resolves.toEqual({ status: "ok" });
+  });
+
+  it("accepts an aborted first creation (.ramifold/ without area.json and without plans/)", async () => {
+    await fsp.mkdir(paths.local, { recursive: true });
+    await expect(check()).resolves.toEqual({ status: "ok" });
+  });
+
+  it("reports plans/ without area.json as damaged with the path of area.json", async () => {
+    await fsp.mkdir(paths.plans, { recursive: true });
+    await expect(check()).resolves.toEqual({ status: "damaged", path: paths.areaJson });
+  });
+
+  it.each([
+    ["not parsable", '{"format": 1,'],
+    ["with Git conflict markers", `<<<<<<< HEAD\n${AREA_JSON}=======\n${AREA_JSON}>>>>>>> other\n`],
+    ["missing createdAt", '{"format": 1}'],
+    ["format 0", `{"format": 0, "createdAt": "${CREATED_AT}"}`],
+    ["format as text", `{"format": "2", "createdAt": "${CREATED_AT}"}`],
+    ["an array", "[]"],
+  ])("reports area.json %s as damaged", async (_name, content) => {
+    await writeAreaJson(content);
+    await expect(check()).resolves.toEqual({ status: "damaged", path: paths.areaJson });
+  });
+
+  it("reports an area.json that cannot be read as damaged", async () => {
+    await fsp.mkdir(paths.areaJson, { recursive: true });
+    await expect(check()).resolves.toEqual({ status: "damaged", path: paths.areaJson });
+  });
+
+  it.each([`{"format": 2, "createdAt": "${CREATED_AT}"}`, '{"format": 7, "somethingNew": true}'])(
+    "reports a format above 1 as a newer version with the path of .ramifold: %s",
+    async (content) => {
+      await writeAreaJson(content);
+      await expect(check()).resolves.toEqual({ status: "newer_version", path: paths.root });
+    },
+  );
+
+  it("changes no file of a damaged area", async () => {
+    await writeAreaJson("{");
+    await fsp.mkdir(paths.plans);
+    const before = await listTree(paths.root);
+    await check();
+    expect(await listTree(paths.root)).toEqual(before);
+    expect(await read(paths.areaJson)).toBe("{");
+  });
+});

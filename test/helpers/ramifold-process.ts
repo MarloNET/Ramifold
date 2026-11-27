@@ -19,8 +19,13 @@ export type RamifoldRunOptions = {
 export type RunningRamifold = {
   url: string;
   port: number;
+  pid: number;
   stdout(): string;
   stderr(): string;
+  /** Sends a signal, for example SIGKILL for a hard abort or SIGSTOP for a hanging process. */
+  kill(signal: NodeJS.Signals): void;
+  /** Resolves with exit code and signal once the process has ended. */
+  exited: Promise<{ code: number | null; signal: NodeJS.Signals | null }>;
   stop(): Promise<void>;
 };
 
@@ -37,7 +42,9 @@ export function startRamifold(options: RamifoldRunOptions = {}): Promise<Running
   const child = spawnRamifold(options);
   let stdout = "";
   let stderr = "";
-  const exited = new Promise<void>((resolve) => child.once("exit", () => resolve()));
+  const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) =>
+    child.once("exit", (code, signal) => resolve({ code, signal })),
+  );
   return new Promise((resolve, reject) => {
     const timer = setTimeout(() => {
       child.kill("SIGKILL");
@@ -52,8 +59,11 @@ export function startRamifold(options: RamifoldRunOptions = {}): Promise<Running
       resolve({
         url: `http://127.0.0.1:${port}`,
         port,
+        pid: child.pid!,
         stdout: () => stdout,
         stderr: () => stderr,
+        kill: (signal) => child.kill(signal),
+        exited,
         stop: async () => {
           if (child.exitCode === null && child.signalCode === null) child.kill("SIGTERM");
           await exited;

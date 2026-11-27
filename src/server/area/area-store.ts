@@ -2,6 +2,7 @@ import { constants } from "node:fs";
 import fsp from "node:fs/promises";
 import path from "node:path";
 import type { AreaPaths } from "./area-paths";
+import { syncFolder, writeAndSync } from "./atomic-write";
 import { nodeFileSchema, planFileSchema, type SessionEntry } from "./file-schemas";
 import { LocalStateFiles } from "./local-state-files";
 
@@ -73,6 +74,40 @@ export class AreaStore {
       });
     }
     return summaries;
+  }
+
+  /** Raw text of `local/instance.lock`; null if the file does not exist. Other read errors are passed on. */
+  async readInstanceLock(): Promise<string | null> {
+    try {
+      return await fsp.readFile(this.paths.instanceLock, "utf8");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      throw error;
+    }
+  }
+
+  /**
+   * Creates `local/instance.lock` exclusively (`wx`), writes the content and fsyncs it (start step 7, TechSpec 2.1).
+   * Rejects with EEXIST if the file exists; after any other error no lock file stays behind.
+   */
+  async createInstanceLock(content: string): Promise<void> {
+    const file = this.paths.instanceLock;
+    try {
+      await writeAndSync(fsp, file, content, "wx");
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "EEXIST") await fsp.unlink(file).catch(() => undefined);
+      throw error;
+    }
+    await syncFolder(fsp, this.paths.local);
+  }
+
+  /** Deletes `local/instance.lock`; a missing file is fine. */
+  async deleteInstanceLock(): Promise<void> {
+    try {
+      await fsp.unlink(this.paths.instanceLock);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
   }
 
   private async readRootTitle(planId: string): Promise<string | null> {

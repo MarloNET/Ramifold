@@ -40,6 +40,32 @@ export class TerminalOutput {
     this.err(`Cannot start: ${folder} ${FOLDER_PROBLEM_TEXT[problem]}.`);
   }
 
+  /** TERM-003 (folder and port from the lock of the running instance) */
+  alreadyRunning(projectFolder: string, port: number): void {
+    this.err(`Ramifold is already running for ${projectFolder} at http://127.0.0.1:${port}.`);
+  }
+
+  /** TERM-009 */
+  processNotResponding(pid: number, projectFolder: string): void {
+    this.err(
+      `Cannot start: a Ramifold process (PID ${pid}) for ${projectFolder} is still running but does not respond. End that process, then start Ramifold again.`,
+    );
+  }
+
+  /** TERM-010 */
+  areaDamaged(filePath: string): void {
+    this.err(
+      `Cannot start: the Ramifold data is damaged: ${filePath}. Ramifold changed nothing. Restore the file (for example with Git), then start Ramifold again.`,
+    );
+  }
+
+  /** TERM-011 */
+  areaFromNewerVersion(areaPath: string): void {
+    this.err(
+      `Cannot start: the Ramifold data in ${areaPath} was created by a newer Ramifold version. Update Ramifold, then start it again.`,
+    );
+  }
+
   /** TERM-007 */
   invalidPort(value: string): void {
     this.err(`Cannot start: "${value}" is not a valid port. Use a whole number from 0 to 65535.`);
