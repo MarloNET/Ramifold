@@ -2,6 +2,7 @@ import fsp from "node:fs/promises";
 import type { ErrorKind } from "../../shared/codes";
 import type { AreaPaths } from "./area-paths";
 import { writeAndSync } from "./atomic-write";
+import { APPEND_NO_FOLLOW, assertNoSymlink } from "./symlink-guard";
 
 export type ErrorLogFs = Pick<typeof fsp, "open">;
 
@@ -21,8 +22,9 @@ export type ErrorLogEntry = {
 const ENTRY_FIELDS = ["at", "kind", "cause", "planId", "nodeId", "nodeNumber", "requestKind", "detail"] as const;
 
 /**
- * Appends entries to `.ramifold/local/errors.log` (REQ-063). Writes only if `local/` exists and is writable:
- * `open(…, "a")` creates at most `errors.log` itself and never a folder, so a missing or read-only area gets no file.
+ * Appends entries to `.ramifold/local/errors.log` (REQ-063). Writes only if `local/` exists and is writable and
+ * neither `.ramifold/` nor `local/` is a symbolic link (N-06): opening with `APPEND_NO_FOLLOW` creates at most
+ * `errors.log` itself, never a folder, and follows no link, so a missing, read-only or linked area gets no entry.
  */
 export class ErrorLog {
   constructor(
@@ -37,7 +39,8 @@ export class ErrorLog {
       if (entry[field] !== undefined) Object.assign(line, { [field]: entry[field] });
     }
     try {
-      await writeAndSync(this.fs, this.paths.errorsLog, `${JSON.stringify(line)}\n`, "a");
+      await assertNoSymlink(this.paths.root, "local");
+      await writeAndSync(this.fs, this.paths.errorsLog, `${JSON.stringify(line)}\n`, APPEND_NO_FOLLOW);
       return true;
     } catch {
       return false;

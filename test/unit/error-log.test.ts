@@ -3,7 +3,9 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { areaPaths, type AreaPaths } from "../../src/server/area/area-paths";
 import { ErrorLog, type ErrorLogEntry } from "../../src/server/area/error-log";
+import { APPEND_NO_FOLLOW } from "../../src/server/area/symlink-guard";
 import { errnoError, faultFs } from "../helpers/fault-fs";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // TechSpec 2.14 "Fehler melden", REQ-063: one JSON line per case in local/errors.log, only if local/ exists and is
@@ -121,5 +123,39 @@ describe("ErrorLog – area missing or not writable (fault injection)", () => {
     await fsp.mkdir(paths.local, { recursive: true });
     const { fs } = faultFs({ failAtStep: step });
     await expect(new ErrorLog(paths, fs).append(ENTRY)).resolves.toBe(false);
+  });
+});
+
+describe("ErrorLog – symbolic links in the area (DER-70-03, TechSpec 2.14 N-06)", () => {
+  let outside: TempProject;
+  beforeEach(async () => {
+    outside = await createTempProject();
+    await fsp.mkdir(path.join(outside.dir, "local"));
+    await fsp.writeFile(path.join(outside.dir, "local", "errors.log"), "outside\n");
+    await fsp.writeFile(path.join(outside.dir, "target.log"), "outside\n");
+  });
+  afterEach(() => outside.cleanup());
+
+  it.each([
+    ["local/errors.log is a link to a file outside", () => fsp.symlink(path.join(outside.dir, "target.log"), paths.errorsLog)],
+    ["local/errors.log is a dangling link", () => fsp.symlink(path.join(outside.dir, "new.log"), paths.errorsLog)],
+    ["local/ is a link to a folder outside", () => fsp.rmdir(paths.local).then(() => fsp.symlink(path.join(outside.dir, "local"), paths.local))],
+    ["the area is a link to a folder outside", () => fsp.rm(paths.root, { recursive: true }).then(() => fsp.symlink(outside.dir, paths.root))],
+  ])("writes no entry when %s, the target stays byte-equal", async (_name, link) => {
+    await fsp.mkdir(paths.local, { recursive: true });
+    await link();
+    const outsideBefore = await checksums(outside.dir);
+    const projectBefore = await checksums(project.dir);
+    expect(await new ErrorLog(paths).append(ENTRY)).toBe(false);
+    expect(await checksums(outside.dir)).toEqual(outsideBefore);
+    expect(await checksums(project.dir)).toEqual(projectBefore);
+  });
+
+  it("opens errors.log with O_NOFOLLOW", async () => {
+    await fsp.mkdir(paths.local, { recursive: true });
+    const flags: unknown[] = [];
+    const fs = { open: (file: string, flag: unknown) => (flags.push(flag), fsp.open(file, flag as number)) } as unknown as typeof fsp;
+    expect(await new ErrorLog(paths, fs).append(ENTRY)).toBe(true);
+    expect(flags).toEqual([APPEND_NO_FOLLOW]);
   });
 });

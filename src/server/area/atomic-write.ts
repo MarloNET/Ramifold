@@ -26,7 +26,7 @@ export function writeJsonFileAtomic(target: string, value: unknown, fs: AtomicWr
 }
 
 /** Opens a file with the given flags, writes the content in one call and fsyncs it. */
-export async function writeAndSync(fs: Pick<typeof fsp, "open">, file: string, content: string, flags: string) {
+export async function writeAndSync(fs: Pick<typeof fsp, "open">, file: string, content: string, flags: string | number) {
   const handle = await fs.open(file, flags);
   try {
     await handle.writeFile(content);

@@ -5,6 +5,7 @@ import { AreaInitializer } from "../../src/server/area/area-initializer";
 import { areaPaths, type AreaPaths } from "../../src/server/area/area-paths";
 import type { Clock } from "../../src/server/clock";
 import { errnoError, faultFs, InjectedFault } from "../helpers/fault-fs";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // Expected contents are copied from TechSpec 2.14 ("Regel je Datei").
@@ -266,5 +267,71 @@ describe("AreaInitializer.checkArea – start step 5 (CC-04)", () => {
     await check();
     expect(await listTree(paths.root)).toEqual(before);
     expect(await read(paths.areaJson)).toBe("{");
+  });
+});
+
+describe("AreaInitializer.checkArea – symbolic links in the area (DER-70-02, TechSpec 2.1 step 5, 2.14 N-06)", () => {
+  const check = () => new AreaInitializer(paths, fixedClock).checkArea();
+  let outside: TempProject;
+  beforeEach(async () => {
+    outside = await createTempProject();
+    await new AreaInitializer(paths, fixedClock).ensureArea();
+    await fsp.cp(paths.root, path.join(outside.dir, "area"), { recursive: true });
+    await fsp.writeFile(path.join(outside.dir, "file"), AREA_JSON);
+  });
+  afterEach(() => outside.cleanup());
+
+  /** Replaces the folder or file at `at` with a link to a copy outside of the same kind. */
+  async function replaceWithLink(at: string): Promise<void> {
+    const isDir = (await fsp.lstat(at).catch(() => null))?.isDirectory() ?? false;
+    await fsp.rm(at, { recursive: true, force: true });
+    await fsp.symlink(isDir ? path.join(outside.dir, "area") : path.join(outside.dir, "file"), at);
+  }
+
+  it.each([
+    [".ramifold/", () => paths.root],
+    ["area.json", () => paths.areaJson],
+    [".gitignore", () => paths.gitignore],
+    ["plans/", () => paths.plans],
+    ["local/", () => paths.local],
+    ["local/tmp/", () => paths.localTmp],
+    ["local/.gitignore", () => paths.localGitignore],
+    ["local/errors.log", () => paths.errorsLog],
+    ["local/sessions.json", () => paths.sessionsJson],
+    ["local/instance.lock", () => paths.instanceLock],
+  ])("reports %s as a link as damaged with the path of the link and changes nothing", async (_name, at) => {
+    await replaceWithLink(at());
+    const before = { project: await checksums(project.dir), outside: await checksums(outside.dir) };
+    await expect(check()).resolves.toEqual({ status: "damaged", path: at() });
+    expect({ project: await checksums(project.dir), outside: await checksums(outside.dir) }).toEqual(before);
+  });
+
+  it("reports a dangling link directly in local/ as damaged", async () => {
+    await fsp.symlink(path.join(outside.dir, "missing"), path.join(paths.local, "consent.json"));
+    await expect(check()).resolves.toEqual({ status: "damaged", path: path.join(paths.local, "consent.json") });
+  });
+
+  it("checks the link before area.json: a valid area.json outside behind a link is still damaged", async () => {
+    await replaceWithLink(paths.areaJson);
+    expect(await read(paths.areaJson)).toBe(AREA_JSON);
+    await expect(check()).resolves.toEqual({ status: "damaged", path: paths.areaJson });
+  });
+
+  it("ignores links deeper than the entries directly in local/ and inside plans/ (rule 0 of the plan check)", async () => {
+    await fsp.symlink(path.join(outside.dir, "file"), path.join(paths.localTmp, "x.json"));
+    await fsp.symlink(path.join(outside.dir, "area"), path.join(paths.plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PS"));
+    await expect(check()).resolves.toEqual({ status: "ok" });
+  });
+
+  it("accepts a project folder that is itself reached through a link", async () => {
+    const linkedProject = path.join(outside.dir, "linked-project");
+    await fsp.symlink(project.dir, linkedProject);
+    await expect(new AreaInitializer(areaPaths(linkedProject), fixedClock).checkArea()).resolves.toEqual({ status: "ok" });
+  });
+
+  it("reports a file in place of .ramifold/ as damaged with the path of area.json, as before", async () => {
+    await fsp.rm(paths.root, { recursive: true });
+    await fsp.writeFile(paths.root, "");
+    await expect(check()).resolves.toEqual({ status: "damaged", path: paths.areaJson });
   });
 });

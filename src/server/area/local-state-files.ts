@@ -2,6 +2,7 @@ import fsp from "node:fs/promises";
 import type { AreaPaths } from "./area-paths";
 import { writeJsonFileAtomic, type AtomicWriteFs } from "./atomic-write";
 import { sessionEntrySchema, sessionsFileSchema, type SessionEntry } from "./file-schemas";
+import { assertNoSymlink } from "./symlink-guard";
 
 export type LocalStateFs = AtomicWriteFs & Pick<typeof fsp, "readFile">;
 
@@ -21,10 +22,11 @@ export class LocalStateFiles {
 
   /**
    * Replaces the session entry of a chat, other entries stay unchanged. Written atomically: if writing fails, the
-   * previous file stays and the error is passed on.
+   * previous file stays and the error is passed on. `local/` as a link rejects with `ELOOP` (N-06).
    */
   async writeSession(chatId: string, entry: SessionEntry): Promise<void> {
     const sessions = await this.readSessions();
+    await assertNoSymlink(this.paths.root, "local");
     await writeJsonFileAtomic(this.paths.sessionsJson, { sessions: { ...sessions, [chatId]: entry } }, this.fs);
   }
 

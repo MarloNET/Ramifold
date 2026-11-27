@@ -5,6 +5,7 @@ import type { Clock } from "../clock";
 import type { AreaPaths } from "./area-paths";
 import { syncFolder, writeAndSync, writeFileAtomic, writeJsonFileAtomic } from "./atomic-write";
 import { areaFileSchema } from "./file-schemas";
+import { findSymlink, findSymlinkInFolder } from "./symlink-guard";
 
 export type AreaFs = Pick<typeof fsp, "mkdir" | "open" | "link" | "rename" | "unlink" | "readFile" | "access">;
 
@@ -34,11 +35,19 @@ export class AreaInitializer {
   /**
    * Start step 5 (TechSpec 2.1, CC-04), read-only: an existing area is damaged if area.json is missing although
    * plans/ exists, or if area.json cannot be read, has conflict markers (not parsable) or violates the schema; a
-   * format above 1 comes from a newer Ramifold version. No area at all is fine; step 7 creates it.
+   * format above 1 comes from a newer Ramifold version. No area at all is fine; step 7 creates it. Before that, a
+   * symbolic link in the area damages it, named with its own path (N-06).
    */
   async checkArea(): Promise<AreaCheck> {
     const p = this.paths;
     const damaged: AreaCheck = { status: "damaged", path: p.areaJson };
+    let link: string | null;
+    try {
+      link = await findAreaSymlink(p.root);
+    } catch {
+      return damaged;
+    }
+    if (link !== null) return { status: "damaged", path: link };
     if (!(await this.exists(p.root))) return { status: "ok" };
     let text: string;
     try {
@@ -135,6 +144,18 @@ export class AreaInitializer {
       },
     );
   }
+}
+
+/**
+ * Start step 5 (TechSpec 2.1, 2.14 N-06): the first symbolic link among `.ramifold/`, `area.json`, `.gitignore`,
+ * `plans/`, `local/`, `local/tmp/` and the entries directly in `local/`; null if there is none.
+ */
+async function findAreaSymlink(root: string): Promise<string | null> {
+  for (const relPath of ["area.json", ".gitignore", "plans", "local/tmp"]) {
+    const link = await findSymlink(root, relPath);
+    if (link !== null) return link;
+  }
+  return findSymlinkInFolder(root, "local");
 }
 
 /** A whole-number `format` above the known one; checked before the schema, which a newer format may change. */

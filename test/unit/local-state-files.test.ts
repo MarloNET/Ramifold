@@ -1,10 +1,12 @@
 import fsp from "node:fs/promises";
+import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { areaPaths, type AreaPaths } from "../../src/server/area/area-paths";
 import { AreaStore } from "../../src/server/area/area-store";
 import type { SessionEntry } from "../../src/server/area/file-schemas";
 import { LocalStateFiles } from "../../src/server/area/local-state-files";
 import { faultFs, InjectedFault } from "../helpers/fault-fs";
+import { checksums } from "../helpers/checksums";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // sessions.json in .ramifold/local/ (TechSpec 3.2, 2.8).
@@ -109,5 +111,30 @@ describe("AreaStore session entries", () => {
     const store = new AreaStore(paths);
     await store.writeSessionEntry(CHAT, ENTRY);
     await expect(store.readSessionEntry(CHAT)).resolves.toEqual(ENTRY);
+  });
+});
+
+describe("LocalStateFiles – local/ as a symbolic link (DER-70-04, TechSpec 2.14 N-06)", () => {
+  let outside: TempProject;
+  beforeEach(async () => {
+    outside = await createTempProject();
+    await fsp.writeFile(path.join(outside.dir, "sessions.json"), JSON.stringify({ sessions: {} }));
+    await fsp.rmdir(paths.local);
+  });
+  afterEach(() => outside.cleanup());
+
+  it.each([
+    ["local/ is a link to a folder outside", () => fsp.symlink(outside.dir, paths.local)],
+    ["the area is a link to a folder outside", () => fsp.rmdir(paths.root).then(() => fsp.symlink(outside.dir, paths.root))],
+  ])("writeSession rejects like a write error with ELOOP when %s, the target stays byte-equal", async (_name, link) => {
+    await link();
+    const before = await checksums(outside.dir);
+    await expect(new LocalStateFiles(paths).writeSession(CHAT, ENTRY)).rejects.toMatchObject({ code: "ELOOP" });
+    expect(await checksums(outside.dir)).toEqual(before);
+  });
+
+  it("AreaStore.writeSessionEntry passes the ELOOP write error on", async () => {
+    await fsp.symlink(outside.dir, paths.local);
+    await expect(new AreaStore(paths).writeSessionEntry(CHAT, ENTRY)).rejects.toMatchObject({ code: "ELOOP" });
   });
 });
