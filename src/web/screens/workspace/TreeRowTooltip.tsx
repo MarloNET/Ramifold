@@ -5,7 +5,8 @@ import { treeRowTooltipText } from "./tree-row-text";
 // The one tooltip of a tree row (TechSpec 2.16 "Tooltip der Baumzeile", DL-02, WCAG 1.4.13). React Aria offers
 // tooltips only for buttons and links, hence this small unit. Visible while the pointer is on the row (after
 // TOOLTIP_DELAY_MS) or the row has keyboard focus (at once); `Esc` hides it until focus and pointer left the row;
-// it stays while the pointer is on row or tooltip and goes 150 ms after both were left; scrolling hides it.
+// it stays while the pointer is on row or tooltip and goes 150 ms after both were left; scrolling hides it, and so
+// does resizing the window (position and shortening were measured when it appeared).
 // Exactly one tooltip in the document: the one claimed last is shown.
 
 /** Delay of tooltips on hover (also for IconButton, TechSpec 2.16). */
@@ -68,7 +69,9 @@ export function TreeRowTooltip(props: {
     // Capture phase: the tree handles `Esc` itself (keeps the selection, disallowEmptySelection).
     document.addEventListener("keydown", onKeyDown, true);
     window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
     return () => {
+      window.removeEventListener("resize", hide);
       document.removeEventListener("keydown", onKeyDown, true);
       window.removeEventListener("scroll", hide, true);
       claims.splice(claims.indexOf(owner), 1);

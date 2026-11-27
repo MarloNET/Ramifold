@@ -272,6 +272,10 @@ test("UI-003 status mark tooltip (DER-19-04): one tooltip, status word or full t
   await page.mouse.move(900, 600);
   await expect(tooltip).toHaveText(`${LONG_TITLE} · No result yet`);
   await expect(tooltip).toHaveCount(1);
+
+  // Resizing the window hides it (position and shortening were measured when it appeared).
+  await page.setViewportSize({ width: 1000, height: 800 });
+  await expect(tooltip).toHaveCount(0);
 });
 
 test("UI-003 keyboard (DER-19-05): one tab stop, arrows, Home/End, Enter opens the node, selection with a bar", async ({
