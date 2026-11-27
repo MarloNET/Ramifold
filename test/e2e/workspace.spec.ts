@@ -187,6 +187,37 @@ test("UI-003.loading (DER-19-02): Loading plan… in the tree, node area empty; 
   await expect(page.getByRole("main")).toBeEmpty();
 });
 
+test.describe("UI-003.loading left before the answer", () => {
+  test.use({ expectedConsoleErrors: [/status of 409/] });
+
+  test("a late 409 plan_unreadable after leaving via Projects does not lead to UI-011", async ({ page }) => {
+    let release: () => void = () => undefined;
+    const released = new Promise<void>((resolve) => (release = resolve));
+    await page.route(`**/api/plans/${RAG.planId}`, async (route) => {
+      await released;
+      await route.fulfill({
+        status: 409,
+        json: { error: { code: "plan_unreadable", details: { title: RAG.title, cause: "git_conflict", location: "nodes.json" } } },
+      });
+    });
+    await page.goto("/");
+    await page.getByRole("link", { name: RAG.title }).click();
+    await expect(page.getByText("Loading plan…")).toBeVisible();
+    await page.getByRole("banner").getByRole("link", { name: "Projects" }).click();
+    await expect(page.getByRole("link", { name: MONITORING.title })).toBeVisible();
+
+    const answered = page.waitForResponse(`**/api/plans/${RAG.planId}`);
+    release();
+    await answered;
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 0)));
+    expect(await page.evaluate(() => window.history.state as unknown)).toBeNull();
+
+    await page.reload();
+    await expect(page.getByRole("link", { name: MONITORING.title })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+});
+
 test("UI-003.default tree rows (AC-REQ-007-01, DER-19-03): number, title, status symbol, names, arrow only with children", async ({
   page,
 }) => {

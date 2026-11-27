@@ -1,24 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { Button, Link } from "react-aria-components";
-import { z } from "zod";
-import { planListResponseSchema, planUnreadableDetailsSchema, type PlanListItemDto } from "../../../shared/api-schemas";
+import { planListResponseSchema, type PlanListItemDto } from "../../../shared/api-schemas";
 import type { ApiClient } from "../../api/api-client";
 import { usePageTitle } from "../../app/page-title";
 import { takeNavigationState } from "../../app/router";
 import { Banner } from "../../components/Banner";
 import { Icon } from "../../components/Icon";
 import { messages } from "../../text/messages";
+import { unreadablePlanNavigationStateSchema } from "../workspace/WorkspaceScreen";
 import { UnreadableProjectDialog, type UnreadableProjectInfo } from "./UnreadableProjectDialog";
 
 // UI-001 project list: states loading, empty, default, error and permission/disabled (unreadable entry with
 // "Details" -> UI-011, TechSpec 2.3). After `409 plan_unreadable` when opening, the workspace navigates here with the
 // unreadable plan as navigation state: the list loads and UI-011 opens; "Close" puts the focus on "Details" of that
 // row (v0.15, N-10). "New project" opens UI-002 with task #76.
-
-/** Navigation state set by WorkspaceScreen (`UnreadablePlanNavigationState`). */
-const unreadableNavigationSchema = z.object({
-  unreadablePlan: planUnreadableDetailsSchema.extend({ planId: z.string() }),
-});
 
 const createdFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
@@ -27,7 +22,7 @@ export function ProjectListScreen(props: { api: ApiClient; connected: boolean; f
   const [plans, setPlans] = useState<PlanListItemDto[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [unreadableDetails, setUnreadableDetails] = useState<UnreadableProjectInfo | null>(null);
-  const [failedOpen] = useState(() => unreadableNavigationSchema.safeParse(takeNavigationState()).data?.unreadablePlan ?? null);
+  const [failedOpen] = useState(() => unreadablePlanNavigationStateSchema.safeParse(takeNavigationState()).data?.unreadablePlan ?? null);
   const failedOpenShown = useRef(false);
   const detailsButtons = useRef(new Map<string, HTMLButtonElement>());
 

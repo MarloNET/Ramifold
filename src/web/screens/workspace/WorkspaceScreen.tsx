@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "react-aria-components";
-import { planUnreadableDetailsSchema, planViewSchema, type PlanUnreadableDetailsDto } from "../../../shared/api-schemas";
+import { z } from "zod";
+import { planUnreadableDetailsSchema, planViewSchema } from "../../../shared/api-schemas";
 import { ApiError, type ApiClient } from "../../api/api-client";
 import { shortenPlanTitle, usePageTitle } from "../../app/page-title";
 import { navigate } from "../../app/router";
@@ -15,8 +16,11 @@ import { PlanTree } from "./PlanTree";
 // expandable area ("Show plan"/"Hide plan", initially open, window-local; only CSS and `data-plan-open`).
 // The node area (node header, objective, result, chat) is filled with task #78.
 
-/** Navigation state for UI-001 after `409 plan_unreadable` (TechSpec 2.3, v0.15, N-10). */
-export type UnreadablePlanNavigationState = { unreadablePlan: PlanUnreadableDetailsDto & { planId: string } };
+/** Navigation state for UI-001 after `409 plan_unreadable` (TechSpec 2.3, v0.15, N-10); ProjectListScreen parses it. */
+export const unreadablePlanNavigationStateSchema = z.object({
+  unreadablePlan: planUnreadableDetailsSchema.extend({ planId: z.string() }),
+});
+export type UnreadablePlanNavigationState = z.infer<typeof unreadablePlanNavigationStateSchema>;
 
 export function WorkspaceScreen(props: { api: ApiClient; connected: boolean; planId: string; folderName: string | null }) {
   const { api, connected, planId, folderName } = props;
@@ -29,11 +33,13 @@ export function WorkspaceScreen(props: { api: ApiClient; connected: boolean; pla
 
   useEffect(() => {
     if (!connected) return;
+    // A late answer must not act once the planner has left this plan (for example via "Projects").
+    let current = true;
     planViewStore.startLoading(planId);
     api.get(`/api/plans/${planId}`, planViewSchema).then(
-      (loaded) => planViewStore.setLoaded(loaded),
+      (loaded) => current && planViewStore.setLoaded(loaded),
       (error: unknown) => {
-        if (!(error instanceof ApiError) || error.body === null) return;
+        if (!current || !(error instanceof ApiError) || error.body === null) return;
         const { code, details } = error.body.error;
         if (code === "plan_unreadable") {
           const unreadable = planUnreadableDetailsSchema.safeParse(details);
@@ -47,6 +53,9 @@ export function WorkspaceScreen(props: { api: ApiClient; connected: boolean; pla
         }
       },
     );
+    return () => {
+      current = false;
+    };
   }, [api, connected, planId]);
 
   return (
