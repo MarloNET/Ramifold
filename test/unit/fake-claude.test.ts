@@ -408,7 +408,7 @@ describe("fake-claude recording (K2)", () => {
     return { settingsFile, contextFile, settings };
   }
 
-  it("writes one numbered JSON file per request with arguments, context, settings, stdin, resumeId, forked and a counter", async () => {
+  it("writes one numbered JSON file per request with arguments, working directory, context, settings, stdin, resumeId, forked and a counter", async () => {
     const recordDir = path.join(tmp, "record");
     const { settingsFile, contextFile, settings } = await writeRunFiles();
     const argv = [...RUN_ARGS, "--settings", settingsFile, "--append-system-prompt-file", contextFile];
@@ -422,6 +422,7 @@ describe("fake-claude recording (K2)", () => {
     const read = async (name: string) => JSON.parse(await readFile(path.join(recordDir, name), "utf8")) as unknown;
     expect(await read("1.json")).toEqual({
       args: argv,
+      cwd: process.cwd(),
       context: "# Context\n\nNode 2.2",
       settings,
       stdin: "First question",

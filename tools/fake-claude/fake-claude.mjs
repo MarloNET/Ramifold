@@ -6,7 +6,8 @@
 // Environment:
 //   RAMIFOLD_FAKE_SCENARIO=<name>        shipped scenario (default: demo)
 //   RAMIFOLD_FAKE_SCENARIO_FILE=<path>   scenario as JSON file; takes precedence over RAMIFOLD_FAKE_SCENARIO
-//   RAMIFOLD_FAKE_RECORD_DIR=<dir>       writes <dir>/<n>.json per request and the counter <dir>/state.json
+//   RAMIFOLD_FAKE_RECORD_DIR=<dir>       writes <dir>/<n>.json per request (arguments, working directory, context,
+//                                        settings, stdin, resumeId, forked) and the counter <dir>/state.json
 
 import { randomUUID } from "node:crypto";
 import { mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
@@ -113,6 +114,7 @@ export async function runFakeClaude(argv, io) {
     const settingsFile = optionValue(argv, "--settings");
     const record = {
       args: argv,
+      cwd: process.cwd(),
       context: contextFile === null ? null : readFileSync(contextFile, "utf8"),
       settings: settingsFile === null ? null : JSON.parse(readFileSync(settingsFile, "utf8")),
       stdin,
