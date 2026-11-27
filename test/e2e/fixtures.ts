@@ -5,12 +5,14 @@ import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // Playwright fixture per test: own project folder (seed scenario), own Ramifold instance on a free port,
 // baseURL of that instance. Requests to other hosts than the instance are blocked (no network). Console errors
-// (for example CSP violations) fail the test.
+// (for example CSP violations) fail the test, except the ones a test expects (`expectedConsoleErrors`, for example the
+// browser line of a forced error response).
 
 type RamifoldFixtures = {
   scenario: keyof typeof SEED_SCENARIOS;
   /** Environment of the instance on top of startRamifold's (which sets RAMIFOLD_AGENT=fake). */
   ramifoldEnv: Record<string, string | undefined>;
+  expectedConsoleErrors: RegExp[];
   project: TempProject;
   ramifold: RunningRamifold;
 };
@@ -18,6 +20,7 @@ type RamifoldFixtures = {
 export const ramifoldTest = base.extend<RamifoldFixtures>({
   scenario: ["empty", { option: true }],
   ramifoldEnv: [{}, { option: true }],
+  expectedConsoleErrors: [[], { option: true }],
   project: async ({ scenario }, use) => {
     const project = await createTempProject();
     await SEED_SCENARIOS[scenario]!(project.dir);
@@ -37,13 +40,13 @@ export const ramifoldTest = base.extend<RamifoldFixtures>({
     });
     await use(context);
   },
-  page: async ({ page }, use) => {
+  page: async ({ page, expectedConsoleErrors }, use) => {
     const consoleErrors: string[] = [];
     page.on("console", (message) => {
       if (message.type() === "error") consoleErrors.push(message.text());
     });
     await use(page);
-    expect(consoleErrors).toEqual([]);
+    expect(consoleErrors.filter((error) => !expectedConsoleErrors.some((expected) => expected.test(error)))).toEqual([]);
   },
 });
 

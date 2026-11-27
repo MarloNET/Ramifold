@@ -1,21 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Link } from "react-aria-components";
 import { planListResponseSchema, type PlanListItemDto } from "../../../shared/api-schemas";
 import type { ApiClient } from "../../api/api-client";
 import { usePageTitle } from "../../app/page-title";
+import { takeNavigationState } from "../../app/router";
+import { Banner } from "../../components/Banner";
 import { Icon } from "../../components/Icon";
 import { messages } from "../../text/messages";
+import { unreadablePlanNavigationStateSchema } from "../workspace/WorkspaceScreen";
 import { UnreadableProjectDialog, type UnreadableProjectInfo } from "./UnreadableProjectDialog";
 
-// UI-001 project list: states loading, empty, default and permission/disabled (unreadable entry with "Details" ->
-// UI-011, TechSpec 2.3). "New project" opens UI-002 with task #76; the error state follows with its task.
+// UI-001 project list: states loading, empty, default, error and permission/disabled (unreadable entry with
+// "Details" -> UI-011, TechSpec 2.3). After `409 plan_unreadable` when opening, the workspace navigates here with the
+// unreadable plan as navigation state: the list loads and UI-011 opens; "Close" puts the focus on "Details" of that
+// row (v0.15, N-10). "New project" opens UI-002 with task #76.
 
 const createdFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" });
 
 export function ProjectListScreen(props: { api: ApiClient; connected: boolean; folderName: string | null }) {
   const { api, connected, folderName } = props;
   const [plans, setPlans] = useState<PlanListItemDto[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [unreadableDetails, setUnreadableDetails] = useState<UnreadableProjectInfo | null>(null);
+  const [failedOpen] = useState(() => unreadablePlanNavigationStateSchema.safeParse(takeNavigationState()).data?.unreadablePlan ?? null);
+  const failedOpenShown = useRef(false);
+  const detailsButtons = useRef(new Map<string, HTMLButtonElement>());
 
   usePageTitle(folderName === null ? null : messages["UI-001.pageTitle"](folderName));
 
@@ -24,12 +33,24 @@ export function ProjectListScreen(props: { api: ApiClient; connected: boolean; f
     let current = true;
     api.get("/api/plans", planListResponseSchema).then(
       (response) => current && setPlans(response.plans),
-      () => undefined,
+      (error: unknown) => {
+        // A network error switches the window to server-down (ApiClient); anything else is UI-001.error.
+        if (current && !(error instanceof TypeError)) setLoadFailed(true);
+      },
     );
     return () => {
       current = false;
     };
   }, [api, connected]);
+
+  useEffect(() => {
+    if (plans === null || failedOpen === null || failedOpenShown.current) return;
+    failedOpenShown.current = true;
+    // Focus "Details" first: the dialog returns the focus there when it closes (UI-011, action "Close").
+    detailsButtons.current.get(failedOpen.planId)?.focus();
+    const { title, cause, location } = failedOpen;
+    setUnreadableDetails({ title, cause, location });
+  }, [plans, failedOpen]);
 
   const newProjectButton = (
     <Button className="button button--primary">
@@ -44,7 +65,8 @@ export function ProjectListScreen(props: { api: ApiClient; connected: boolean; f
         <h1>{messages["UI-001.heading"]}</h1>
         {plans !== null && plans.length > 0 && newProjectButton}
       </div>
-      {plans === null && <p className="loading-text">{messages["UI-001.loading"]}</p>}
+      {loadFailed && <Banner variant="error">{messages["UI-001.error"]}</Banner>}
+      {plans === null && !loadFailed && <p className="loading-text">{messages["UI-001.loading"]}</p>}
       {plans !== null && plans.length === 0 && (
         <div className="empty-state">
           <p>{messages["UI-001.empty"]}</p>
@@ -89,6 +111,10 @@ export function ProjectListScreen(props: { api: ApiClient; connected: boolean; f
                   <td className="project-table__actions">
                     {unreadable !== null && (
                       <Button
+                        ref={(button) => {
+                          if (button === null) detailsButtons.current.delete(plan.planId);
+                          else detailsButtons.current.set(plan.planId, button);
+                        }}
                         className="button"
                         onPress={() => setUnreadableDetails({ title: plan.title, ...unreadable })}
                       >

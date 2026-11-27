@@ -7,6 +7,16 @@ export const messages = {
   "AppHeader.dataNotice": "Data notice",
   "AppHeader.simulatedAi": "Simulated AI",
   "AppHeader.simulatedAiTooltip": "AI answers are simulated and do not come from a real AI.",
+  "AppHeader.breadcrumb": "Breadcrumb",
+  "AppHeader.projects": "Projects",
+
+  "StatusBadge.open": "No result yet",
+  "StatusBadge.concept": "Concept",
+  "StatusBadge.fixed": "Fixed plan",
+  "StatusBadge.notSent": "not sent",
+  "StatusBadge.incomplete": "incomplete",
+  "StatusBadge.notSaved": "not saved",
+  "StatusBadge.aborted": "aborted",
 
   "UI-001.heading": "Projects",
   "UI-001.loading": "Loading projects…",
@@ -19,6 +29,19 @@ export const messages = {
   "UI-001.columnActions": "Actions",
   "UI-001.notReadable": "Not readable",
   "UI-001.details": "Details",
+  "UI-001.error": "The projects could not be loaded. Restart Ramifold and try again.",
+
+  "UI-003.pageTitle": (planTitle: string, folderName: string) => `${planTitle} – ${folderName} – Ramifold`,
+  "UI-003.loadingPlan": "Loading plan…",
+  "UI-003.plan": "Plan",
+  "UI-003.showPlan": "Show plan",
+  "UI-003.hidePlan": "Hide plan",
+  // Accessible names of the tree row arrow; set explicitly, React Aria would localize them by the browser language.
+  "UI-003.expand": "Expand",
+  "UI-003.collapse": "Collapse",
+  "UI-003.draft": "Draft",
+  "UI-003.aiRunning": "AI running",
+  "UI-003.objective": "Objective",
 
   "UI-011.title": (title: string) => `${title} cannot be opened`,
   "UI-011.titleUntitled": "This project cannot be opened",

@@ -45,3 +45,37 @@ export const planListResponseSchema = z.object({
   plans: z.array(planListItemSchema),
 });
 export type PlanListResponseDto = z.infer<typeof planListResponseSchema>;
+
+/** `details` of `409 plan_unreadable` (TechSpec 2.0, 2.3). */
+export const planUnreadableDetailsSchema = z.object({
+  title: z.string().nullable(),
+  cause: z.enum(UNREADABLE_CAUSES),
+  location: z.string(),
+});
+export type PlanUnreadableDetailsDto = z.infer<typeof planUnreadableDetailsSchema>;
+
+export const treeNodeSchema = z.object({
+  id: ulidSchema,
+  parentId: ulidSchema.nullable(),
+  depth: z.number().int().min(0),
+  number: z.string().nullable(),
+  title: z.string(),
+  resultStatus: z.enum(["open", "concept", "fixed"]),
+  childCount: z.number().int().min(0),
+  descendantCount: z.number().int().min(0),
+  hasAiDraft: z.boolean(),
+});
+export type TreeNodeDto = z.infer<typeof treeNodeSchema>;
+
+export const readOnlyInfoSchema = z.object({ cause: z.literal("external_change"), detectedAt: isoTimestampSchema });
+export type ReadOnlyInfoDto = z.infer<typeof readOnlyInfoSchema>;
+
+/** GET /api/plans/:planId; `nodes` in tree order (pre-order). */
+export const planViewSchema = z.object({
+  planId: ulidSchema,
+  title: z.string(),
+  createdAt: isoTimestampSchema,
+  readOnly: readOnlyInfoSchema.nullable(),
+  nodes: z.array(treeNodeSchema),
+});
+export type PlanViewDto = z.infer<typeof planViewSchema>;

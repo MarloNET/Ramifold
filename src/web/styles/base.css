@@ -1,4 +1,4 @@
-/* Base styles, focus ring and the components of UI-001 (TechSpec 2.16). Only tokens from tokens.css. */
+/* Base styles, focus ring and the components of UI-001 and UI-003 (TechSpec 2.16). Only tokens from tokens.css. */
 *,
 *::before,
 *::after {
@@ -330,8 +330,285 @@ code {
   font-size: 0.88em;
 }
 
+/* Breadcrumbs in the header of UI-003 (AppHeader, AL-04) */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.9rem;
+  color: var(--header-muted);
+}
+
+.breadcrumbs .icon {
+  color: var(--text-muted);
+}
+
+.breadcrumbs__link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.breadcrumbs__link[data-hovered] {
+  text-decoration: underline;
+}
+
+.breadcrumbs__here {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  color: var(--header-text);
+}
+
+/* Banner (Banner, DL-04): colors from the variant, the symbol takes the text color */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0;
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: var(--r-m);
+  font-size: 0.95rem;
+}
+
+.banner .icon {
+  margin-top: 3px;
+}
+
+.banner__text {
+  flex: 1;
+}
+
+.banner[data-variant="info"] {
+  border-color: var(--info-border);
+  background: var(--info-bg);
+  color: var(--info-text);
+}
+
+.banner[data-variant="error"] {
+  border-color: var(--error-border);
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.banner[data-variant="warn"] {
+  border-color: var(--warning-border);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.banner[data-variant="success"] {
+  border-color: var(--success-border);
+  background: var(--success-bg);
+  color: var(--success-text);
+}
+
+/* Pills and marks (StatusBadge) */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.status-badge[data-kind="open"] {
+  background: var(--none-bg);
+  color: var(--none-text);
+}
+
+.status-badge[data-kind="concept"] {
+  background: var(--concept-bg);
+  color: var(--concept-text);
+}
+
+.status-badge[data-kind="fixed"] {
+  background: var(--fixed-bg);
+  color: var(--fixed-text);
+}
+
+.status-badge[data-kind="not_sent"],
+.status-badge[data-kind="incomplete"],
+.status-badge[data-kind="not_saved"] {
+  background: var(--error-bg);
+  color: var(--error-text);
+}
+
+.status-badge[data-kind="aborted"] {
+  color: var(--text-muted);
+}
+
+/* Workspace (UI-003): plan column 320 px and node area; tree and header do not scroll with the node area */
+.workspace {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  height: calc(100vh - 48px);
+}
+
+.workspace__plan {
+  overflow: auto;
+  padding: 14px 10px;
+  border-right: 1px solid var(--divider);
+  background: var(--tree-bg);
+  color: var(--tree-text);
+}
+
+.workspace__plan-toggle {
+  display: none;
+}
+
+.workspace__tree .loading-text {
+  margin: 0 8px;
+}
+
+.workspace__node {
+  overflow: auto;
+  min-width: 0;
+  max-width: 1100px;
+  padding: var(--work-pad);
+}
+
+.objective {
+  max-width: 80ch;
+  margin: 0 0 16px;
+}
+
+.objective p {
+  margin: 0;
+}
+
+/* Tree (PlanTree, TechSpec 2.16 "Baumzeile") */
+.tree-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--row-h);
+  padding-inline-end: 8px;
+  border-radius: var(--r-s);
+  font-size: var(--fs-tree);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.tree-row[data-hovered] {
+  background: var(--hover);
+}
+
+.tree-row[data-selected] {
+  background: var(--tree-sel-bg);
+  color: var(--tree-sel-text);
+  font-weight: 600;
+}
+
+/* The selected node is marked by a bar in addition to the color (REQ-062). */
+.tree-row[data-selected]::before {
+  content: "";
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--tree-sel-bar);
+}
+
+/* Above the neighbouring rows, which would otherwise paint over the ring outside the row. */
+.tree-row[data-focus-visible] {
+  z-index: 1;
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.tree-row[data-root] .tree-row__title {
+  font-weight: 700;
+}
+
+.tree-row__chevron {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  width: 18px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--tree-muted);
+  cursor: pointer;
+}
+
+.tree-row__number {
+  color: var(--tree-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tree-row__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tree-row__status {
+  display: inline-flex;
+}
+
+.tree-row__status[data-status="open"] {
+  color: var(--status-none);
+}
+
+.tree-row__status[data-status="concept"] {
+  color: var(--status-concept);
+}
+
+.tree-row__status[data-status="fixed"] {
+  color: var(--status-fixed);
+}
+
+/* Tooltip of a tree row (TreeRowTooltip): directly below the row, without a gap */
+.tree-tooltip {
+  position: fixed;
+  z-index: 20;
+  max-width: 320px;
+  padding: 4px 8px;
+  border-radius: var(--r-s);
+  background: var(--text);
+  color: var(--bg);
+  font-size: 0.8rem;
+  white-space: normal;
+}
+
 @media (max-width: 1023.98px) {
   .modal {
     width: calc(100vw - 16px);
+  }
+
+  /* Plan column as an expandable area above the single-column node area (AL-05). */
+  .workspace {
+    display: block;
+    height: auto;
+  }
+
+  .workspace__plan {
+    overflow: visible;
+    border-right: 0;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .workspace__plan-toggle {
+    display: inline-flex;
+    margin: 0 0 8px;
+  }
+
+  .workspace[data-plan-open="false"] .workspace__tree {
+    display: none;
+  }
+
+  .workspace__node {
+    overflow: visible;
   }
 }
