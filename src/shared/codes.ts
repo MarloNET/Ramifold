@@ -10,6 +10,7 @@ export const ERROR_CODES = [
   "node_not_found",
   "suggestion_not_found",
   "ai_request_not_found",
+  "route_not_found",
   "instance_mismatch",
   "plan_unreadable",
   "plan_read_only",

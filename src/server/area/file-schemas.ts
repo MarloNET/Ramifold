@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CAUSE_CODES } from "../../shared/codes";
 
 // zod schemas of the files in the Ramifold area (TechSpec 3.1).
 
@@ -33,6 +34,62 @@ export const nodeFileSchema = z.looseObject({
   updatedAt: isoTimestampSchema,
 });
 export type NodeFile = z.infer<typeof nodeFileSchema>;
+
+/** `plans/<planId>/results/<nodeId>/<versionId>.json` (only created, never changed). */
+export const resultVersionFileSchema = z.looseObject({
+  id: ulidSchema,
+  nodeId: ulidSchema,
+  status: z.enum(["concept", "fixed"]),
+  content: z.string().refine((content) => content.trim() !== ""),
+  createdAt: isoTimestampSchema,
+});
+export type ResultVersionFile = z.infer<typeof resultVersionFileSchema>;
+
+/** First line of `plans/<planId>/chats/<chatId>.jsonl`: assigns the chat to its node. */
+export const chatHeaderLineSchema = z.looseObject({
+  t: z.literal("chat"),
+  id: ulidSchema,
+  nodeId: ulidSchema,
+  createdAt: isoTimestampSchema,
+});
+export type ChatHeaderLine = z.infer<typeof chatHeaderLineSchema>;
+
+/** The event lines after the header; lines with an unknown `t` are ignored when read (REQ-065). */
+export const chatEventLineSchema = z.discriminatedUnion("t", [
+  z.looseObject({ t: z.literal("planner_message"), id: ulidSchema, text: z.string(), at: isoTimestampSchema }),
+  z.looseObject({
+    t: z.literal("planner_status"),
+    id: ulidSchema,
+    status: z.enum(["sent", "not_sent"]),
+    cause: z.enum(CAUSE_CODES).optional(),
+    at: isoTimestampSchema,
+  }),
+  z.looseObject({
+    t: z.literal("ai_start"),
+    id: ulidSchema,
+    replyTo: ulidSchema,
+    sessionRebuilt: z.boolean(),
+    at: isoTimestampSchema,
+  }),
+  z.looseObject({ t: z.literal("ai_text"), id: ulidSchema, text: z.string() }),
+  z.looseObject({
+    t: z.literal("ai_end"),
+    id: ulidSchema,
+    status: z.enum(["complete", "incomplete", "aborted"]),
+    cause: z.enum(CAUSE_CODES).optional(),
+    at: isoTimestampSchema,
+  }),
+]);
+export type ChatEventLine = z.infer<typeof chatEventLineSchema>;
+
+/** Values of `t` with a known meaning after the header line. */
+export const CHAT_EVENT_TYPES: readonly string[] = [
+  "planner_message",
+  "planner_status",
+  "ai_start",
+  "ai_text",
+  "ai_end",
+];
 
 // Machine-local files in `.ramifold/local/` (TechSpec 3.2).
 

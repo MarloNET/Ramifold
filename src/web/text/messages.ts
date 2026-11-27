@@ -16,4 +16,20 @@ export const messages = {
   "UI-001.columnCreated": "Created",
   "UI-001.untitled": "(untitled)",
   "UI-001.pageTitle": (folderName: string) => `Projects – ${folderName} – Ramifold`,
+  "UI-001.columnActions": "Actions",
+  "UI-001.notReadable": "Not readable",
+  "UI-001.details": "Details",
+
+  "UI-011.title": (title: string) => `${title} cannot be opened`,
+  "UI-011.titleUntitled": "This project cannot be opened",
+  "UI-011.text": "Ramifold cannot read the data of this project. Ramifold did not change anything.",
+  "UI-011.cause": "Cause",
+  "UI-011.location": "Location",
+  "UI-011.causeGitConflict": "Git conflict",
+  "UI-011.causeDamaged": "Damaged data",
+  "UI-011.causeNewerVersion": "Data from a newer Ramifold version",
+  "UI-011.causeInconsistent": "Inconsistent data",
+  "UI-011.instruction":
+    "Resolve the problem in your project folder, restart Ramifold, and open the project again. Your other projects are not affected.",
+  "UI-011.close": "Close",
 } as const;

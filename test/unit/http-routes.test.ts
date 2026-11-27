@@ -1,3 +1,4 @@
+import fsp from "node:fs/promises";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
@@ -126,3 +127,96 @@ describe("staticAssets", () => {
   });
 });
 
+
+describe("GET /api/plans with readability (TechSpec 2.3)", () => {
+  it("marks an unreadable plan with cause and location and reports it once (DER-18-05)", async () => {
+    t = await startTestApp();
+    await writePlanFiles(t.projectFolder, {
+      planId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PS",
+      rootNodeId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PT",
+      title: "Eigenes produktives RAG",
+      createdAt: "2026-11-03T10:00:00.000Z",
+    });
+    const nodeFile = path.join(t.projectFolder, ".ramifold/plans/01JDQ7Z8M3A6Y2W4X5V7T9R1PS/nodes/01JDQ7Z8M3A6Y2W4X5V7T9R1PT.json");
+    await fsp.appendFile(nodeFile, "=======\n");
+    const windowId = t.windowHub.open({ write: () => true, on: () => undefined });
+    const requestHeaders = {
+      host: t.host,
+      "x-ramifold-instance": TEST_INSTANCE_ID,
+      "x-ramifold-window": windowId,
+    };
+    const first = await t.app.inject({ url: "/api/plans", headers: requestHeaders });
+    await t.app.inject({ url: "/api/plans", headers: requestHeaders });
+    expect(planListResponseSchema.parse(first.json()).plans).toEqual([
+      {
+        planId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PS",
+        // The only node file has the markers, so the title is not readable.
+        title: null,
+        createdAt: "2026-11-03T10:00:00.000Z",
+        readable: false,
+        unreadable: {
+          cause: "git_conflict",
+          location: ".ramifold/plans/01JDQ7Z8M3A6Y2W4X5V7T9R1PS/nodes/01JDQ7Z8M3A6Y2W4X5V7T9R1PT.json",
+        },
+      },
+    ]);
+    expect(t.errorLines).toHaveLength(1);
+    expect(t.errorLines[0]).toMatch(
+      /^\[ramifold\] \S+ plan_unreadable cause=git_conflict plan=01JDQ7Z8M3A6Y2W4X5V7T9R1PS \.ramifold\/plans\/01JDQ7Z8M3A6Y2W4X5V7T9R1PS\/nodes\/01JDQ7Z8M3A6Y2W4X5V7T9R1PT\.json$/,
+    );
+  });
+});
+
+describe("unknown /api route (TechSpec 2.0, v0.11, N-01, DER-18-07)", () => {
+  it.each(["GET", "POST"] as const)("%s /api/nothing with valid headers → 404 route_not_found without details", async (method) => {
+    t = await startTestApp();
+    const windowId = t.windowHub.open({ write: () => true, on: () => undefined });
+    const res = await t.app.inject({
+      method,
+      url: "/api/nothing",
+      headers: {
+        host: t.host,
+        "x-ramifold-instance": TEST_INSTANCE_ID,
+        "x-ramifold-window": windowId,
+        ...(method === "POST" ? { "content-type": "application/json", "x-ramifold-request-id": "6f9619ff-8b86-4011-b42d-00c04fc964aa" } : {}),
+      },
+      payload: method === "POST" ? "{}" : undefined,
+    });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).toEqual({ error: { code: "route_not_found" } });
+    expect(t.errorLines).toEqual([]);
+  });
+
+  it("the path /api itself and other methods are covered too", async () => {
+    t = await startTestApp();
+    const windowId = t.windowHub.open({ write: () => true, on: () => undefined });
+    const headers = { host: t.host, "x-ramifold-instance": TEST_INSTANCE_ID, "x-ramifold-window": windowId };
+    for (const url of ["/api", "/api/plans/x/y"]) {
+      const res = await t.app.inject({ url, headers });
+      expect([res.statusCode, res.json()]).toEqual([404, { error: { code: "route_not_found" } }]);
+    }
+  });
+
+  it("requestGuard answers first: without instance header 403 missing_instance_header", async () => {
+    t = await startTestApp();
+    for (const method of ["GET", "POST"] as const) {
+      const res = await t.app.inject({
+        method,
+        url: "/api/nothing",
+        headers: {
+          host: t.host,
+          ...(method === "POST" ? { "content-type": "application/json", "x-ramifold-request-id": "6f9619ff-8b86-4011-b42d-00c04fc964aa" } : {}),
+        },
+        payload: method === "POST" ? "{}" : undefined,
+      });
+      expect([res.statusCode, res.json()]).toEqual([403, { error: { code: "missing_instance_header" } }]);
+    }
+  });
+
+  it("paths outside /api keep the Fastify default", async () => {
+    t = await startTestApp();
+    const res = await t.app.inject({ url: "/apix", headers: { host: t.host } });
+    expect(res.statusCode).toBe(404);
+    expect(res.json()).not.toEqual({ error: { code: "route_not_found" } });
+  });
+});

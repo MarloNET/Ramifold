@@ -33,36 +33,54 @@ describe("inspectProjectFolder", () => {
   });
 });
 
-describe("AreaStore.readPlanSummaries", () => {
+describe("AreaStore.listPlanFolders", () => {
   it("returns no plans when plans/ does not exist", async () => {
-    await expect(new AreaStore(areaPaths(project.dir)).readPlanSummaries()).resolves.toEqual([]);
+    await expect(new AreaStore(areaPaths(project.dir)).listPlanFolders()).resolves.toEqual([]);
   });
 
-  it("reads plan.json and the title of the root node", async () => {
+  it("lists folders and links with a plan id as name, sorted; files and other names are no plans", async () => {
+    const plans = areaPaths(project.dir).plans;
+    await fsp.mkdir(path.join(plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PT"), { recursive: true });
+    await fsp.mkdir(path.join(plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PS"));
+    await fsp.mkdir(path.join(plans, "notes"));
+    await fsp.writeFile(path.join(plans, "README"), "");
+    await fsp.symlink(path.join(project.dir, "elsewhere"), path.join(plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PV"));
+    await expect(new AreaStore(areaPaths(project.dir)).listPlanFolders()).resolves.toEqual([
+      "01JDQ7Z8M3A6Y2W4X5V7T9R1PS",
+      "01JDQ7Z8M3A6Y2W4X5V7T9R1PT",
+      "01JDQ7Z8M3A6Y2W4X5V7T9R1PV",
+    ]);
+  });
+});
+
+describe("AreaStore.loadPlan", () => {
+  const planId = "01JDQ7Z8M3A6Y2W4X5V7T9R1PS";
+
+  it("loads a readable plan together with its file stamp", async () => {
     await writePlanFiles(project.dir, {
-      planId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PS",
+      planId,
       rootNodeId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PT",
       title: "Eigenes produktives RAG",
       createdAt: "2026-11-03T10:00:00.000Z",
     });
-    await expect(new AreaStore(areaPaths(project.dir)).readPlanSummaries()).resolves.toEqual([
-      { planId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PS", createdAt: "2026-11-03T10:00:00.000Z", title: "Eigenes produktives RAG" },
-    ]);
+    const loaded = await new AreaStore(areaPaths(project.dir)).loadPlan(planId);
+    expect(loaded?.check).toMatchObject({ readable: true, plan: { title: "Eigenes produktives RAG" } });
+    expect(loaded?.stamp.paths()).toEqual(["nodes/01JDQ7Z8M3A6Y2W4X5V7T9R1PT.json", "plan.json"]);
   });
 
-  it("ignores plan folders without plan.json (aborted creation) and plain files", async () => {
-    const plans = areaPaths(project.dir).plans;
-    await fsp.mkdir(path.join(plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PS", "nodes"), { recursive: true });
-    await fsp.writeFile(path.join(plans, "README"), "");
-    await expect(new AreaStore(areaPaths(project.dir)).readPlanSummaries()).resolves.toEqual([]);
+  it("returns null for a plan folder without plan.json (aborted creation)", async () => {
+    await fsp.mkdir(path.join(areaPaths(project.dir).plans, planId, "nodes"), { recursive: true });
+    await expect(new AreaStore(areaPaths(project.dir)).loadPlan(planId)).resolves.toBeNull();
   });
 
-  it("returns null for parts that cannot be read (readability check follows with task #74)", async () => {
-    const planDir = path.join(areaPaths(project.dir).plans, "01JDQ7Z8M3A6Y2W4X5V7T9R1PS");
-    await fsp.mkdir(path.join(planDir, "nodes"), { recursive: true });
-    await fsp.writeFile(path.join(planDir, "plan.json"), "<<<<<<< HEAD\n");
-    await expect(new AreaStore(areaPaths(project.dir)).readPlanSummaries()).resolves.toEqual([
-      { planId: "01JDQ7Z8M3A6Y2W4X5V7T9R1PS", createdAt: null, title: null },
-    ]);
+  it("does not follow a linked plan folder, also not for the stamp", async () => {
+    const outside = path.join(project.dir, "outside");
+    await fsp.mkdir(outside);
+    await fsp.writeFile(path.join(outside, "plan.json"), "{}");
+    await fsp.mkdir(areaPaths(project.dir).plans, { recursive: true });
+    await fsp.symlink(outside, path.join(areaPaths(project.dir).plans, planId));
+    const loaded = await new AreaStore(areaPaths(project.dir)).loadPlan(planId);
+    expect(loaded?.check).toMatchObject({ readable: false, cause: "damaged", location: `.ramifold/plans/${planId}` });
+    expect(loaded?.stamp.paths()).toEqual([]);
   });
 });
