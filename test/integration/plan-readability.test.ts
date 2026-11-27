@@ -120,6 +120,27 @@ describe("PlanRegistry.getLoaded on a real file system (scenario unreadable)", (
   });
 });
 
+describe("PlanRegistry.list on a real file system (CR-177-02)", () => {
+  it("a plan with a folder without read permission is listed as damaged; the other plans stay listed", async () => {
+    project = await createTempProject({ scenario: "unreadable" });
+    const { rag, monitoring } = UNREADABLE_SEED;
+    const nodes = path.join(project.dir, ".ramifold", "plans", rag.planId, "nodes");
+    await fsp.chmod(nodes, 0o000);
+    try {
+      const plans = await realRegistry(project.dir).registry.list();
+
+      expect(plans.find((p) => p.planId === rag.planId)).toMatchObject({
+        readable: false,
+        unreadable: { cause: "damaged", location: `.ramifold/plans/${rag.planId}/nodes` },
+      });
+      expect(plans.find((p) => p.planId === monitoring.planId)?.readable).toBe(true);
+      expect(plans).toHaveLength(Object.keys(UNREADABLE_SEED).length);
+    } finally {
+      await fsp.chmod(nodes, 0o755);
+    }
+  });
+});
+
 /** Opens a window via GET /api/events (kept open) and returns the request headers of that window. */
 function openWindow(instance: RunningRamifold): Promise<{ headers: Record<string, string>; close: () => void }> {
   return new Promise((resolve, reject) => {

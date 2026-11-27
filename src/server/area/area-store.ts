@@ -106,7 +106,7 @@ export class AreaStore {
    * during loading shows up as a deviation (TechSpec 2.12). null if the folder has no `plan.json` (aborted creation).
    */
   async loadPlan(planId: string): Promise<{ check: PlanTreeCheck; stamp: PlanStamp } | null> {
-    const stamp = await PlanStamp.capture(this.paths.planDir(planId));
+    const stamp = await PlanStamp.capture(this.paths, planId);
     const check = await loadPlanFromDisk(this.paths, planId);
     return check === null ? null : { check, stamp };
   }

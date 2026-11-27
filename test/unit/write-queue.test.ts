@@ -1,6 +1,7 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { areaPaths } from "../../src/server/area/area-paths";
 import { PlanStamp } from "../../src/server/area/plan-stamp";
 import { WriteQueue } from "../../src/server/area/write-queue";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
@@ -61,8 +62,8 @@ describe("WriteQueue with PlanStamp (FIND-024)", () => {
   let planDir: string;
   beforeEach(async () => {
     project = await createTempProject();
-    planDir = path.join(project.dir, "plan");
-    await fsp.mkdir(planDir);
+    planDir = path.join(project.dir, ".ramifold", "plans", "P");
+    await fsp.mkdir(planDir, { recursive: true });
     await fsp.writeFile(path.join(planDir, "plan.json"), "{}\n");
   });
   afterEach(() => project.cleanup());
@@ -72,7 +73,7 @@ describe("WriteQueue with PlanStamp (FIND-024)", () => {
     ["fails midway", true],
   ])("a check enqueued between writing and refreshing runs afterwards and finds no deviation (write job %s)", async (_name, fails) => {
     const queue = new WriteQueue();
-    const stamp = await PlanStamp.capture(planDir);
+    const stamp = await PlanStamp.capture(areaPaths(project.dir), "P");
     const written = hold();
     const proceed = hold();
     const writeJob = queue.run("P", async () => {

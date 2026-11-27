@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { UnreadableCause } from "../../shared/codes";
 import { hasConflictMarkers } from "./conflict-markers";
 import {
@@ -23,8 +24,13 @@ export type RawPlanFile = { name: string; text: string };
 /** The files of `plans/<planId>/` as loadPlanFromDisk read them, each list sorted by name. */
 export type RawPlanFiles = {
   planId: string;
-  /** Symbolic links found while reading (rule 0), relative to the plan folder in reading order; "" is the plan folder. */
+  /**
+   * Symbolic links found while reading (rule 0), relative to the plan folder in reading order; "" is the plan folder,
+   * ".." and "../.." are `plans/` and `.ramifold/` (found by symlinkGuard).
+   */
   symlinks: string[];
+  /** Folders that could not be read (rule 3), relative to the plan folder in reading order; "" is the plan folder. */
+  unreadableDirs: string[];
   planJson: string;
   /** `nodes/<nodeId>.json` */
   nodes: RawPlanFile[];
@@ -57,7 +63,7 @@ const MAX_TITLE_CODE_POINTS = 200;
 
 export function validatePlanTree(raw: RawPlanFiles): PlanTreeCheck {
   const base = `.ramifold/plans/${raw.planId}`;
-  const at = (relPath: string) => (relPath === "" ? base : `${base}/${relPath}`);
+  const at = (relPath: string) => (relPath === "" ? base : path.posix.normalize(`${base}/${relPath}`));
   const fail = (cause: UnreadableCause, relPath: string): PlanTreeCheck => ({
     readable: false,
     cause,
@@ -89,9 +95,12 @@ export function validatePlanTree(raw: RawPlanFiles): PlanTreeCheck {
     }
   }
 
-  // Rule 3: damaged files.
+  // Rule 3: damaged files; a folder that cannot be read counts like a file that cannot be read.
+  const unreadableDir = (relDir: string) => raw.unreadableDirs.includes(relDir);
+  if (unreadableDir("")) return fail("damaged", "");
   const plan = planFileSchema.safeParse(planJson);
   if (!plan.success || plan.data.id !== raw.planId) return fail("damaged", "plan.json");
+  if (unreadableDir("nodes")) return fail("damaged", "nodes");
   const nodes: NodeFile[] = [];
   for (const file of raw.nodes) {
     const parsed = nodeFileSchema.safeParse(parseJson(file.text));
@@ -100,13 +109,19 @@ export function validatePlanTree(raw: RawPlanFiles): PlanTreeCheck {
     }
     nodes.push(parsed.data);
   }
+  if (unreadableDir("results")) return fail("damaged", "results");
+  const unreadableResultDirs = raw.unreadableDirs.filter((d) => d.startsWith("results/") && nodeIds.has(d.slice(8)));
   const versions: { folder: string; version: ResultVersionFile; relPath: string }[] = [];
   for (const file of results) {
     const [folder, name] = file.name.split("/") as [string, string];
+    const unreadableBefore = unreadableResultDirs.find((d) => d < `results/${folder}/`);
+    if (unreadableBefore !== undefined) return fail("damaged", unreadableBefore);
     const parsed = resultVersionFileSchema.safeParse(parseJson(file.text));
     if (!parsed.success || parsed.data.id !== stem(name, ".json")) return fail("damaged", `results/${file.name}`);
     versions.push({ folder, version: parsed.data, relPath: `results/${file.name}` });
   }
+  if (unreadableResultDirs.length > 0) return fail("damaged", unreadableResultDirs[0]!);
+  if (unreadableDir("chats")) return fail("damaged", "chats");
   const nodeChats: LoadedChat[] = [];
   for (const chat of chats) {
     const chatId = stem(chat.file.name, ".jsonl");
@@ -168,18 +183,17 @@ function readChatEvents(text: string): ChatEventLine[] | null {
 }
 
 /**
- * Id of the first node file (in name order) with a missing parent, on a cycle, or one of several roots; "" when
- * there is no node at all; null when the tree is consistent.
+ * Id of the first node file (in name order) that has a missing parent, is on a cycle, or is one of several roots;
+ * "" when there is no node at all; null when the tree is consistent.
  */
 function findInconsistentNode(nodes: NodeFile[]): string | null {
   if (nodes.length === 0) return "";
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const missingParent = nodes.find((n) => n.parentId !== null && !byId.has(n.parentId));
-  if (missingParent) return missingParent.id;
-  const onCycle = nodes.find((n) => isOnCycle(n, byId));
-  if (onCycle) return onCycle.id;
-  const roots = nodes.filter((n) => n.parentId === null);
-  return roots.length === 1 ? null : roots[0]!.id;
+  const severalRoots = nodes.filter((n) => n.parentId === null).length > 1;
+  const affected = nodes.find((n) =>
+    n.parentId === null ? severalRoots : !byId.has(n.parentId) || isOnCycle(n, byId),
+  );
+  return affected?.id ?? null;
 }
 
 function isOnCycle(start: NodeFile, byId: Map<string, NodeFile>): boolean {

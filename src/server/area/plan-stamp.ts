@@ -1,9 +1,12 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
+import type { AreaPaths } from "./area-paths";
+import { findSymlink } from "./symlink-guard";
 
 // File stamp of a plan (TechSpec 2.12, ADR-006, REQ-074): relative path -> {size, mtimeMs, ctimeMs, ino} for all files
 // under `plans/<planId>/` recursively, without `PLAN.md` and without files with `.tmp-` in the name. Links are
-// recorded with `lstat` and never followed.
+// recorded with `lstat` and never followed; a link on the path to the plan folder is found by symlinkGuard (TechSpec
+// 4.3). A folder that cannot be read has no entries, so that one plan never breaks the listing of the others.
 
 export type StampEntry = { size: number; mtimeMs: number; ctimeMs: number; ino: number };
 
@@ -15,13 +18,11 @@ export class PlanStamp {
     private readonly entries: Map<string, StampEntry>,
   ) {}
 
-  /** Records the stamp of all files of the plan folder; a linked plan folder is not followed and has no entries. */
-  static async capture(planDir: string): Promise<PlanStamp> {
-    const isLink = await fsp.lstat(planDir).then(
-      (stats) => stats.isSymbolicLink(),
-      () => false,
-    );
-    return new PlanStamp(planDir, isLink ? new Map() : await scan(planDir));
+  /** Records the stamp of all files of the plan folder; with a link on the way there it is not followed, no entries. */
+  static async capture(paths: AreaPaths, planId: string): Promise<PlanStamp> {
+    const planDir = paths.planDir(planId);
+    const link = await findSymlink(paths.root, path.posix.join("plans", planId)).catch(() => planDir);
+    return new PlanStamp(planDir, link !== null ? new Map() : await scan(planDir));
   }
 
   /** Recorded relative paths (with `/`), sorted. */
@@ -60,15 +61,17 @@ async function scan(planDir: string): Promise<Map<string, StampEntry>> {
     let dirents;
     try {
       dirents = await fsp.readdir(path.join(planDir, relDir), { withFileTypes: true });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code === "ENOENT") return;
-      throw error;
+    } catch {
+      return;
     }
     for (const dirent of dirents) {
       const relPath = relDir === "" ? dirent.name : `${relDir}/${dirent.name}`;
       if (isIgnored(relPath)) continue;
       if (dirent.isDirectory()) await walk(relPath);
-      else entries.set(relPath, toEntry(await fsp.lstat(path.join(planDir, relPath))));
+      else {
+        const stats = await fsp.lstat(path.join(planDir, relPath)).catch(() => null);
+        if (stats !== null) entries.set(relPath, toEntry(stats));
+      }
     }
   };
   await walk("");

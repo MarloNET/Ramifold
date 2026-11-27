@@ -113,6 +113,17 @@ describe("loadPlanFromDisk: rule 0 symbolic links (DER-18-08)", () => {
     expect(await checksums(target)).toEqual(before);
   });
 
+  it("plans/ as link is found through symlinkGuard: damaged with plans/ as location, the target is not read", async () => {
+    await seedPlan();
+    const plans = path.join(project.dir, ".ramifold", "plans");
+    const target = path.join(project.dir, "outside-plans");
+    await fsp.rename(plans, target);
+    await fsp.symlink(target, plans);
+    const before = await checksums(target);
+    await expect(load()).resolves.toMatchObject({ readable: false, cause: "damaged", location: ".ramifold/plans", title: null });
+    expect(await checksums(target)).toEqual(before);
+  });
+
   it("a node file as link", async () => {
     await seedPlan();
     const target = await outsideFile("node.json", await fsp.readFile(path.join(planDir(), "nodes", `${CHILD}.json`), "utf8"));
@@ -173,5 +184,33 @@ describe("loadPlanFromDisk: rule 0 symbolic links (DER-18-08)", () => {
     await fsp.mkdir(path.join(planDir(), "chats"), { recursive: true });
     await fsp.symlink(target, path.join(planDir(), "chats", "01JDQ7Z8M3A6Y2W4X5V7T9R1Q7.jsonl"));
     await expect(load()).resolves.toMatchObject({ cause: "damaged", location: `${base}/chats/01JDQ7Z8M3A6Y2W4X5V7T9R1Q7.jsonl` });
+  });
+});
+
+describe("loadPlanFromDisk: a folder that cannot be read (CR-177-02)", () => {
+  const unreadableFolder = async (relDir: string) => {
+    const dir = path.join(planDir(), relDir);
+    await fsp.chmod(dir, 0o000);
+    return () => fsp.chmod(dir, 0o755);
+  };
+
+  it.each(["nodes", "chats", `results/${CHILD}`])("%s without read permission: damaged with the folder as location", async (relDir) => {
+    await seedPlan();
+    const restore = await unreadableFolder(relDir);
+    try {
+      await expect(load()).resolves.toMatchObject({ readable: false, cause: "damaged", location: `${base}/${relDir}` });
+    } finally {
+      await restore();
+    }
+  });
+
+  it("the plan folder without read permission: damaged with the plan folder as location", async () => {
+    await seedPlan();
+    const restore = await unreadableFolder("");
+    try {
+      await expect(load()).resolves.toMatchObject({ readable: false, cause: "damaged", location: base, title: null });
+    } finally {
+      await restore();
+    }
   });
 });

@@ -37,6 +37,7 @@ function files(overrides: Partial<RawPlanFiles> = {}): RawPlanFiles {
   return {
     planId: PLAN,
     symlinks: [],
+    unreadableDirs: [],
     planJson: json({ format: 1, id: PLAN, createdAt: AT, profile: "software" }),
     nodes: [node(ROOT, null, "Eigenes produktives RAG"), node(N1, ROOT), node(N2, N1)],
     results: [result(N1, V1)],
@@ -236,6 +237,26 @@ describe("validatePlanTree: rule 3 damaged", () => {
     expect(unreadable(invalid)).toEqual({ cause: "damaged", location: `${BASE}/chats/${CHAT1}.jsonl` });
   });
 
+  it("a folder that cannot be read is damaged with the folder as location (CR-177-02)", () => {
+    expect(unreadable(files({ unreadableDirs: [""] }))).toEqual({ cause: "damaged", location: BASE });
+    expect(unreadable(files({ nodes: [], unreadableDirs: ["nodes"] }))).toEqual({ cause: "damaged", location: `${BASE}/nodes` });
+    expect(unreadable(files({ chats: [], unreadableDirs: ["chats"] }))).toEqual({ cause: "damaged", location: `${BASE}/chats` });
+    expect(unreadable(files({ unreadableDirs: [`results/${N2}`] }))).toEqual({ cause: "damaged", location: `${BASE}/results/${N2}` });
+  });
+
+  it("a folder that cannot be read: the first affected entry in reading order, after the rules before", () => {
+    const damagedVersion = files({ results: [result(N1, V1, { content: "  " })], unreadableDirs: [`results/${N2}`] });
+    expect(unreadable(damagedVersion)).toEqual({ cause: "damaged", location: `${BASE}/results/${N1}/${V1}.json` });
+    const damagedNode = files({ nodes: [node(ROOT, null), { name: `${N1}.json`, text: "{" }], unreadableDirs: ["chats"] });
+    expect(unreadable(damagedNode)).toEqual({ cause: "damaged", location: `${BASE}/nodes/${N1}.json` });
+    const newer = files({ planJson: json({ format: 2 }), unreadableDirs: ["nodes"] });
+    expect(unreadable(newer)).toEqual({ cause: "newer_version", location: `${BASE}/plan.json` });
+  });
+
+  it("a result folder of no node that cannot be read is ignored like its files", () => {
+    expect(validatePlanTree(files({ unreadableDirs: [`results/${GHOST}`] })).readable).toBe(true);
+  });
+
   it("damaged wins over inconsistent", () => {
     const raw = files({ nodes: [node(ROOT, null), node(N1, GHOST), { name: `${N2}.json`, text: "{" }] });
     expect(unreadable(raw)).toEqual({ cause: "damaged", location: `${BASE}/nodes/${N2}.json` });
@@ -256,6 +277,13 @@ describe("validatePlanTree: rule 4 inconsistent (AC-REQ-072-04)", () => {
   it("two roots: the first root file", () => {
     const raw = files({ nodes: [node(ROOT, null), node(N1, null)] });
     expect(unreadable(raw)).toEqual({ cause: "inconsistent", location: `${BASE}/nodes/${ROOT}.json` });
+  });
+
+  it("several problems: the first affected file in name order, whatever the kind (CR-177-03)", () => {
+    const raw = files({ nodes: [node(ROOT, N1), node(N1, ROOT), node(N2, GHOST)] });
+    expect(unreadable(raw)).toEqual({ cause: "inconsistent", location: `${BASE}/nodes/${ROOT}.json` });
+    const rootsAfterMissingParent = files({ nodes: [node(ROOT, null), node(N1, null), node(N2, GHOST)] });
+    expect(unreadable(rootsAfterMissingParent)).toEqual({ cause: "inconsistent", location: `${BASE}/nodes/${ROOT}.json` });
   });
 
   it("no node at all: the nodes folder", () => {

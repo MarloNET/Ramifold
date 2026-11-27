@@ -1,6 +1,7 @@
 import fsp from "node:fs/promises";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { areaPaths } from "../../src/server/area/area-paths";
 import { PlanStamp } from "../../src/server/area/plan-stamp";
 import { createTempProject, type TempProject } from "../helpers/temp-project";
 
@@ -18,37 +19,39 @@ beforeEach(async () => {
 });
 afterEach(() => project.cleanup());
 
+const capture = () => PlanStamp.capture(areaPaths(project.dir), "P");
+
 describe("PlanStamp", () => {
   it("records all files recursively with their relative paths", async () => {
-    const stamp = await PlanStamp.capture(planDir);
+    const stamp = await capture();
     expect(stamp.paths()).toEqual(["nodes/a.json", "plan.json"]);
     await expect(stamp.matchesDisk()).resolves.toBe(true);
   });
 
   it("detects a changed, an added and a removed file", async () => {
-    let stamp = await PlanStamp.capture(planDir);
+    let stamp = await capture();
     await fsp.writeFile(path.join(planDir, "nodes", "a.json"), '{"changed":true}\n');
     await expect(stamp.matchesDisk()).resolves.toBe(false);
 
-    stamp = await PlanStamp.capture(planDir);
+    stamp = await capture();
     await fsp.mkdir(path.join(planDir, "chats"));
     await fsp.writeFile(path.join(planDir, "chats", "c.jsonl"), "{}\n");
     await expect(stamp.matchesDisk()).resolves.toBe(false);
 
-    stamp = await PlanStamp.capture(planDir);
+    stamp = await capture();
     await fsp.rm(path.join(planDir, "chats", "c.jsonl"));
     await expect(stamp.matchesDisk()).resolves.toBe(false);
   });
 
   it("ignores PLAN.md and temp files", async () => {
-    const stamp = await PlanStamp.capture(planDir);
+    const stamp = await capture();
     await fsp.writeFile(path.join(planDir, "PLAN.md"), "# Export\n");
     await fsp.writeFile(path.join(planDir, "nodes", "a.json.tmp-0a1b2c3d"), "{}");
     await expect(stamp.matchesDisk()).resolves.toBe(true);
   });
 
   it("refresh takes over own writes and removes deleted paths", async () => {
-    const stamp = await PlanStamp.capture(planDir);
+    const stamp = await capture();
     await fsp.writeFile(path.join(planDir, "nodes", "b.json"), "{}\n");
     await fsp.rm(path.join(planDir, "nodes", "a.json"));
     await stamp.refresh(["nodes/b.json", "nodes/a.json"]);
@@ -61,7 +64,23 @@ describe("PlanStamp", () => {
     await fsp.mkdir(outside);
     await fsp.writeFile(path.join(outside, "x.json"), "{}");
     await fsp.symlink(outside, path.join(planDir, "chats"));
-    const stamp = await PlanStamp.capture(planDir);
+    const stamp = await capture();
     expect(stamp.paths()).toEqual(["chats", "nodes/a.json", "plan.json"]);
+  });
+
+  it("a link on the path to the plan folder (symlinkGuard): no entries, the target is not followed", async () => {
+    const plans = path.join(project.dir, ".ramifold", "plans");
+    await fsp.rename(plans, path.join(project.dir, "outside-plans"));
+    await fsp.symlink(path.join(project.dir, "outside-plans"), plans);
+    expect((await capture()).paths()).toEqual([]);
+  });
+
+  it("a folder without read permission does not throw; its files are not recorded", async () => {
+    await fsp.chmod(path.join(planDir, "nodes"), 0o000);
+    try {
+      expect((await capture()).paths()).toEqual(["plan.json"]);
+    } finally {
+      await fsp.chmod(path.join(planDir, "nodes"), 0o755);
+    }
   });
 });
