@@ -46,6 +46,14 @@ export const planListResponseSchema = z.object({
 });
 export type PlanListResponseDto = z.infer<typeof planListResponseSchema>;
 
+/** `details` of `409 plan_unreadable` (TechSpec 2.0, 2.3). */
+export const planUnreadableDetailsSchema = z.object({
+  title: z.string().nullable(),
+  cause: z.enum(UNREADABLE_CAUSES),
+  location: z.string(),
+});
+export type PlanUnreadableDetailsDto = z.infer<typeof planUnreadableDetailsSchema>;
+
 export const treeNodeSchema = z.object({
   id: ulidSchema,
   parentId: ulidSchema.nullable(),

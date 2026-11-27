@@ -3,14 +3,22 @@ import type { InstanceInfoDto } from "../../shared/api-schemas";
 import { messages } from "../text/messages";
 import { Icon } from "./Icon";
 
-// Header of both screens (UI-001, UI-003): brand, project folder, mark "Simulated AI", link "Data notice".
-// Breadcrumbs and the mark "Read-only" follow with UI-003; the dialog UI-009 behind "Data notice" with task T-09.
+// Header of both screens: brand, mark "Simulated AI", link "Data notice"; in UI-001 the project folder, in UI-003 the
+// breadcrumbs "Projects" › plan title (TechSpec 2.16, AL-04). The mark "Read-only" follows with task #140, "Export"
+// with #148, the dialog UI-009 behind "Data notice" with task T-09.
 
-export function AppHeader({ instance, simulated }: { instance: InstanceInfoDto | null; simulated: boolean }) {
+export function AppHeader(props: {
+  instance: InstanceInfoDto | null;
+  simulated: boolean;
+  /** Set in UI-003: the title of the opened plan, null while it loads. */
+  workspace?: { planTitle: string | null };
+}) {
+  const { instance, simulated, workspace } = props;
   return (
     <header className="app-header">
       <span className="app-header__brand">{messages["AppHeader.brand"]}</span>
-      {instance && (
+      {workspace !== undefined && <Breadcrumbs planTitle={workspace.planTitle} />}
+      {workspace === undefined && instance && (
         <ProjectFolder
           displayPath={instance.projectFolder.displayPath}
           absolutePath={instance.projectFolder.absolutePath}
@@ -26,6 +34,23 @@ export function AppHeader({ instance, simulated }: { instance: InstanceInfoDto |
         <Link className="app-header__link">{messages["AppHeader.dataNotice"]}</Link>
       </div>
     </header>
+  );
+}
+
+/** "Projects" (link to UI-001), the decorative separator and the plan title, shortened with "…" (UI-003). */
+function Breadcrumbs({ planTitle }: { planTitle: string | null }) {
+  return (
+    <nav className="breadcrumbs" aria-label={messages["AppHeader.breadcrumb"]}>
+      <Link className="breadcrumbs__link" href="/">
+        {messages["AppHeader.projects"]}
+      </Link>
+      {planTitle !== null && (
+        <>
+          <Icon name="breadcrumb-separator" />
+          <span className="breadcrumbs__here">{planTitle}</span>
+        </>
+      )}
+    </nav>
   );
 }
 

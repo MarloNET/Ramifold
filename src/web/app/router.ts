@@ -11,9 +11,21 @@ export function matchRoute(pathname: string): Route {
   return { name: "unknown" };
 }
 
-export function navigate(path: string): void {
-  window.history.pushState(null, "", path);
+/**
+ * Navigates to `path`. `state` is the navigation state of the new entry (for example the unreadable plan after a
+ * failed open, TechSpec 2.3, v0.15, N-10); `replace` replaces the current entry instead of adding one.
+ */
+export function navigate(path: string, options: { replace?: boolean; state?: unknown } = {}): void {
+  if (options.replace) window.history.replaceState(options.state ?? null, "", path);
+  else window.history.pushState(options.state ?? null, "", path);
   window.dispatchEvent(new PopStateEvent("popstate"));
+}
+
+/** Returns the navigation state of the current entry once and removes it, so that a reload does not repeat it. */
+export function takeNavigationState(): unknown {
+  const state: unknown = window.history.state;
+  if (state !== null) window.history.replaceState(null, "", window.location.href);
+  return state;
 }
 
 function subscribe(listener: () => void) {
