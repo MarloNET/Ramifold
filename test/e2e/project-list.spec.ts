@@ -36,6 +36,30 @@ test("UI-001.empty: shows the hint and the action New project, without axe viola
   expect(axe.violations).toEqual([]);
 });
 
+test.describe("header mark Simulated AI (DER-16-04)", () => {
+  test("UI-001.empty: shows flask-conical and text with the tooltip in the simulated mode", async ({ page }) => {
+    await page.goto("/");
+    const mark = page.getByRole("banner").getByText("Simulated AI", { exact: true });
+    await expect(mark).toBeVisible();
+    await expect(mark).toHaveAttribute("title", "AI answers are simulated and do not come from a real AI.");
+    await expect(mark.locator('[data-icon="simulated-ai"]')).toHaveCount(1);
+  });
+
+  test.describe("normal mode", () => {
+    test.use({ ramifoldEnv: { RAMIFOLD_AGENT: undefined, RAMIFOLD_CLAUDE_CMD: undefined } });
+
+    test("UI-001.empty: shows no mark without RAMIFOLD_AGENT=fake", async ({ page }) => {
+      await page.goto("/");
+      await expect(page.getByText("No project in this folder yet.")).toBeVisible();
+      await expect(page.getByRole("banner").getByRole("link", { name: "Data notice" })).toBeVisible();
+      await expect(page.getByText("Simulated AI")).toHaveCount(0);
+      await expect(page.locator('[data-icon="simulated-ai"]')).toHaveCount(0);
+      const axe = await new AxeBuilder({ page }).analyze();
+      expect(axe.violations).toEqual([]);
+    });
+  });
+});
+
 test("UI-001.loading: shows Loading projects… until the list arrives", async ({ page }) => {
   let release: () => void = () => undefined;
   const released = new Promise<void>((resolve) => (release = resolve));
