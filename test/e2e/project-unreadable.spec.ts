@@ -202,6 +202,8 @@ test("UI-001.default (AC-REQ-072-03): after resolving the conflict and a restart
     await expect(ragRow.getByRole("button", { name: "Details" })).toHaveCount(0);
     await expectNoAxeViolations(page);
   } finally {
+    // The orderly shutdown ends the event stream mid-response; leave the page first, as above.
+    await page.goto("about:blank");
     await restarted.stop();
   }
 });
