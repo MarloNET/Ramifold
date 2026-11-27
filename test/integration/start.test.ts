@@ -8,7 +8,8 @@ import { areaPaths } from "../../src/server/area/area-paths";
 import { systemClock } from "../../src/server/clock";
 import { rawGet } from "../helpers/raw-http";
 import { runRamifoldToExit, startRamifold, type RamifoldRunOptions, type RunningRamifold } from "../helpers/ramifold-process";
-import { checksums, createTempProject, type TempProject } from "../helpers/temp-project";
+import { checksums } from "../helpers/checksums";
+import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // Start and start aborts (TechSpec 2.1, Story #16, task #72). Wording of the TERM texts from the UI/UX Design §5.
 // The instances run with the simulated Claude Code (RAMIFOLD_AGENT=fake, set by startRamifold) unless a test unsets it.

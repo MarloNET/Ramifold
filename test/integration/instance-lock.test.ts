@@ -5,7 +5,8 @@ import net from "node:net";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { runRamifoldToExit, startRamifold, type RunningRamifold } from "../helpers/ramifold-process";
-import { checksums, createTempProject, type TempProject } from "../helpers/temp-project";
+import { checksums } from "../helpers/checksums";
+import { createTempProject, type TempProject } from "../helpers/temp-project";
 
 // Instance lock, start checks 4 and 5 and the orderly shutdown (TechSpec 2.1, 3.2; Story #17, task #73).
 // The instances run with the simulated Claude Code (RAMIFOLD_AGENT=fake, set by startRamifold).
