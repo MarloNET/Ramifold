@@ -36,6 +36,9 @@ export const messages = {
   "UI-003.plan": "Plan",
   "UI-003.showPlan": "Show plan",
   "UI-003.hidePlan": "Hide plan",
+  // Accessible names of the tree row arrow; set explicitly, React Aria would localize them by the browser language.
+  "UI-003.expand": "Expand",
+  "UI-003.collapse": "Collapse",
   "UI-003.draft": "Draft",
   "UI-003.aiRunning": "AI running",
   "UI-003.objective": "Objective",

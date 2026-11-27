@@ -50,9 +50,11 @@ async function seedPlans(projectFolder: string) {
 const tree = (page: Page) => page.getByRole("treegrid", { name: "Plan" });
 const treeRow = (page: Page, name: string) => tree(page).getByRole("row", { name, exact: true });
 
-async function expectNoAxeViolations(page: Page) {
-  // The h1 of UI-003 is the node header "<number> <title>" (NodeHeader), which comes with task #78; UI-001 has its h1.
-  const axe = await new AxeBuilder({ page }).disableRules(["page-has-heading-one"]).analyze();
+async function expectNoAxeViolations(page: Page, screen: "UI-001" | "UI-003") {
+  // The h1 of UI-003 is the node header "<number> <title>" (NodeHeader), which comes with task #78; remove the
+  // exception there. UI-001 has its h1.
+  const builder = new AxeBuilder({ page });
+  const axe = await (screen === "UI-003" ? builder.disableRules(["page-has-heading-one"]) : builder).analyze();
   expect(axe.violations.map((v) => ({ id: v.id, targets: v.nodes.map((n) => n.target.join(" ")) }))).toEqual([]);
 }
 
@@ -108,7 +110,7 @@ test.describe("AC-REQ-006-02", () => {
     await page.goto("/");
     await expect(page.getByText("No project in this folder yet.")).toBeVisible();
     await expect(page.getByRole("button", { name: "New project" })).toBeVisible();
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, "UI-001");
   });
 });
 
@@ -136,7 +138,7 @@ async function expectListError(page: Page) {
   await expect(banner.locator('[data-icon="error"]')).toHaveCount(1);
   await expect(page.getByText("Loading projects…")).toHaveCount(0);
   await expect(page.getByRole("table")).toHaveCount(0);
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-001");
 }
 
 test("UI-001.loading (DER-19-08): Loading projects… without axe violations", async ({ page }) => {
@@ -149,7 +151,7 @@ test("UI-001.loading (DER-19-08): Loading projects… without axe violations", a
   await page.goto("/");
   await expect(page.getByText("Loading projects…")).toBeVisible();
   await expect(page.getByRole("table")).toHaveCount(0);
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-001");
   release();
   await expect(page.getByRole("table")).toBeVisible();
 });
@@ -171,7 +173,7 @@ test("UI-003.loading (DER-19-02): Loading plan… in the tree, node area empty; 
   await expect(page.locator("[data-icon]").filter({ visible: true })).toHaveCount(1); // only "Simulated AI"
   await expect(page.getByRole("main")).toBeEmpty();
   await expect(tree(page)).toHaveCount(0);
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-003");
 
   release();
   await expect(plan.getByText("Loading plan…")).toHaveCount(0);
@@ -230,7 +232,20 @@ test("UI-003.default tree rows (AC-REQ-007-01, DER-19-03): number, title, status
 
   // Symbols are no focus points of their own.
   await expect(tree(page).locator("svg[focusable='false'][aria-hidden='true']")).toHaveCount(7);
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-003");
+});
+
+test.describe("UI-003 tree with a German browser language (REQ-068)", () => {
+  test.use({ locale: "de-DE" });
+
+  test("the expand arrow keeps its English name", async ({ page }) => {
+    await openRag(page);
+    const arrow = treeRow(page, "2 Retrieval, Concept").getByRole("button");
+    await expect(arrow).toHaveAccessibleName("Collapse 2 Retrieval, Concept");
+    await arrow.click();
+    await expect(arrow).toHaveAccessibleName("Expand 2 Retrieval, Concept");
+    await expect(tree(page).getByRole("button", { name: /Reduzieren|Erweitern/ })).toHaveCount(0);
+  });
 });
 
 test("UI-003 status mark tooltip (DER-19-04): one tooltip, status word or full title, Esc hides it", async ({ page }) => {
@@ -247,7 +262,7 @@ test("UI-003 status mark tooltip (DER-19-04): one tooltip, status word or full t
   await expect(tooltip).toHaveCount(1);
   await expect(tooltip).toHaveText("Concept");
   await expect(tooltip).toHaveAttribute("aria-hidden", "true");
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-003");
 
   // It stays while the row has the focus.
   await page.waitForTimeout(1000);
@@ -338,7 +353,7 @@ test("UI-003 keyboard (DER-19-05): one tab stop, arrows, Home/End, Enter opens t
   // Mouse click opens a node too.
   await chunking.click();
   await expect(chunking).toHaveAttribute("aria-selected", "true");
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-003");
 });
 
 test("UI-003 header and page title (DER-19-06): breadcrumbs with one separator, Data notice, Simulated AI", async ({
@@ -366,7 +381,7 @@ test("UI-003 header and page title (DER-19-06): breadcrumbs with one separator, 
   await expect(header.getByRole("link", { name: "Data notice" })).toBeVisible();
   await expect(header.getByText("Simulated AI")).toBeVisible();
   await expect(header.locator('[data-icon="simulated-ai"]')).toHaveCount(1);
-  await expectNoAxeViolations(page);
+  await expectNoAxeViolations(page, "UI-003");
 
   // "Projects" leads to UI-001.
   await breadcrumb.getByRole("link", { name: "Projects" }).click();
@@ -406,7 +421,7 @@ test.describe("UI-003 below 1024 px (DER-19-07)", () => {
     const treeBox = (await tree(page).boundingBox())!;
     const mainBox = (await page.getByRole("main").boundingBox())!;
     expect(treeBox.y + treeBox.height).toBeLessThanOrEqual(mainBox.y + 0.5);
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, "UI-003");
 
     // Changing the node keeps the state.
     await treeRow(page, "2 Retrieval, Concept").click();
@@ -422,7 +437,7 @@ test.describe("UI-003 below 1024 px (DER-19-07)", () => {
     // Not in the tab order: Tab from the button does not reach the tree.
     await page.keyboard.press("Tab");
     await expect(tree(page).locator(":focus")).toHaveCount(0);
-    await expectNoAxeViolations(page);
+    await expectNoAxeViolations(page, "UI-003");
 
     await show.click();
     await expect(page.getByRole("button", { name: "Hide plan" })).toHaveAttribute("aria-expanded", "true");

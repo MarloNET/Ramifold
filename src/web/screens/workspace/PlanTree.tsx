@@ -90,7 +90,11 @@ function PlanTreeRow({ node, state }: { node: TreeNodeDto; state: TreeItemConten
     <>
       {state.hasChildItems ? (
         // Not a focus stop of its own: React Aria takes the arrow out of the tab order of the tree.
-        <Button slot="chevron" className="tree-row__chevron">
+        <Button
+          slot="chevron"
+          className="tree-row__chevron"
+          aria-label={messages[state.isExpanded ? "UI-003.collapse" : "UI-003.expand"]}
+        >
           <Icon name={state.isExpanded ? "collapse" : "expand"} size="compact" />
         </Button>
       ) : (
